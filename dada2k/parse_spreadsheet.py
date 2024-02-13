@@ -35,7 +35,8 @@ def trim_dataframe(df: pd.DataFrame):
 def export_dataframe(df: pd.DataFrame, output_path: str):
     with open(output_path, 'w') as file:
         for index, row in df.iterrows():
-            formatted_line = f"{row['type']}/{row['id']} {row['accident']} {row['start']} {row['end']} {row['toa']}\n"
+            padded_video_id = str(row['id']).zfill(3)
+            formatted_line = f"{row['type']}/{padded_video_id} {row['accident']} {row['start']} {row['end']} {row['toa']}\n"
             file.write(formatted_line)
 
 
