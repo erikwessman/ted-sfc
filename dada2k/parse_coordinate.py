@@ -5,21 +5,6 @@ import numpy as np
 
 
 def main(input_path: str, output_path: str):
-
-    # iterate over all categories
-
-    # cd into each one
-
-    # cd into fixation
-
-    # cd into maps
-
-    # iterate over .mat files
-
-    # convert .mat to coordinates (x,y)
-
-    # write to 00X_coordinate.txt
-
     if not os.path.exists(input_path):
         print("Path does not exist")
         exit(1)
@@ -46,14 +31,15 @@ def main(input_path: str, output_path: str):
                     continue
 
                 coordinates[category][video] = mat_to_coordinate(file_path)
-    pass
 
 
 def mat_to_coordinate(file_path):
     mat = scipy.io.loadmat(file_path)['I']
-    coordinate = np.where(mat == 1)
-    ones = np.count_nonzero(mat == 1)
-    print(ones)
+    non_zero_coords = np.argwhere(mat != 0)
+    avg_x = np.mean(non_zero_coords[:, 0])
+    avg_y = np.mean(non_zero_coords[:, 1])
+    
+    print(avg_x, avg_y)
     exit(1)
 
 
