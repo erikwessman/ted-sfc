@@ -43,9 +43,9 @@ def export_dataframe(df: pd.DataFrame, output_path: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--input", default="/home/erik/devel/ted-sfc/dada2k/data/DADA-annotation.xlsx", help="")
+        "--input", default="./dada2k/data/DADA-annotation.xlsx", help="")
     parser.add_argument(
-        "--output", default="/home/erik/devel/ted-sfc/dada2k/data/DADA-annotation.txt", help="")
+        "--output", default="./dada2k/data/DADA-annotation.txt", help="")
     args = parser.parse_args()
 
     main(args.input, args.output)
