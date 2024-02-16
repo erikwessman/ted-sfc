@@ -206,7 +206,7 @@ class DashCamEnv(core.Env):
         cls_pred = (score_pred > self.score_thresh).int()
         xnor_dist = torch.logical_not(
             torch.logical_xor(cls_pred, self.clsID)).float()
-        r_tta = (tta_weights * xnor_dist).unsqueeze(1)
+        r_tta = (xnor_dist).unsqueeze(1)
 
         # compute fixation prediction award
         # (B, 2), [x, y]
