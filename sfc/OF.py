@@ -136,7 +136,7 @@ while True:
     current_frame_differences = [frame_number]  
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 20, 3, 5, 1.2, 0)
+    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
     prev_gray = gray
 
     
@@ -222,7 +222,12 @@ while True:
                     moving_avg_vector = angle_to_vector(moving_avg, scale)
 
                     # Store the clamped angle difference
-                    angle_differences[cell_index].append(-angle_diff)
+                    angle_differences[cell_index].append(clamped_angle_diff)
+                    if clamped_angle_diff != 0:
+    # This means clamped_angle_diff is -angle_diff and meets the threshold condition
+    # Draw a bounding box around the cell
+                        cv2.rectangle(frame, (cell_start_x, cell_start_y), (cell_end_x, cell_end_y), (0, 255, 0), 2)  # Green bounding box
+
 
                     
 
