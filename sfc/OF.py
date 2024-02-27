@@ -24,8 +24,8 @@ def draw_grid(frame, grid_size, skip_top_rows, skip_bottom_rows, skip_right_colu
     if end_x + grid_size <= w:
         cv2.line(frame, (end_x, start_y), (end_x, end_y), (255, 0, 0), 1)
 # Video path and parameters
-video_path = '/Users/tayssir/Desktop/c.webm'
-output_path = '/Users/tayssir/Desktop/output_video.mp4'
+video_path = './data/c.webm'
+output_path = './output/OF/c_grid.avi'
 grid_size = 200
 skip_top_rows = 3
 skip_bottom_rows = 3
@@ -360,7 +360,7 @@ while True:
 import csv
 
 # Specify the CSV file name
-csv_filename = 'angle_differences.csv'
+csv_filename = './output/OF/angle_differences.csv'
 
 # Write data to CSV
 with open(csv_filename, 'w', newline='') as file:
