@@ -1,19 +1,18 @@
+import csv
+import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import csv
-import os
 
 # Constants and configurations
 HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
 ORIGINAL_VIDEO_PATH = "./data/original.webm"
 OUTPUT_PATH = "./output/attention"
-THRESHOLD = 50
-TOP_LEFT = (0, 0.4)
-BOTTOM_RIGHT = (0.6, 0.6)
-NUM_COLS = 6
-NUM_ROWS = 2
-COMMON_COLOR = (255, 255, 255)
+SALIENCY_THRESHOLD = 50
+GRID_TOP_LEFT = (0, 0.35)
+GRID_BOTTOM_RIGHT = (0.5, 0.6)
+GRID_NUM_COLS = 6
+GRID_NUM_ROWS = 2
 
 
 def match_video_resolutions(new_video_path: str, original_video_path: str):
@@ -56,7 +55,7 @@ def match_video_resolutions(new_video_path: str, original_video_path: str):
         return resized_new_video_path
 
 
-def draw_grid(frame, cell_positions, line_color=(0, 255, 0), line_thickness=1):
+def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
     for top_left, bottom_right in cell_positions:
         start_x, start_y = top_left
         end_x, end_y = bottom_right
@@ -95,24 +94,24 @@ def draw_grid(frame, cell_positions, line_color=(0, 255, 0), line_thickness=1):
         )
 
 
-def calculate_cell_positions(image):
+def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows):
     h, w, _ = image.shape  # Get the height and width of the frame
 
     # Convert proportional positions to pixel positions
-    start_x = int(w * TOP_LEFT[0])
-    start_y = int(h * TOP_LEFT[1])
-    end_x = int(w * BOTTOM_RIGHT[0])
-    end_y = int(h * BOTTOM_RIGHT[1])
+    start_x = int(w * top_left[0])
+    start_y = int(h * top_left[1])
+    end_x = int(w * bottom_right[0])
+    end_y = int(h * bottom_right[1])
 
     # Calculate the size of each cell in the grid
-    cell_width = (end_x - start_x) // NUM_COLS
-    cell_height = (end_y - start_y) // NUM_ROWS
+    cell_width = (end_x - start_x) // num_cols
+    cell_height = (end_y - start_y) // num_rows
 
     cell_positions = []
 
     # Iterate over the cells
-    for row in range(NUM_ROWS):
-        for col in range(NUM_COLS):
+    for row in range(num_rows):
+        for col in range(num_cols):
             # Calculate the coordinates of the top-left corner of the cell
             cell_start_x = start_x + col * cell_width
             cell_start_y = start_y + row * cell_height
@@ -134,12 +133,12 @@ def process_frame(frame, cell_positions):
 
     heatmap_mean_values = []
 
-    for top_left, bottom_right in cell_positions:
+    for GRID_TOP_LEFT, GRID_BOTTOM_RIGHT in cell_positions:
         # Define the cell boundaries
-        cell_start_x = top_left[0]
-        cell_start_y = top_left[1]
-        cell_end_x = bottom_right[0]
-        cell_end_y = bottom_right[1]
+        cell_start_x = GRID_TOP_LEFT[0]
+        cell_start_y = GRID_TOP_LEFT[1]
+        cell_end_x = GRID_BOTTOM_RIGHT[0]
+        cell_end_y = GRID_BOTTOM_RIGHT[1]
 
         # Ensure the cell is within the image boundaries
         cell_end_x = min(cell_end_x, w)
@@ -149,61 +148,60 @@ def process_frame(frame, cell_positions):
         cell_region = frame[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         cell_mean_value = np.mean(cell_region)
 
-        # Get the value if its over the threshold, otherwise 0
-        # cell_mean_value = (cell_mean_value if cell_mean_value >= THRESHOLD else 0)
+        # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
+        # cell_mean_value = (cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0)
 
         heatmap_mean_values.append(cell_mean_value)
 
-        # Draw a green bounding box around the cell if the value is above the threshold
-        if cell_mean_value > THRESHOLD:
+        # Draw a bounding box around the cell if the value is above the SALIENCY_THRESHOLD
+        if cell_mean_value > SALIENCY_THRESHOLD:
             cv2.rectangle(
                 frame,
                 (cell_start_x, cell_start_y),
                 (cell_end_x, cell_end_y),
-                (0, 0, 255),
-                2,
+                (0, 255, 0),
+                5,
             )
 
     return heatmap_mean_values
 
 
 def overlay_heatmap(frame_heatmap, frame_original):
-    heatmap = cv2.applyColorMap(
-        (frame_heatmap * 255).astype(np.uint8), cv2.COLORMAP_JET
-    )
-    return cv2.addWeighted(frame_original, 0.5, heatmap, 0.5, 0)
+    heatmap = cv2.applyColorMap((frame_heatmap * 255).astype(np.uint8), cv2.COLORMAP_JET)
+    return cv2.addWeighted(frame_original, 0.6, heatmap, 0.4, 0)
 
 
-def annotate_frame(
-    frame, text, position, font_scale=1, font_color=(255, 255, 255), thickness=2
-):
+def annotate_frame(frame, text, position, font_scale=1, font_color=(255, 255, 255), thickness=2):
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
 
 
-def save_results(angle_differences_per_frame):
+def save_results(mean_attention_map):
     csv_path = os.path.join(OUTPUT_PATH, "output.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Frame"] + [f"Cell{i+1}" for i in range(12)])
-        for frame_data in angle_differences_per_frame:
-            writer.writerow(frame_data)
+        for key, values in mean_attention_map.items():
+            row = [key] + values
+            writer.writerow(row)
 
 
-def plot_results(angle_differences):
-    raise NotImplementedError()
-
-    for cell_index, diffs in angle_differences.items():
+def plot_results(mean_attention_map):
+    for index, value in mean_attention_map.items():
         plt.figure()
-        plt.plot(diffs, label=f"Cell {cell_index+1}")
+        plt.plot(value, label=f"Cell {index+1}")
         plt.xlabel("Frame")
-        plt.ylabel("Angle Difference")
-        plt.title(f"Angle Difference for Cell {cell_index+1} Over Time")
+        plt.ylabel("Mean attention")
+        plt.title(f"Mean attention value for cell {index+1} over time")
         plt.legend()
     plt.show()
 
 
 def main():
+    if not os.path.exists(OUTPUT_PATH):
+        print("Output path does not exist, creating it...")
+        os.makedirs(OUTPUT_PATH)
+
     # Resize the heatmap video to have the same dimensions as the original video
     heatmap_video_path = match_video_resolutions(
         HEATMAP_VIDEO_PATH, ORIGINAL_VIDEO_PATH
@@ -228,7 +226,7 @@ def main():
 
     frame_number = 0
     mean_attention_map = {}
-    cell_positions = calculate_cell_positions(frame_heatmap)
+    cell_positions = calculate_cell_positions(frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS)
 
     while ret_heatmap and ret_original:
         frame_number += 1
@@ -236,17 +234,17 @@ def main():
         # Calculate the mean heatmap value for each cell
         mean_attention_map[frame_number] = process_frame(frame_heatmap, cell_positions)
 
-        # Overlay cell grid on heatmap frame
-        draw_grid(frame_heatmap, cell_positions)
-
-        # Annotate frame with the frame number
-        annotate_frame(frame_heatmap, f"Frame: {frame_number}", (10, 30))
-
         # Overlay the heatmap frame over the original frame
         combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
+        # Overlay cell grid on combined frame
+        draw_grid(combined_frame, cell_positions)
+
+        # Add frame number
+        annotate_frame(combined_frame, f"Frame: {frame_number}", (10, 30))
+
         # Write frame to video output
-        # out.write(combined_frame)
+        out.write(combined_frame)
 
         # Show the frame to the user
         cv2.imshow("Saliency grid", combined_frame)
