@@ -1,10 +1,11 @@
-import csv
 import os
+import csv
 import cv2
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-import argparse
+from tqdm import tqdm
 
 # Constants and configurations
 HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
@@ -17,7 +18,7 @@ GRID_NUM_COLS = 6
 GRID_NUM_ROWS = 2
 
 
-def match_video_resolutions(new_video_path: str, original_video_path: str):
+def match_video_resolutions(new_video_path: str, original_video_path: str, output_path: str) -> str:
     # Open the original video and get its resolution
     original_cap = cv2.VideoCapture(original_video_path)
     original_width = int(original_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -35,7 +36,7 @@ def match_video_resolutions(new_video_path: str, original_video_path: str):
         print("Videos already have the same resolution. No resizing needed.")
         return new_video_path
     else:
-        resized_new_video_path = os.path.join(OUTPUT_PATH, "resized.avi")
+        resized_new_video_path = os.path.join(output_path, "resized.avi")
 
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         fps = new_cap.get(cv2.CAP_PROP_FPS)
@@ -163,7 +164,9 @@ def process_frame(frame, cell_positions):
         cell_mean_value = np.mean(cell_region)
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
-        cell_mean_value = (cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0)
+        cell_mean_value = (
+            cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0
+        )
 
         heatmap_mean_values.append(cell_mean_value)
 
@@ -217,7 +220,7 @@ def create_plots(mean_attention_map, output_path, plot_results):
         plt.legend()
         plt.savefig(os.path.join(output_path, f"cell_{cell_index+1}.png"))
 
-    if (plot_results):
+    if plot_results:
         plt.show()
 
 
@@ -231,7 +234,6 @@ def main(args):
         exit(1)
 
     if not os.path.exists(OUTPUT_PATH):
-        print("Output path does not exist, creating it...")
         os.makedirs(OUTPUT_PATH)
 
     output_path = os.path.join(
@@ -241,7 +243,7 @@ def main(args):
 
     # Resize the heatmap video to have the same dimensions as the original video
     heatmap_video_path = match_video_resolutions(
-        HEATMAP_VIDEO_PATH, ORIGINAL_VIDEO_PATH
+        HEATMAP_VIDEO_PATH, ORIGINAL_VIDEO_PATH, output_path
     )
 
     cap_heatmap = cv2.VideoCapture(heatmap_video_path)
@@ -250,8 +252,17 @@ def main(args):
     ret_heatmap, frame_heatmap = cap_heatmap.read()
     ret_original, frame_original = cap_original.read()
 
+    total_frames_heatmap = int(cap_heatmap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_frames_original = int(cap_original.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    if total_frames_heatmap != total_frames_original:
+        print("Number of frames in input videos do not match")
+        print(f"Heatmap video: {total_frames_heatmap} frames")
+        print(f"Original video: {total_frames_original} frames")
+        exit(1)
+
     if not ret_heatmap and ret_original:
-        print("Unable to read video")
+        print("Unable to read video(s)")
         exit(1)
 
     out = cv2.VideoWriter(
@@ -267,36 +278,35 @@ def main(args):
         frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS
     )
 
-    print("Processing...")
+    with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
+        while ret_heatmap and ret_original:
+            frame_number += 1
 
-    while ret_heatmap and ret_original:
-        frame_number += 1
+            # Calculate the mean heatmap value for each cell
+            mean_attention_map[frame_number] = process_frame(
+                frame_heatmap, cell_positions
+            )
 
-        # Calculate the mean heatmap value for each cell
-        mean_attention_map[frame_number] = process_frame(frame_heatmap, cell_positions)
+            combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-        # Overlay the heatmap frame over the original frame
-        combined_frame = overlay_heatmap(frame_heatmap, frame_original)
+            # Overlay cell grid on combined frame
+            draw_grid(combined_frame, cell_positions)
 
-        # Overlay cell grid on combined frame
-        draw_grid(combined_frame, cell_positions)
+            annotate_frame(combined_frame, f"Frame: {frame_number}", (10, 30))
 
-        # Add frame number
-        annotate_frame(combined_frame, f"Frame: {frame_number}", (10, 30))
+            out.write(combined_frame)
 
-        # Write frame to video output
-        out.write(combined_frame)
+            if args.plot_results:
+                cv2.imshow("Saliency grid", combined_frame)
 
-        # Show the frame to the user
-        if (args.plot_results):
-            cv2.imshow("Saliency grid", combined_frame)
+            ret_heatmap, frame_heatmap = cap_heatmap.read()
+            ret_original, frame_original = cap_original.read()
 
-        ret_heatmap, frame_heatmap = cap_heatmap.read()
-        ret_original, frame_original = cap_original.read()
+            progress.update(1)
 
-        if cv2.waitKey(30) & 0xFF == ord("q"):
-            print("Interrupted by user")
-            break
+            if cv2.waitKey(30) & 0xFF == ord("q"):
+                print("Interrupted by user")
+                break
 
     cap_heatmap.release()
     cap_original.release()
@@ -312,9 +322,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-            "--plot-results", action=argparse.BooleanOptionalAction)
-    
+    parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
+
     args = parser.parse_args()
 
     main(args)
