@@ -10,7 +10,7 @@ import argparse
 HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
 ORIGINAL_VIDEO_PATH = "./data/original.webm"
 OUTPUT_PATH = "./output/attention"
-SALIENCY_THRESHOLD = 50
+SALIENCY_THRESHOLD = 75
 GRID_TOP_LEFT = (0, 0.35)
 GRID_BOTTOM_RIGHT = (0.5, 0.6)
 GRID_NUM_COLS = 6
@@ -163,7 +163,7 @@ def process_frame(frame, cell_positions):
         cell_mean_value = np.mean(cell_region)
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
-        # cell_mean_value = (cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0)
+        cell_mean_value = (cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0)
 
         heatmap_mean_values.append(cell_mean_value)
 
@@ -222,6 +222,14 @@ def create_plots(mean_attention_map, output_path, plot_results):
 
 
 def main(args):
+    if not os.path.exists(HEATMAP_VIDEO_PATH):
+        print(f"Heatmap video path {HEATMAP_VIDEO_PATH} does not exist")
+        exit(1)
+
+    if not os.path.exists(ORIGINAL_VIDEO_PATH):
+        print(f"Original video path {ORIGINAL_VIDEO_PATH} does not exist")
+        exit(1)
+
     if not os.path.exists(OUTPUT_PATH):
         print("Output path does not exist, creating it...")
         os.makedirs(OUTPUT_PATH)
@@ -244,7 +252,7 @@ def main(args):
 
     if not ret_heatmap and ret_original:
         print("Unable to read video")
-        return
+        exit(1)
 
     out = cv2.VideoWriter(
         os.path.join(output_path, "attention_grid.avi"),
@@ -258,6 +266,8 @@ def main(args):
     cell_positions = calculate_cell_positions(
         frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS
     )
+
+    print("Processing...")
 
     while ret_heatmap and ret_original:
         frame_number += 1
