@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 # Constants and configurations
 HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
@@ -133,12 +134,12 @@ def process_frame(frame, cell_positions):
 
     heatmap_mean_values = []
 
-    for GRID_TOP_LEFT, GRID_BOTTOM_RIGHT in cell_positions:
+    for top_left, bottom_right in cell_positions:
         # Define the cell boundaries
-        cell_start_x = GRID_TOP_LEFT[0]
-        cell_start_y = GRID_TOP_LEFT[1]
-        cell_end_x = GRID_BOTTOM_RIGHT[0]
-        cell_end_y = GRID_BOTTOM_RIGHT[1]
+        cell_start_x = top_left[0]
+        cell_start_y = top_left[1]
+        cell_end_x = bottom_right[0]
+        cell_end_y = bottom_right[1]
 
         # Ensure the cell is within the image boundaries
         cell_end_x = min(cell_end_x, w)
@@ -176,8 +177,8 @@ def annotate_frame(frame, text, position, font_scale=1, font_color=(255, 255, 25
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
 
 
-def save_results(mean_attention_map):
-    csv_path = os.path.join(OUTPUT_PATH, "output.csv")
+def save_results(mean_attention_map, output_path):
+    csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Frame"] + [f"Cell{i+1}" for i in range(12)])
@@ -186,14 +187,16 @@ def save_results(mean_attention_map):
             writer.writerow(row)
 
 
-def plot_results(mean_attention_map):
-    for index, value in mean_attention_map.items():
+def plot_results(mean_attention_map, output_path):
+    for cell_index in range(12):
         plt.figure()
-        plt.plot(value, label=f"Cell {index+1}")
+        plt.plot([value[cell_index] for value in mean_attention_map.values()], label=f"Cell {cell_index+1}")
         plt.xlabel("Frame")
         plt.ylabel("Mean attention")
-        plt.title(f"Mean attention value for cell {index+1} over time")
+        plt.title(f"Mean attention value for cell {cell_index+1} over time")
         plt.legend()
+        plt.savefig(os.path.join(output_path, f"cell_{cell_index+1}.png"))
+
     plt.show()
 
 
@@ -201,6 +204,9 @@ def main():
     if not os.path.exists(OUTPUT_PATH):
         print("Output path does not exist, creating it...")
         os.makedirs(OUTPUT_PATH)
+        
+    output_path = os.path.join(OUTPUT_PATH, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    os.makedirs(output_path)
 
     # Resize the heatmap video to have the same dimensions as the original video
     heatmap_video_path = match_video_resolutions(
@@ -218,7 +224,7 @@ def main():
         return
 
     out = cv2.VideoWriter(
-        os.path.join(OUTPUT_PATH, "output.avi"),
+        os.path.join(output_path, "attention_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
         20.0,
         (frame_original.shape[1], frame_original.shape[0]),
@@ -261,8 +267,10 @@ def main():
     out.release()
     cv2.destroyAllWindows()
 
-    save_results(mean_attention_map)
-    plot_results(mean_attention_map)
+    save_results(mean_attention_map, output_path)
+    plot_results(mean_attention_map, output_path)
+
+    print(f"Saved results to {output_path}")
 
     print("Done")
 

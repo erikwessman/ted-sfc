@@ -160,11 +160,8 @@ cython_debug/
 #.idea/
 
 # SFC
-sfc/data/
-sfc/output/attention/*.avi
-sfc/output/attention/*.mp4
-sfc/output/OF/*.avi
-sfc/output/OF/*.mp4
+sfc/data/*
+sfc/output/*
 
 # OS Specific
 .DS_Store
