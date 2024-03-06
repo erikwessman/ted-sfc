@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+import argparse
 
 # Constants and configurations
 HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
@@ -94,6 +95,18 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
             thickness=line_thickness,
         )
 
+        # Draw the cell index in the top-left corner
+        cell_index = cell_positions.index((top_left, bottom_right))
+        cv2.putText(
+            frame,
+            str(cell_index + 1),
+            (start_x + 20, start_y + 35),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )
+
 
 def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows):
     h, w, _ = image.shape  # Get the height and width of the frame
@@ -168,11 +181,15 @@ def process_frame(frame, cell_positions):
 
 
 def overlay_heatmap(frame_heatmap, frame_original):
-    heatmap = cv2.applyColorMap((frame_heatmap * 255).astype(np.uint8), cv2.COLORMAP_JET)
+    heatmap = cv2.applyColorMap(
+        (frame_heatmap * 255).astype(np.uint8), cv2.COLORMAP_JET
+    )
     return cv2.addWeighted(frame_original, 0.6, heatmap, 0.4, 0)
 
 
-def annotate_frame(frame, text, position, font_scale=1, font_color=(255, 255, 255), thickness=2):
+def annotate_frame(
+    frame, text, position, font_scale=1, font_color=(255, 255, 255), thickness=2
+):
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
 
@@ -180,32 +197,38 @@ def annotate_frame(frame, text, position, font_scale=1, font_color=(255, 255, 25
 def save_results(mean_attention_map, output_path):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["Frame"] + [f"Cell{i+1}" for i in range(12)])
+        writer = csv.writer(csvfile, delimiter=";")
+        writer.writerow(["frame_id"] + [f"cell{i+1}" for i in range(6)])
         for key, values in mean_attention_map.items():
-            row = [key] + values
+            row = [key] + values[0:6]
             writer.writerow(row)
 
 
-def plot_results(mean_attention_map, output_path):
+def create_plots(mean_attention_map, output_path, plot_results):
     for cell_index in range(12):
         plt.figure()
-        plt.plot([value[cell_index] for value in mean_attention_map.values()], label=f"Cell {cell_index+1}")
+        plt.plot(
+            [value[cell_index] for value in mean_attention_map.values()],
+            label=f"Cell {cell_index+1}",
+        )
         plt.xlabel("Frame")
         plt.ylabel("Mean attention")
         plt.title(f"Mean attention value for cell {cell_index+1} over time")
         plt.legend()
         plt.savefig(os.path.join(output_path, f"cell_{cell_index+1}.png"))
 
-    plt.show()
+    if (plot_results):
+        plt.show()
 
 
-def main():
+def main(args):
     if not os.path.exists(OUTPUT_PATH):
         print("Output path does not exist, creating it...")
         os.makedirs(OUTPUT_PATH)
-        
-    output_path = os.path.join(OUTPUT_PATH, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
+    output_path = os.path.join(
+        OUTPUT_PATH, datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    )
     os.makedirs(output_path)
 
     # Resize the heatmap video to have the same dimensions as the original video
@@ -232,7 +255,9 @@ def main():
 
     frame_number = 0
     mean_attention_map = {}
-    cell_positions = calculate_cell_positions(frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS)
+    cell_positions = calculate_cell_positions(
+        frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS
+    )
 
     while ret_heatmap and ret_original:
         frame_number += 1
@@ -253,7 +278,8 @@ def main():
         out.write(combined_frame)
 
         # Show the frame to the user
-        cv2.imshow("Saliency grid", combined_frame)
+        if (args.plot_results):
+            cv2.imshow("Saliency grid", combined_frame)
 
         ret_heatmap, frame_heatmap = cap_heatmap.read()
         ret_original, frame_original = cap_original.read()
@@ -268,12 +294,17 @@ def main():
     cv2.destroyAllWindows()
 
     save_results(mean_attention_map, output_path)
-    plot_results(mean_attention_map, output_path)
+    create_plots(mean_attention_map, output_path, args.plot_results)
 
     print(f"Saved results to {output_path}")
-
     print("Done")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument(
+            "--plot-results", action=argparse.BooleanOptionalAction)
+    
+    args = parser.parse_args()
+
+    main(args)
