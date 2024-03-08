@@ -72,7 +72,7 @@ def plot_cells(df, output_path, display_plots):
     axs[1, 2].set_title("cell6")
 
     for ax in axs.flat:
-        ax.set(xlabel="frame_id", ylabel="delta angle")
+        ax.set(xlabel="frame_id", ylabel="mean attention")
 
     # Hide x labels and tick labels for top plots and y ticks for right plots.
     for ax in axs.flat:
