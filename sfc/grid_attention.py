@@ -8,8 +8,6 @@ from datetime import datetime
 from tqdm import tqdm
 
 # Constants and configurations
-HEATMAP_VIDEO_PATH = "./data/heatmap.avi"
-ORIGINAL_VIDEO_PATH = "./data/original.webm"
 OUTPUT_PATH = "./output/attention"
 SALIENCY_THRESHOLD = 75
 GRID_TOP_LEFT = (0, 0.35)
@@ -18,7 +16,9 @@ GRID_NUM_COLS = 6
 GRID_NUM_ROWS = 2
 
 
-def match_video_resolutions(new_video_path: str, original_video_path: str, output_path: str) -> str:
+def match_video_resolutions(
+    new_video_path: str, original_video_path: str, output_path: str
+) -> str:
     # Open the original video and get its resolution
     original_cap = cv2.VideoCapture(original_video_path)
     original_width = int(original_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -225,12 +225,15 @@ def create_plots(mean_attention_map, output_path, plot_results):
 
 
 def main(args):
-    if not os.path.exists(HEATMAP_VIDEO_PATH):
-        print(f"Heatmap video path {HEATMAP_VIDEO_PATH} does not exist")
+    heatmap_video_path = args.heatmap_video_path
+    original_video_path = args.original_video_path
+
+    if not os.path.exists(heatmap_video_path):
+        print(f"Heatmap video path {heatmap_video_path} does not exist")
         exit(1)
 
-    if not os.path.exists(ORIGINAL_VIDEO_PATH):
-        print(f"Original video path {ORIGINAL_VIDEO_PATH} does not exist")
+    if not os.path.exists(original_video_path):
+        print(f"Original video path {original_video_path} does not exist")
         exit(1)
 
     if not os.path.exists(OUTPUT_PATH):
@@ -242,12 +245,12 @@ def main(args):
     os.makedirs(output_path)
 
     # Resize the heatmap video to have the same dimensions as the original video
-    heatmap_video_path = match_video_resolutions(
-        HEATMAP_VIDEO_PATH, ORIGINAL_VIDEO_PATH, output_path
+    resized_heatmap_video_path = match_video_resolutions(
+        heatmap_video_path, original_video_path, output_path
     )
 
-    cap_heatmap = cv2.VideoCapture(heatmap_video_path)
-    cap_original = cv2.VideoCapture(ORIGINAL_VIDEO_PATH)
+    cap_heatmap = cv2.VideoCapture(resized_heatmap_video_path)
+    cap_original = cv2.VideoCapture(original_video_path)
 
     ret_heatmap, frame_heatmap = cap_heatmap.read()
     ret_original, frame_original = cap_original.read()
@@ -323,6 +326,18 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--heatmap-video-path",
+        required=False,
+        help="Path to the heatmap video",
+        default="./data/heatmap.avi",
+    )
+    parser.add_argument(
+        "--original-video-path",
+        required=False,
+        help="Path to the original video",
+        default="./data/original.webm",
+    )
 
     args = parser.parse_args()
 

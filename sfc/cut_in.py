@@ -126,25 +126,23 @@ def plot_red_strips_or_smth(df, output_path, display_plots):
 
 
 def main(args):
-    cell_values = pd.read_csv(args.csv_path, sep=";")
-
-    output_path = os.path.join(
-        OUTPUT_PATH,
-        f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-    )
-    os.makedirs(output_path)
+    data_path = args.data_path
+    if (not os.path.exists(data_path)):
+        raise ValueError(f"Path {data_path} does not exist.")
+    
+    cell_values = pd.read_csv(os.path.join(data_path, "cell_values.csv"), sep=";")
 
     cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
-    plot_cells(cell_values, output_path, args.display_plots)
-    plot_morton_codes(morton_codes, output_path, args.display_plots)
-    plot_red_strips_or_smth(cell_values, output_path, args.display_plots)
+    plot_cells(cell_values, data_path, args.display_plots)
+    plot_morton_codes(morton_codes, data_path, args.display_plots)
+    plot_red_strips_or_smth(cell_values, data_path, args.display_plots)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--csv-path", required=True, help="Path to the csv file with the cell values"
+        "--data-path", required=True, help="Path to the directory containing cell_values.csv and where output will be placed"
     )
     parser.add_argument("--display-plots", action=argparse.BooleanOptionalAction)
 
