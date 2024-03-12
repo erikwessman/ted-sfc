@@ -8,7 +8,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 # Constants and configurations
-OUTPUT_PATH = "./output/attention"
+BASE_OUTPUT_PATH = "./output/attention"
 SALIENCY_THRESHOLD = 0.4
 GRID_TOP_LEFT = (0, 0.35)
 GRID_BOTTOM_RIGHT = (0.5, 0.6)
@@ -207,6 +207,15 @@ def save_results(mean_attention_map, output_path):
             row = [key] + values[0:6]
             writer.writerow(row)
 
+def save_config(output_path, args):
+    config_path = os.path.join(output_path, "config.txt")
+    with open(config_path, "w") as config_file:
+        config_file.write(f"video_path: {args.video_path}\n")
+        config_file.write(f"saliency_threshold: {SALIENCY_THRESHOLD}\n")
+        config_file.write(f"grid_top_left: {GRID_TOP_LEFT}\n")
+        config_file.write(f"grid_bottom_right: {GRID_BOTTOM_RIGHT}\n")
+        config_file.write(f"grid_num_cols: {GRID_NUM_COLS}\n")
+        config_file.write(f"grid_num_rows: {GRID_NUM_ROWS}\n")
 
 def create_plots(mean_attention_map, output_path, plot_results):
     for cell_index in range(12):
@@ -226,8 +235,14 @@ def create_plots(mean_attention_map, output_path, plot_results):
 
 
 def main(args):
-    heatmap_video_path = args.heatmap_video_path
-    original_video_path = args.original_video_path
+    video_path = args.video_path
+
+    if not os.path.exists(video_path):
+        print(f"Video path {video_path} does not exist")
+        exit(1)
+
+    heatmap_video_path = os.path.join(video_path, args.heatmap_video_name)
+    original_video_path = os.path.join(video_path, args.original_video_name)
 
     if not os.path.exists(heatmap_video_path):
         print(f"Heatmap video path {heatmap_video_path} does not exist")
@@ -237,12 +252,13 @@ def main(args):
         print(f"Original video path {original_video_path} does not exist")
         exit(1)
 
-    if not os.path.exists(OUTPUT_PATH):
-        os.makedirs(OUTPUT_PATH)
+    if not os.path.exists(BASE_OUTPUT_PATH):
+        os.makedirs(BASE_OUTPUT_PATH)
 
-    output_path = os.path.join(
-        OUTPUT_PATH, datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    )
+    path_parts = os.path.normpath(video_path).split(os.sep)
+    relative_path = os.path.join(path_parts[-2], path_parts[-1])
+
+    output_path = os.path.join(BASE_OUTPUT_PATH, relative_path, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     os.makedirs(output_path)
 
     # Resize the heatmap video to have the same dimensions as the original video
@@ -318,6 +334,7 @@ def main(args):
     cv2.destroyAllWindows()
 
     save_results(mean_attention_map, output_path)
+    save_config(output_path, args)
     create_plots(mean_attention_map, output_path, args.plot_results)
 
     print(f"Saved results to {output_path}")
@@ -328,16 +345,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
     parser.add_argument(
-        "--heatmap-video-path",
-        required=False,
-        help="Path to the heatmap video",
-        default="./data/heatmap.avi",
+        "--video-path",
+        required=True,
+        help="Path to the folder containing the input videos",
     )
     parser.add_argument(
-        "--original-video-path",
+        "--heatmap-video-name",
         required=False,
-        help="Path to the original video",
-        default="./data/original.webm",
+        default="heatmap.avi",
+        help="Name of the heatmap video file",
+    )
+    parser.add_argument(
+        "--original-video-name",
+        required=False,
+        default="original.avi",
+        help="Name of the original video file",
     )
 
     args = parser.parse_args()
