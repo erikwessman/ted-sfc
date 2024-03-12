@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # Constants and configurations
 OUTPUT_PATH = "./output/attention"
-SALIENCY_THRESHOLD = 75
+SALIENCY_THRESHOLD = 0.4
 GRID_TOP_LEFT = (0, 0.35)
 GRID_BOTTOM_RIGHT = (0.5, 0.6)
 GRID_NUM_COLS = 6
@@ -161,7 +161,8 @@ def process_frame(frame, cell_positions):
 
         # Calculate the mean value of the cell region
         cell_region = frame[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
-        cell_mean_value = np.mean(cell_region)
+        # normalize cell_mean_value to be between 0 and 1
+        cell_mean_value = np.mean(cell_region) / 255
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
         cell_mean_value = (
@@ -295,7 +296,7 @@ def main(args):
             # Overlay cell grid on combined frame
             draw_grid(combined_frame, cell_positions)
 
-            annotate_frame(combined_frame, f"Frame: {frame_number}", (10, 30))
+            annotate_frame(combined_frame, f"frame: {frame_number}. saliency_threshold: {SALIENCY_THRESHOLD}", (10, 30))
 
             out.write(combined_frame)
 
