@@ -218,22 +218,28 @@ def save_config(output_path, args, config):
             f.write(line)
 
 
-def create_plots(mean_attention_map, output_path, plot_results):
-    for cell_index in range(12):
-        plt.figure()
-        plt.plot(
+def create_plots(mean_attention_map, output_path, display_results, grid_cols, grid_rows):
+    fig, axs = plt.subplots(nrows=grid_rows, ncols=grid_cols, figsize=(grid_cols * 4, grid_rows * 3))
+
+    for cell_index, ax in enumerate(axs.flat):
+        ax.plot(
             [value[cell_index] for value in mean_attention_map.values()],
             label=f"Cell {cell_index+1}",
         )
-        plt.xlabel("Frame")
-        plt.ylabel("Mean attention")
-        plt.title(f"Mean attention value for cell {cell_index+1} over time")
-        plt.legend()
-        plt.savefig(os.path.join(output_path, f"cell_{cell_index+1}.png"))
+        ax.set_title(f"Cell {cell_index+1}")
 
-    if plot_results:
+        if cell_index == 0:
+            ax.legend()
+
+    fig.text(0.5, 0.04, 'Frame', ha='center')
+    fig.text(0.04, 0.5, 'Mean Attention', va='center', rotation='vertical')
+
+    plt.subplots_adjust(left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+
+    plt.savefig(os.path.join(output_path, "all_cells.png"))
+
+    if display_results:
         plt.show()
-
 
 def main(args, config):
     video_path = args.video_path
@@ -330,7 +336,7 @@ def main(args, config):
 
             out.write(combined_frame)
 
-            if args.plot_results:
+            if args.display_results:
                 cv2.imshow("Saliency grid", combined_frame)
 
             ret_heatmap, frame_heatmap = cap_heatmap.read()
@@ -349,7 +355,7 @@ def main(args, config):
 
     save_results(mean_attention_map, output_path)
     save_config(output_path, args, config)
-    create_plots(mean_attention_map, output_path, args.plot_results)
+    create_plots(mean_attention_map, output_path, args.display_results, grid_num_cols, grid_num_rows)
 
     print(f"Saved results to {output_path}")
     print("Done")
@@ -379,7 +385,7 @@ if __name__ == "__main__":
         default="original.avi",
         help="Name of the original video file",
     )
-    parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
     config = load_yaml_to_dict(args.config_path)
