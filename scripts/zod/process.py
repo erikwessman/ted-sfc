@@ -1,3 +1,9 @@
+"""
+Processes the Zenseact Open Dataset.
+Combines the individual frame sequences into AVI videos.
+Outputs the result in the data/zod directory.
+"""
+
 import os
 import subprocess
 import argparse
@@ -6,12 +12,13 @@ import random
 
 FPS = 10
 SCALE = "1280:720"
+OUTPUT_PATH = "./data/zod"
 
 
-def process_sequences(sequences_path, output_path, mode, max_videos):
-    os.makedirs(output_path, exist_ok=True)
+def process_data(data_path, mode, max_videos):
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
 
-    sequences_dir = os.path.join(sequences_path, "sequences")
+    sequences_dir = os.path.join(data_path, "sequences")
     sequence_names = os.listdir(sequences_dir)
 
     if mode == "random":
@@ -26,7 +33,7 @@ def process_sequences(sequences_path, output_path, mode, max_videos):
         camera_front_blur_dir = os.path.join(sequence_dir, "camera_front_blur")
 
         if os.path.isdir(camera_front_blur_dir):
-            sequence_output_dir = os.path.join(output_path, sequence_name)
+            sequence_output_dir = os.path.join(OUTPUT_PATH, sequence_name)
             os.makedirs(sequence_output_dir, exist_ok=True)
 
             ffmpeg_command = [
@@ -45,10 +52,11 @@ def process_sequences(sequences_path, output_path, mode, max_videos):
                 "23",
                 "-preset",
                 "veryfast",
-                os.path.join(sequence_output_dir, "output.avi"),
+                os.path.join(sequence_output_dir, "original.avi"),
             ]
 
             subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
             print(f"Processed sequence {sequence_name}")
             processed_videos += 1
         else:
@@ -57,17 +65,12 @@ def process_sequences(sequences_path, output_path, mode, max_videos):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Process sequences of images into videos."
+        description="Process ZOD sequences of images into videos."
     )
     parser.add_argument(
-        "sequences_path",
+        "data_path",
         type=str,
-        help="Path to the top-level folder containing the 'sequences' subfolder.",
-    )
-    parser.add_argument(
-        "output_path",
-        type=str,
-        help="Output path to store the processed videos",
+        help="Path to original ZOD dataset",
     )
     parser.add_argument(
         "--mode",
@@ -88,7 +91,7 @@ def main():
     # If max_videos is not specified or specified as 0, process all videos
     max_videos = args.max_videos if args.max_videos > 0 else float("inf")
 
-    process_sequences(args.sequences_path, args.output_path, args.mode, max_videos)
+    process_data(args.data_path, args.mode, max_videos)
 
 
 if __name__ == "__main__":
