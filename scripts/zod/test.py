@@ -1,13 +1,17 @@
+"""
+Test for using the ZOD Python module
+"""
+
 from matplotlib import pyplot as plt
 from zod import ZodSequences
 import zod.constants as constants
 from zod.constants import AnnotationProject
 from zod.visualization.object_visualization import overlay_object_3d_box_on_image
 
-dataset_root = "/mnt/sdb/zod"
-version = "full"  # "mini" or "full"
+DATASET_ROOT = "/mnt/sdb/zod"
+VERSION = "full"  # "mini" or "full"
 
-zod_sequences = ZodSequences(dataset_root=dataset_root, version=version)
+zod_sequences = ZodSequences(dataset_root=DATASET_ROOT, version=VERSION)
 validation_sequences = zod_sequences.get_split(constants.VAL)
 
 seq = zod_sequences[list(validation_sequences)[0]]
@@ -32,4 +36,4 @@ for annotation in annotations:
 
 plt.axis("off")
 plt.imshow(image)
-plt.savefig("/home/erik/Downloads/something.png")
+plt.savefig("./zod.png")
