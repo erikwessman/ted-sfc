@@ -13,7 +13,7 @@ BASE_OUTPUT_PATH = "./output/attention"
 
 
 def load_yaml_to_dict(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         return yaml.safe_load(file)
 
 
@@ -60,7 +60,7 @@ def match_video_resolutions(
 
 
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
-    for top_left, bottom_right in cell_positions:
+    for cell_index, (top_left, bottom_right) in enumerate(cell_positions):
         start_x, start_y = top_left
         end_x, end_y = bottom_right
 
@@ -98,7 +98,6 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
         # Draw the cell index in the top-left corner
-        cell_index = cell_positions.index((top_left, bottom_right))
         cv2.putText(
             frame,
             str(cell_index + 1),
@@ -110,8 +109,8 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows):
-    h, w, _ = image.shape  # Get the height and width of the frame
+def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows, direction = "left"):
+    h, w, _ = image.shape
 
     # Convert proportional positions to pixel positions
     start_x = int(w * top_left[0])
@@ -119,24 +118,24 @@ def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows):
     end_x = int(w * bottom_right[0])
     end_y = int(h * bottom_right[1])
 
-    # Calculate the size of each cell in the grid
     cell_width = (end_x - start_x) // num_cols
     cell_height = (end_y - start_y) // num_rows
 
     cell_positions = []
 
-    # Iterate over the cells
+    if direction == "left":
+        col_range = range(num_cols)
+    else:
+        col_range = range(num_cols - 1, -1, -1)
+
     for row in range(num_rows):
-        for col in range(num_cols):
-            # Calculate the coordinates of the top-left corner of the cell
+        for col in col_range:
             cell_start_x = start_x + col * cell_width
             cell_start_y = start_y + row * cell_height
 
-            # Calculate the coordinates of the bottom-right corner of the cell
             cell_end_x = cell_start_x + cell_width
             cell_end_y = cell_start_y + cell_height
 
-            # Append the cell coordinates to the list
             cell_positions.append(
                 ((cell_start_x, cell_start_y), (cell_end_x, cell_end_y))
             )
@@ -218,8 +217,12 @@ def save_config(output_path, args, config):
             f.write(line)
 
 
-def create_plots(mean_attention_map, output_path, display_results, grid_cols, grid_rows):
-    fig, axs = plt.subplots(nrows=grid_rows, ncols=grid_cols, figsize=(grid_cols * 4, grid_rows * 3))
+def create_plots(
+    mean_attention_map, output_path, display_results, grid_cols, grid_rows
+):
+    fig, axs = plt.subplots(
+        nrows=grid_rows, ncols=grid_cols, figsize=(grid_cols * 4, grid_rows * 3)
+    )
 
     for cell_index, ax in enumerate(axs.flat):
         ax.plot(
@@ -231,15 +234,18 @@ def create_plots(mean_attention_map, output_path, display_results, grid_cols, gr
         if cell_index == 0:
             ax.legend()
 
-    fig.text(0.5, 0.04, 'Frame', ha='center')
-    fig.text(0.04, 0.5, 'Mean Attention', va='center', rotation='vertical')
+    fig.text(0.5, 0.04, "Frame", ha="center")
+    fig.text(0.04, 0.5, "Mean Attention", va="center", rotation="vertical")
 
-    plt.subplots_adjust(left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+    plt.subplots_adjust(
+        left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4
+    )
 
     plt.savefig(os.path.join(output_path, "all_cells.png"))
 
     if display_results:
         plt.show()
+
 
 def main(args, config):
     video_path = args.video_path
@@ -309,9 +315,15 @@ def main(args, config):
     grid_bottom_right = config["grid_bottom_right"]
     grid_num_cols = config["grid_num_cols"]
     grid_num_rows = config["grid_num_rows"]
+    grid_direction = config["grid_direction"]
 
     cell_positions = calculate_cell_positions(
-        frame_heatmap, grid_top_left, grid_bottom_right, grid_num_cols, grid_num_rows
+        frame_heatmap,
+        grid_top_left,
+        grid_bottom_right,
+        grid_num_cols,
+        grid_num_rows,
+        grid_direction,
     )
 
     with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
@@ -355,7 +367,13 @@ def main(args, config):
 
     save_results(mean_attention_map, output_path)
     save_config(output_path, args, config)
-    create_plots(mean_attention_map, output_path, args.display_results, grid_num_cols, grid_num_rows)
+    create_plots(
+        mean_attention_map,
+        output_path,
+        args.display_results,
+        grid_num_cols,
+        grid_num_rows,
+    )
 
     print(f"Saved results to {output_path}")
     print("Done")
