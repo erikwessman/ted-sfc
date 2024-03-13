@@ -79,7 +79,7 @@ def plot_cells(df, output_path, display_plots):
         ax.label_outer()
 
     plt.savefig(os.path.join(output_path, "cell_values.png"))
-    if (display_plots):
+    if display_plots:
         plt.show()
 
 
@@ -92,7 +92,7 @@ def plot_morton_codes(df, output_path, display_plots):
     plt.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
 
     plt.savefig(os.path.join(output_path, "morton_codes.png"))
-    if (display_plots):
+    if display_plots:
         plt.show()
 
 
@@ -121,15 +121,15 @@ def plot_red_strips_or_smth(df, output_path, display_plots):
     plt.eventplot(data_cell6, orientation="horizontal", colors="r", lineoffsets=0.5)
 
     plt.savefig(os.path.join(output_path, "red_morton_codes.png"))
-    if (display_plots):
+    if display_plots:
         plt.show()
 
 
 def main(args):
     data_path = args.data_path
-    if (not os.path.exists(data_path)):
+    if not os.path.exists(data_path):
         raise ValueError(f"Path {data_path} does not exist.")
-    
+
     cell_values = pd.read_csv(os.path.join(data_path, "cell_values.csv"), sep=";")
 
     cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
@@ -142,7 +142,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--data-path", required=True, help="Path to the directory containing cell_values.csv and where output will be placed"
+        "--data-path",
+        required=True,
+        help="Path to the directory containing cell_values.csv and where output will be placed",
     )
     parser.add_argument("--display-plots", action=argparse.BooleanOptionalAction)
 

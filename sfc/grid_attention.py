@@ -1,6 +1,7 @@
 import os
 import csv
 import cv2
+import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,11 +10,11 @@ from tqdm import tqdm
 
 # Constants and configurations
 BASE_OUTPUT_PATH = "./output/attention"
-SALIENCY_THRESHOLD = 0.4
-GRID_TOP_LEFT = (0, 0.35)
-GRID_BOTTOM_RIGHT = (0.5, 0.6)
-GRID_NUM_COLS = 6
-GRID_NUM_ROWS = 2
+
+
+def load_yaml_to_dict(file_path):
+    with open(file_path, 'r') as file:
+        return yaml.safe_load(file)
 
 
 def match_video_resolutions(
@@ -143,7 +144,7 @@ def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows):
     return cell_positions
 
 
-def process_frame(frame, cell_positions):
+def process_frame(frame, cell_positions, saliency_threshold):
     h, w = frame.shape[:2]
 
     heatmap_mean_values = []
@@ -166,13 +167,13 @@ def process_frame(frame, cell_positions):
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
         cell_mean_value = (
-            cell_mean_value if cell_mean_value >= SALIENCY_THRESHOLD else 0
+            cell_mean_value if cell_mean_value >= saliency_threshold else 0
         )
 
         heatmap_mean_values.append(cell_mean_value)
 
         # Draw a bounding box around the cell if the value is above the SALIENCY_THRESHOLD
-        if cell_mean_value > SALIENCY_THRESHOLD:
+        if cell_mean_value > saliency_threshold:
             cv2.rectangle(
                 frame,
                 (cell_start_x, cell_start_y),
@@ -207,15 +208,15 @@ def save_results(mean_attention_map, output_path):
             row = [key] + values[0:6]
             writer.writerow(row)
 
-def save_config(output_path, args):
+
+def save_config(output_path, args, config):
     config_path = os.path.join(output_path, "config.txt")
-    with open(config_path, "w") as config_file:
-        config_file.write(f"video_path: {args.video_path}\n")
-        config_file.write(f"saliency_threshold: {SALIENCY_THRESHOLD}\n")
-        config_file.write(f"grid_top_left: {GRID_TOP_LEFT}\n")
-        config_file.write(f"grid_bottom_right: {GRID_BOTTOM_RIGHT}\n")
-        config_file.write(f"grid_num_cols: {GRID_NUM_COLS}\n")
-        config_file.write(f"grid_num_rows: {GRID_NUM_ROWS}\n")
+    with open(config_path, "w") as f:
+        f.write(f"video_path: {args.video_path}\n")
+        for key, value in config.items():
+            line = f"{key}: {value}\n"
+            f.write(line)
+
 
 def create_plots(mean_attention_map, output_path, plot_results):
     for cell_index in range(12):
@@ -234,7 +235,7 @@ def create_plots(mean_attention_map, output_path, plot_results):
         plt.show()
 
 
-def main(args):
+def main(args, config):
     video_path = args.video_path
 
     if not os.path.exists(video_path):
@@ -258,7 +259,9 @@ def main(args):
     path_parts = os.path.normpath(video_path).split(os.sep)
     relative_path = os.path.join(path_parts[-2], path_parts[-1])
 
-    output_path = os.path.join(BASE_OUTPUT_PATH, relative_path, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    output_path = os.path.join(
+        BASE_OUTPUT_PATH, relative_path, datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    )
     os.makedirs(output_path)
 
     # Resize the heatmap video to have the same dimensions as the original video
@@ -294,8 +297,15 @@ def main(args):
 
     frame_number = 0
     mean_attention_map = {}
+
+    saliency_threshold = config["saliency_threshold"]
+    grid_top_left = config["grid_top_left"]
+    grid_bottom_right = config["grid_bottom_right"]
+    grid_num_cols = config["grid_num_cols"]
+    grid_num_rows = config["grid_num_rows"]
+
     cell_positions = calculate_cell_positions(
-        frame_heatmap, GRID_TOP_LEFT, GRID_BOTTOM_RIGHT, GRID_NUM_COLS, GRID_NUM_ROWS
+        frame_heatmap, grid_top_left, grid_bottom_right, grid_num_cols, grid_num_rows
     )
 
     with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
@@ -304,7 +314,7 @@ def main(args):
 
             # Calculate the mean heatmap value for each cell
             mean_attention_map[frame_number] = process_frame(
-                frame_heatmap, cell_positions
+                frame_heatmap, cell_positions, saliency_threshold
             )
 
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
@@ -312,7 +322,11 @@ def main(args):
             # Overlay cell grid on combined frame
             draw_grid(combined_frame, cell_positions)
 
-            annotate_frame(combined_frame, f"frame: {frame_number}. saliency_threshold: {SALIENCY_THRESHOLD}", (10, 30))
+            annotate_frame(
+                combined_frame,
+                f"frame: {frame_number}. saliency_threshold: {saliency_threshold}",
+                (10, 30),
+            )
 
             out.write(combined_frame)
 
@@ -334,7 +348,7 @@ def main(args):
     cv2.destroyAllWindows()
 
     save_results(mean_attention_map, output_path)
-    save_config(output_path, args)
+    save_config(output_path, args, config)
     create_plots(mean_attention_map, output_path, args.plot_results)
 
     print(f"Saved results to {output_path}")
@@ -343,11 +357,15 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
     parser.add_argument(
         "--video-path",
         required=True,
         help="Path to the folder containing the input videos",
+    )
+    parser.add_argument(
+        "--config-path",
+        required=True,
+        help="Path to config yml file",
     )
     parser.add_argument(
         "--heatmap-video-name",
@@ -361,7 +379,9 @@ if __name__ == "__main__":
         default="original.avi",
         help="Name of the original video file",
     )
+    parser.add_argument("--plot-results", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
+    config = load_yaml_to_dict(args.config_path)
 
-    main(args)
+    main(args, config)
