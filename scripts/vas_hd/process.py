@@ -2,12 +2,19 @@
 Processes the VAS-HD dataset.
 """
 
+import os
 import argparse
 
 
 FPS = 10
 SCALE = "1280:720"
 OUTPUT_PATH = "./data/vas_hd"
+
+
+def check_data_exists(video_id: str) -> bool:
+    """Given a video ID, check if it already exists in the data directory"""
+    video_path = os.path.join(OUTPUT_PATH, video_id, "original.avi")
+    return os.path.exists(video_path)
 
 
 def process_data(data_path, mode, max_videos):
