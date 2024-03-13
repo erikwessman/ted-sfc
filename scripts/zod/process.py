@@ -15,6 +15,12 @@ SCALE = "1280:720"
 OUTPUT_PATH = "./data/zod"
 
 
+def check_data_exists(video_id: str) -> bool:
+    """Given a video ID, check if it already exists in the data directory"""
+    video_path = os.path.join(OUTPUT_PATH, video_id, "original.avi")
+    return os.path.exists(video_path)
+
+
 def process_data(data_path, mode, max_videos):
     os.makedirs(OUTPUT_PATH, exist_ok=True)
 
@@ -23,11 +29,18 @@ def process_data(data_path, mode, max_videos):
 
     if mode == "random":
         random.shuffle(sequence_names)
+    else:
+        sequence_names.sort()
 
     processed_videos = 0
     for sequence_name in sequence_names:
         if processed_videos >= max_videos:
             break
+
+        if check_data_exists(sequence_name):
+            processed_videos += 1
+            print(f"{sequence_name} exists, skipping...")
+            continue
 
         sequence_dir = os.path.join(sequences_dir, sequence_name)
         camera_front_blur_dir = os.path.join(sequence_dir, "camera_front_blur")
