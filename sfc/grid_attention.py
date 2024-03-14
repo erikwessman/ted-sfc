@@ -8,14 +8,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from tqdm import tqdm
 
-# Constants and configurations
-config = {}
-
-
-def load_config(file_path):
-    global config
+def load_config(file_path) -> dict:
     with open(file_path, "r") as f:
-        config = yaml.safe_load(f)
+        return yaml.safe_load(f)
 
 
 def match_video_resolutions(original_video_path: str, video_to_resize_path: str) -> str:
@@ -106,7 +101,7 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_cell_positions(image):
+def calculate_cell_positions(image, config):
     h, w, _ = image.shape
 
     # Convert proportional positions to pixel positions
@@ -214,7 +209,7 @@ def save_config(output_path, args, config):
     print(f"Config saved to {config_path}")
 
 
-def save_plots(mean_attention_map, output_path, display_results):
+def save_plots(mean_attention_map, output_path, display_results, config):
     fig, axs = plt.subplots(
         nrows=config["grid_num_rows"],
         ncols=config["grid_num_cols"],
@@ -245,7 +240,7 @@ def save_plots(mean_attention_map, output_path, display_results):
 
 
 def process_video_and_generate_attention_map(
-    heatmap_video_path, original_video_path, target_path, video_id
+    heatmap_video_path, original_video_path, target_path, video_id, config
 ) -> dict:
     # Resize the heatmap video to have the same dimensions as the original video
     match_video_resolutions(heatmap_video_path, original_video_path)
@@ -279,7 +274,7 @@ def process_video_and_generate_attention_map(
     frame_number = 0
     mean_attention_map = {}
 
-    cell_positions = calculate_cell_positions(frame_heatmap)
+    cell_positions = calculate_cell_positions(frame_heatmap, config)
 
     with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
         while ret_heatmap and ret_original:
@@ -321,6 +316,8 @@ def process_video_and_generate_attention_map(
 
 
 def main(args):
+    config = load_config(args.grid_config_path)
+
     dataset_path = args.dataset_path
     output_path = args.output_path
 
@@ -340,11 +337,11 @@ def main(args):
 
             if os.path.exists(heatmap_video_path) and os.path.exists(original_video_path):
                 mean_attention_map = process_video_and_generate_attention_map(
-                    heatmap_video_path, original_video_path, target_path, video_id
+                    heatmap_video_path, original_video_path, target_path, video_id, config
                 )
 
                 save_csv(mean_attention_map, target_path)
-                save_plots(mean_attention_map, target_path, args.display_results)
+                save_plots(mean_attention_map, target_path, args.display_results, config)
                 print(f"Done. Results saved in {target_path}.")
             else:
                 print("Skipped. Source or heatmap video does not exist.")
@@ -372,10 +369,8 @@ if __name__ == "__main__":
         "grid_config_path",
         help="Path to config yml file",
     )
-
     parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
-    load_config(args.grid_config_path)
 
     main(args)

@@ -5,9 +5,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import zCurve as z
 
-OUTPUT_PATH = "./output/cut_in"
-
-
 def calculateMortonFrom6D_with_zCurve(a, b, c, d, e, f):
     # Cap floating point numbers to one decimal place
     a_int = int(round(a, 1) * 10)
