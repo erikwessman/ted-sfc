@@ -49,41 +49,7 @@ def compute_morton_codes_for_cells(df):
     df["cell6_morton"] = df["cell6"].apply(calculateMortonFrom1D_with_zCurve)
     return (df, pd.DataFrame(lst, columns=["morton", "frame_id"]))
 
-
-def plot_cells(df, output_path, display_plots):
-    # Plot cut-in data.
-
-    # We print the column headers to know what we have access to.
-    cols = df.columns.values.tolist()
-
-    # Next, we do subplots to plot the subcells.
-    _, axs = plt.subplots(2, 3)
-    axs[0, 0].plot(df["frame_id"], df["cell1"])
-    axs[0, 0].set_title("cell1")
-    axs[0, 1].plot(df["frame_id"], df["cell2"], "tab:orange")
-    axs[0, 1].set_title("cell2")
-    axs[0, 2].plot(df["frame_id"], df["cell3"], "tab:orange")
-    axs[0, 2].set_title("cell3")
-    axs[1, 0].plot(df["frame_id"], df["cell4"], "tab:green")
-    axs[1, 0].set_title("cell4")
-    axs[1, 1].plot(df["frame_id"], df["cell5"], "tab:red")
-    axs[1, 1].set_title("cell5")
-    axs[1, 2].plot(df["frame_id"], df["cell6"], "tab:red")
-    axs[1, 2].set_title("cell6")
-
-    for ax in axs.flat:
-        ax.set(xlabel="frame_id", ylabel="mean attention")
-
-    # Hide x labels and tick labels for top plots and y ticks for right plots.
-    for ax in axs.flat:
-        ax.label_outer()
-
-    plt.savefig(os.path.join(output_path, "cell_values.png"))
-    if display_plots:
-        plt.show()
-
-
-def plot_morton_codes(df, output_path, display_plots):
+def create_and_save_morton_codes(df, output_path, display_plots):
     data = df["morton"] / 1000000000000
     plt.figure()
     plt.xlabel("Morton")
@@ -96,7 +62,7 @@ def plot_morton_codes(df, output_path, display_plots):
         plt.show()
 
 
-def plot_red_strips_or_smth(df, output_path, display_plots):
+def create_and_save_red_stripes(df, output_path, display_plots):
     data_cell1 = df["cell1_morton"] / 1000000000000
     data_cell2 = df["cell2_morton"] / 1000000000000
     data_cell3 = df["cell3_morton"] / 1000000000000
@@ -126,25 +92,37 @@ def plot_red_strips_or_smth(df, output_path, display_plots):
 
 
 def main(args):
-    data_path = args.data_path
-    if not os.path.exists(data_path):
-        raise ValueError(f"Path {data_path} does not exist.")
+    output_path = args.output_path
 
-    cell_values = pd.read_csv(os.path.join(data_path, "cell_values.csv"), sep=";")
+    if not os.path.exists(output_path):
+        raise ValueError(f"Output path {output_path} does not exist.")
 
-    cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
+    video_dirs = [name for name in os.listdir(output_path) if os.path.isdir(os.path.join(output_path, name))]
 
-    plot_cells(cell_values, data_path, args.display_plots)
-    plot_morton_codes(morton_codes, data_path, args.display_plots)
-    plot_red_strips_or_smth(cell_values, data_path, args.display_plots)
+    for video_id in video_dirs:
+        print(f"Processing folder {video_id}")
+        target_path = os.path.join(output_path, video_id)
 
+        if os.path.isfile(os.path.join(target_path, "cell_values.csv")):
+            cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
+
+            cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
+
+            create_and_save_morton_codes(morton_codes, target_path, args.display_plots)
+            create_and_save_red_stripes(cell_values, target_path, args.display_plots)
+            print(f"Done. Results saved in {target_path}.")
+        else:
+            print(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
+
+        print("--------------------------")
+
+    print("Done")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--data-path",
-        required=True,
-        help="Path to the directory containing cell_values.csv and where output will be placed",
+        "output_path",
+        help="Path to the directory containing the output for each video, including cell_values.csv.",
     )
     parser.add_argument("--display-plots", action=argparse.BooleanOptionalAction)
 

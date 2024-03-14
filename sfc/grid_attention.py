@@ -211,6 +211,7 @@ def save_config(output_path, args, config):
         for key, value in config.items():
             line = f"{key}: {value}\n"
             f.write(line)
+    print(f"Config saved to {config_path}")
 
 
 def save_plots(mean_attention_map, output_path, display_results):
@@ -259,7 +260,7 @@ def process_video_and_generate_attention_map(
     total_frames_original = int(cap_original.get(cv2.CAP_PROP_FRAME_COUNT))
 
     if total_frames_heatmap != total_frames_original:
-        print("Number of frames in input videos do not match")
+        print("Number of frames in input videos do not match.")
         print(f"Heatmap video: {total_frames_heatmap} frames")
         print(f"Original video: {total_frames_original} frames")
         exit(1)
@@ -323,39 +324,37 @@ def main(args):
     dataset_path = args.dataset_path
     output_path = args.output_path
 
-    assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist"
-    assert os.path.exists(output_path), f"Output path {output_path} does not exist"
+    assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist."
+    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
-    for video_id in os.listdir(dataset_path):
+    video_dirs = [name for name in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, name))]
+
+    for video_id in video_dirs:
         video_path = os.path.join(dataset_path, video_id)
         target_path = os.path.join(output_path, video_id)
 
+        print(f"Processing folder {video_id}")
         if os.path.isdir(video_path) and os.path.isdir(target_path):
             original_video_path = os.path.join(video_path, f"{video_id}.avi")
             heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-            if os.path.exists(heatmap_video_path) and os.path.exists(
-                original_video_path
-            ):
-                print(f"Processing video {video_id}")
+            if os.path.exists(heatmap_video_path) and os.path.exists(original_video_path):
                 mean_attention_map = process_video_and_generate_attention_map(
                     heatmap_video_path, original_video_path, target_path, video_id
                 )
 
                 save_csv(mean_attention_map, target_path)
-                save_plots(
-                    mean_attention_map,
-                    target_path,
-                    args.display_results,
-                )
+                save_plots(mean_attention_map, target_path, args.display_results)
+                print(f"Done. Results saved in {target_path}.")
             else:
-                print(f"Skipping {video_id}. Source or heatmap video does not exist")
+                print("Skipped. Source or heatmap video does not exist.")
         else:
-            print(f"Skipping {video_id}. Source or output video directory does not exist")
+            print("Skipped. Source or output video directory does not exist.")
+
+        print("--------------------------")
 
     save_config(output_path, args, config)
 
-    print(f"Saved results to {output_path}")
     print("Done")
 
 
