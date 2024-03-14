@@ -1,5 +1,5 @@
 saliency_threshold: 0.4
-grid_top_left: 
+grid_top_left:
   - 0
   - 0.35
 grid_bottom_right:
@@ -7,4 +7,4 @@ grid_bottom_right:
   - 0.6
 grid_num_rows: 2
 grid_num_cols: 6
-grid_direction: left
+grid_direction: right

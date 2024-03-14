@@ -8,18 +8,12 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from tqdm import tqdm
 
-# Constants and configurations
-BASE_OUTPUT_PATH = "./output/attention"
+def load_config(file_path) -> dict:
+    with open(file_path, "r") as f:
+        return yaml.safe_load(f)
 
 
-def load_yaml_to_dict(file_path):
-    with open(file_path, "r") as file:
-        return yaml.safe_load(file)
-
-
-def match_video_resolutions(
-    new_video_path: str, original_video_path: str, output_path: str
-) -> str:
+def match_video_resolutions(original_video_path: str, video_to_resize_path: str) -> str:
     # Open the original video and get its resolution
     original_cap = cv2.VideoCapture(original_video_path)
     original_width = int(original_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -27,7 +21,7 @@ def match_video_resolutions(
     original_cap.release()
 
     # Open the new video and get its resolution
-    new_cap = cv2.VideoCapture(new_video_path)
+    new_cap = cv2.VideoCapture(video_to_resize_path)
     new_width = int(new_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     new_height = int(new_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -35,14 +29,12 @@ def match_video_resolutions(
     if original_width == new_width and original_height == new_height:
         new_cap.release()
         print("Videos already have the same resolution. No resizing needed.")
-        return new_video_path
+        return video_to_resize_path
     else:
-        resized_new_video_path = os.path.join(output_path, "resized.avi")
-
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         fps = new_cap.get(cv2.CAP_PROP_FPS)
         out = cv2.VideoWriter(
-            resized_new_video_path, fourcc, fps, (original_width, original_height)
+            video_to_resize_path, fourcc, fps, (original_width, original_height)
         )
 
         # Read through the new video, resize each frame, and write to the output
@@ -55,8 +47,8 @@ def match_video_resolutions(
 
         new_cap.release()
         out.release()
-        print(f"New video has been resized and saved to {resized_new_video_path}.")
-        return resized_new_video_path
+        print(f"New video has been resized and saved to {video_to_resize_path}.")
+        return video_to_resize_path
 
 
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
@@ -109,26 +101,26 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows, direction = "left"):
+def calculate_cell_positions(image, config):
     h, w, _ = image.shape
 
     # Convert proportional positions to pixel positions
-    start_x = int(w * top_left[0])
-    start_y = int(h * top_left[1])
-    end_x = int(w * bottom_right[0])
-    end_y = int(h * bottom_right[1])
+    start_x = int(w * config["grid_top_left"][0])
+    start_y = int(h * config["grid_top_left"][1])
+    end_x = int(w * config["grid_bottom_right"][0])
+    end_y = int(h * config["grid_bottom_right"][1])
 
-    cell_width = (end_x - start_x) // num_cols
-    cell_height = (end_y - start_y) // num_rows
+    cell_width = (end_x - start_x) // config["grid_num_cols"]
+    cell_height = (end_y - start_y) // config["grid_num_rows"]
 
     cell_positions = []
 
-    if direction == "left":
-        col_range = range(num_cols)
+    if config["grid_direction"] == "right":
+        col_range = range(config["grid_num_cols"])
     else:
-        col_range = range(num_cols - 1, -1, -1)
+        col_range = range(config["grid_num_cols"] - 1, -1, -1)
 
-    for row in range(num_rows):
+    for row in range(config["grid_num_rows"]):
         for col in col_range:
             cell_start_x = start_x + col * cell_width
             cell_start_y = start_y + row * cell_height
@@ -143,7 +135,7 @@ def calculate_cell_positions(image, top_left, bottom_right, num_cols, num_rows, 
     return cell_positions
 
 
-def process_frame(frame, cell_positions, saliency_threshold):
+def calculate_cell_values(frame, cell_positions, saliency_threshold):
     h, w = frame.shape[:2]
 
     heatmap_mean_values = []
@@ -198,7 +190,7 @@ def annotate_frame(
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
 
 
-def save_results(mean_attention_map, output_path):
+def save_csv(mean_attention_map, output_path):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
@@ -211,17 +203,17 @@ def save_results(mean_attention_map, output_path):
 def save_config(output_path, args, config):
     config_path = os.path.join(output_path, "config.txt")
     with open(config_path, "w") as f:
-        f.write(f"video_path: {args.video_path}\n")
         for key, value in config.items():
             line = f"{key}: {value}\n"
             f.write(line)
+    print(f"Config saved to {config_path}")
 
 
-def create_plots(
-    mean_attention_map, output_path, display_results, grid_cols, grid_rows
-):
+def save_plots(mean_attention_map, output_path, display_results, config):
     fig, axs = plt.subplots(
-        nrows=grid_rows, ncols=grid_cols, figsize=(grid_cols * 4, grid_rows * 3)
+        nrows=config["grid_num_rows"],
+        ncols=config["grid_num_cols"],
+        figsize=(config["grid_num_cols"] * 4, config["grid_num_rows"] * 3),
     )
 
     for cell_index, ax in enumerate(axs.flat):
@@ -247,41 +239,13 @@ def create_plots(
         plt.show()
 
 
-def main(args, config):
-    video_path = args.video_path
-
-    if not os.path.exists(video_path):
-        print(f"Video path {video_path} does not exist")
-        exit(1)
-
-    heatmap_video_path = os.path.join(video_path, args.heatmap_video_name)
-    original_video_path = os.path.join(video_path, args.original_video_name)
-
-    if not os.path.exists(heatmap_video_path):
-        print(f"Heatmap video path {heatmap_video_path} does not exist")
-        exit(1)
-
-    if not os.path.exists(original_video_path):
-        print(f"Original video path {original_video_path} does not exist")
-        exit(1)
-
-    if not os.path.exists(BASE_OUTPUT_PATH):
-        os.makedirs(BASE_OUTPUT_PATH)
-
-    path_parts = os.path.normpath(video_path).split(os.sep)
-    relative_path = os.path.join(path_parts[-2], path_parts[-1])
-
-    output_path = os.path.join(
-        BASE_OUTPUT_PATH, relative_path, datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    )
-    os.makedirs(output_path)
-
+def process_video_and_generate_attention_map(
+    heatmap_video_path, original_video_path, target_path, video_id, config
+) -> dict:
     # Resize the heatmap video to have the same dimensions as the original video
-    resized_heatmap_video_path = match_video_resolutions(
-        heatmap_video_path, original_video_path, output_path
-    )
+    match_video_resolutions(heatmap_video_path, original_video_path)
 
-    cap_heatmap = cv2.VideoCapture(resized_heatmap_video_path)
+    cap_heatmap = cv2.VideoCapture(heatmap_video_path)
     cap_original = cv2.VideoCapture(original_video_path)
 
     ret_heatmap, frame_heatmap = cap_heatmap.read()
@@ -291,7 +255,7 @@ def main(args, config):
     total_frames_original = int(cap_original.get(cv2.CAP_PROP_FRAME_COUNT))
 
     if total_frames_heatmap != total_frames_original:
-        print("Number of frames in input videos do not match")
+        print("Number of frames in input videos do not match.")
         print(f"Heatmap video: {total_frames_heatmap} frames")
         print(f"Original video: {total_frames_original} frames")
         exit(1)
@@ -301,7 +265,7 @@ def main(args, config):
         exit(1)
 
     out = cv2.VideoWriter(
-        os.path.join(output_path, "attention_grid.avi"),
+        os.path.join(target_path, f"{video_id}_attention_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
         20.0,
         (frame_original.shape[1], frame_original.shape[0]),
@@ -310,39 +274,22 @@ def main(args, config):
     frame_number = 0
     mean_attention_map = {}
 
-    saliency_threshold = config["saliency_threshold"]
-    grid_top_left = config["grid_top_left"]
-    grid_bottom_right = config["grid_bottom_right"]
-    grid_num_cols = config["grid_num_cols"]
-    grid_num_rows = config["grid_num_rows"]
-    grid_direction = config["grid_direction"]
-
-    cell_positions = calculate_cell_positions(
-        frame_heatmap,
-        grid_top_left,
-        grid_bottom_right,
-        grid_num_cols,
-        grid_num_rows,
-        grid_direction,
-    )
+    cell_positions = calculate_cell_positions(frame_heatmap, config)
 
     with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
         while ret_heatmap and ret_original:
             frame_number += 1
 
-            # Calculate the mean heatmap value for each cell
-            mean_attention_map[frame_number] = process_frame(
-                frame_heatmap, cell_positions, saliency_threshold
+            mean_attention_map[frame_number] = calculate_cell_values(
+                frame_heatmap, cell_positions, config["saliency_threshold"]
             )
-
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-            # Overlay cell grid on combined frame
             draw_grid(combined_frame, cell_positions)
 
             annotate_frame(
                 combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {saliency_threshold}",
+                f"frame: {frame_number}. saliency_threshold: {config['saliency_threshold']}",
                 (10, 30),
             )
 
@@ -365,47 +312,65 @@ def main(args, config):
     out.release()
     cv2.destroyAllWindows()
 
-    save_results(mean_attention_map, output_path)
-    save_config(output_path, args, config)
-    create_plots(
-        mean_attention_map,
-        output_path,
-        args.display_results,
-        grid_num_cols,
-        grid_num_rows,
-    )
+    return mean_attention_map
 
-    print(f"Saved results to {output_path}")
+
+def main(args):
+    config = load_config(args.grid_config_path)
+
+    dataset_path = args.dataset_path
+    output_path = args.output_path
+
+    assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist."
+    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
+
+    video_dirs = [name for name in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, name))]
+
+    for video_id in video_dirs:
+        video_path = os.path.join(dataset_path, video_id)
+        target_path = os.path.join(output_path, video_id)
+
+        print(f"Processing folder {video_id}")
+        if os.path.isdir(video_path) and os.path.isdir(target_path):
+            original_video_path = os.path.join(video_path, f"{video_id}.avi")
+            heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
+
+            if os.path.exists(heatmap_video_path) and os.path.exists(original_video_path):
+                mean_attention_map = process_video_and_generate_attention_map(
+                    heatmap_video_path, original_video_path, target_path, video_id, config
+                )
+
+                save_csv(mean_attention_map, target_path)
+                save_plots(mean_attention_map, target_path, args.display_results, config)
+                print(f"Done. Results saved in {target_path}.")
+            else:
+                print("Skipped. Source or heatmap video does not exist.")
+        else:
+            print("Skipped. Source or output video directory does not exist.")
+
+        print("--------------------------")
+
+    save_config(output_path, args, config)
+
     print("Done")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--video-path",
-        required=True,
-        help="Path to the folder containing the input videos",
+        "dataset_path",
+        help="Path to the folder containing the dataset, e.g. ./data/{dataset_name}",
     )
     parser.add_argument(
-        "--config-path",
-        required=True,
+        "output_path",
+        help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
+    )
+    parser.add_argument(
+        "grid_config_path",
         help="Path to config yml file",
-    )
-    parser.add_argument(
-        "--heatmap-video-name",
-        required=False,
-        default="heatmap.avi",
-        help="Name of the heatmap video file",
-    )
-    parser.add_argument(
-        "--original-video-name",
-        required=False,
-        default="original.avi",
-        help="Name of the original video file",
     )
     parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
-    config = load_yaml_to_dict(args.config_path)
 
-    main(args, config)
+    main(args)
