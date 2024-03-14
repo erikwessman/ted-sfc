@@ -5,8 +5,8 @@ import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import datetime
 from tqdm import tqdm
+
 
 def load_config(file_path) -> dict:
     with open(file_path, "r") as f:
@@ -324,7 +324,11 @@ def main(args):
     assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist."
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
-    video_dirs = [name for name in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, name))]
+    video_dirs = [
+        name
+        for name in os.listdir(dataset_path)
+        if os.path.isdir(os.path.join(dataset_path, name))
+    ]
 
     for video_id in video_dirs:
         video_path = os.path.join(dataset_path, video_id)
@@ -335,13 +339,21 @@ def main(args):
             original_video_path = os.path.join(video_path, f"{video_id}.avi")
             heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-            if os.path.exists(heatmap_video_path) and os.path.exists(original_video_path):
+            if os.path.exists(heatmap_video_path) and os.path.exists(
+                original_video_path
+            ):
                 mean_attention_map = process_video_and_generate_attention_map(
-                    heatmap_video_path, original_video_path, target_path, video_id, config
+                    heatmap_video_path,
+                    original_video_path,
+                    target_path,
+                    video_id,
+                    config,
                 )
 
                 save_csv(mean_attention_map, target_path)
-                save_plots(mean_attention_map, target_path, args.display_results, config)
+                save_plots(
+                    mean_attention_map, target_path, args.display_results, config
+                )
                 print(f"Done. Results saved in {target_path}.")
             else:
                 print("Skipped. Source or heatmap video does not exist.")

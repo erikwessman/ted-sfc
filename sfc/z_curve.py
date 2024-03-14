@@ -118,7 +118,7 @@ if __name__ == "__main__":
         "output_path",
         help="Path to the directory containing the output for each video, including cell_values.csv.",
     )
-    parser.add_argument("--display-plots", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--display_plots", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 

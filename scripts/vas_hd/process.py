@@ -22,9 +22,7 @@ def process_data(data_path, mode, max_videos):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description=""
-    )
+    parser = argparse.ArgumentParser(description="")
     parser.add_argument(
         "data_path",
         type=str,

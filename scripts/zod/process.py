@@ -19,11 +19,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Process ZOD sequences of images into videos."
     )
-    parser.add_argument(
-        "data_path",
-        type=str,
-        help="Path to original ZOD dataset"
-    )
+    parser.add_argument("data_path", type=str, help="Path to original ZOD dataset")
     parser.add_argument(
         "output_path",
         type=str,
@@ -63,7 +59,9 @@ def process_data(data_path, output_path, mode, max_videos):
     else:
         sequence_names.sort()
 
-    total_sequences = min(len(sequence_names), max_videos) if max_videos else len(sequence_names)
+    total_sequences = (
+        min(len(sequence_names), max_videos) if max_videos else len(sequence_names)
+    )
 
     processed_videos = 0
 
@@ -103,7 +101,9 @@ def process_data(data_path, output_path, mode, max_videos):
                     os.path.join(sequence_output_dir, f"{sequence_name}.avi"),
                 ]
 
-                subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(
+                    ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
                 processed_videos += 1
             else:
                 print(f"Skipped {sequence_dir}, camera front_blur directory not found.")
