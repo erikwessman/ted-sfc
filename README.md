@@ -2,6 +2,12 @@
 
 ## Prerequisites
 
+### Clone with submodules
+
+Clone the repository with the DRIVE submodule
+
+`git clone --recurse-submodules git@github.com:erikwessman/ted-sfc.git`
+
 ### Prepare data
 
 1. Make sure the dataset follows the structure below.
