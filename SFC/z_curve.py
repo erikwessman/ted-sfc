@@ -3,6 +3,7 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import zCurve as z
+from tqdm import tqdm
 
 
 def parse_arguments():
@@ -91,8 +92,9 @@ def main(output_path, display_plots):
         if os.path.isdir(os.path.join(output_path, name))
     ]
 
-    for video_id in video_dirs:
-        print(f"Processing folder {video_id}")
+    pbar = tqdm(video_dirs, desc="Processing folders")
+    for video_id in pbar:
+        pbar.set_description(f"Processing folder {video_id}")
         target_path = os.path.join(output_path, video_id)
 
         if os.path.isfile(os.path.join(target_path, "cell_values.csv")):
@@ -104,13 +106,10 @@ def main(output_path, display_plots):
 
             create_and_save_morton_codes(morton_codes, target_path, display_plots)
             create_and_save_red_stripes(cell_values, target_path, display_plots)
-            print(f"Done. Results saved in {target_path}.")
         else:
-            print(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
+            tqdm.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
 
-        print("--------------------------")
-
-    print("Done")
+        pbar.set_description("Processing folders")
 
 
 if __name__ == "__main__":

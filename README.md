@@ -14,9 +14,9 @@
 
 The project currently supports the following datasets:
 
-* [SMIRK](https://www.ai.se/en/labs/data-factory/datasets/smirk-dataset)
-* [VAS-HD](https://www.ai.se/en/labs/data-factory/datasets/highway-dataset)
-* [ZOD (for testing)](https://www.zod.zenseact.com)
+- [SMIRK](https://www.ai.se/en/labs/data-factory/datasets/smirk-dataset)
+- [VAS-HD](https://www.ai.se/en/labs/data-factory/datasets/highway-dataset)
+- [ZOD (for testing)](https://www.zod.zenseact.com)
 
 Make sure the dataset follows the structure below.
 
@@ -46,11 +46,15 @@ python scripts/zod/process.py data/zod --mode random --max_videos 10
 ```bash
 # Create the environment for DRIVE
 conda create -n pyRL python=3.7 -y
+conda activate pyRL
+conda install pytorch==1.4.0 cudatoolkit=10.1 -c pytorch
+pip install -r DRIVE/requirements.txt
 ```
 
 ```bash
 # Create the environment for SFCs
 conda create -n TED-SFC python=3.10
+conda activate TED-SFC
 pip install -r requirements.txt
 ```
 
@@ -61,11 +65,11 @@ Download saliency model [here]() and place in `DRIVE/models/saliency/mlnet_25.pt
 ## Run the processing pipeline
 
 ```bash
-./run_pipeline.sh path/to/dataset path/to/output path/to/dataset_config.yml path/to/event_config.yml
+./run_pipeline.sh path/to/dataset path/to/output path/to/dataset_config.yml path/to/event_config.yml [--no-heatmap]
 ```
 
 The results will be placed in the output directory.
 
 ## Evaluate
 
-Run the script `python SFC/evaluate.py` 
+Run the script `python SFC/evaluate.py`

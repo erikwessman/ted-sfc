@@ -47,35 +47,40 @@ if [ -d "$output_path" ]; then
         echo -n "Output path already exists. Do you want to overwrite it? (y/[n]): "
         read -r response
         if [ "$response" == "y" ]; then
-            # If response is yes, break the loop and continue with the script
             break
         elif [ "$response" == "n" ] || [ -z "$response" ]; then
-            # If response is no or empty, exit the script
             echo "Exiting..."
             exit 1
         else
-            # If response is anything else, inform the user and repeat the question
             echo "Invalid response. Please enter 'y' for yes or 'n' for no."
         fi
     done
 else
-    echo "Output path does not exist. Attempting to create it."
+    echo "Output path does not exist. Creating it now..."
     mkdir -p "$output_path"
 fi
 
 if [ "$skip_heatmap" -eq 0 ]; then
     conda activate pyRL
-
-    echo "Executing main_saliency..."
+    echo "Starting main_saliency.py..."
     python DRIVE/main_saliency.py "$data_path" "$output_path" "$dataset_config_path"
+    echo "main_saliency.py completed."
 fi
 
 conda activate TED-SFC
 
-echo "Executing grid_attention.py..."
+echo "----------------------------------------"
+echo "Starting grid_attention.py..."
+echo "----------------------------------------"
 python SFC/grid_attention.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
+echo "grid_attention.py completed."
 
-echo "Executing z_curve.py..."
+echo "----------------------------------------"
+echo "Starting z_curve.py..."
+echo "----------------------------------------"
 python SFC/z_curve.py "$output_path"
+echo "z_curve.py completed."
 
-echo "Pipeline done"
+echo "========================================"
+echo "Pipeline Execution Completed Successfully"
+echo "========================================"

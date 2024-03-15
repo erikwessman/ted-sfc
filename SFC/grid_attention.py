@@ -34,8 +34,7 @@ def load_config(file_path) -> dict:
     with open(file_path, "r") as f:
         return yaml.safe_load(f)
 
-
-def match_video_resolutions(original_video_path: str, video_to_resize_path: str) -> str:
+def ensure_matching_video_resolution(original_video_path: str, target_video_path: str):
     # Open the original video and get its resolution
     original_cap = cv2.VideoCapture(original_video_path)
     original_width = int(original_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -43,34 +42,31 @@ def match_video_resolutions(original_video_path: str, video_to_resize_path: str)
     original_cap.release()
 
     # Open the new video and get its resolution
-    new_cap = cv2.VideoCapture(video_to_resize_path)
-    new_width = int(new_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    new_height = int(new_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    target_cap = cv2.VideoCapture(target_video_path)
+    target_width = int(target_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    target_height = int(target_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     # Check if the resolutions are the same
-    if original_width == new_width and original_height == new_height:
-        new_cap.release()
-        print("Videos already have the same resolution. No resizing needed.")
-        return video_to_resize_path
+    if original_width == target_width and original_height == target_height:
+        target_cap.release()
     else:
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
-        fps = new_cap.get(cv2.CAP_PROP_FPS)
+        fps = target_cap.get(cv2.CAP_PROP_FPS)
         out = cv2.VideoWriter(
-            video_to_resize_path, fourcc, fps, (original_width, original_height)
+            target_video_path, fourcc, fps, (original_width, original_height)
         )
 
         # Read through the new video, resize each frame, and write to the output
-        while new_cap.isOpened():
-            ret, frame = new_cap.read()
+        while target_cap.isOpened():
+            ret, frame = target_cap.read()
             if not ret:
                 break
             resized_frame = cv2.resize(frame, (original_width, original_height))
             out.write(resized_frame)
 
-        new_cap.release()
+        target_cap.release()
         out.release()
-        print(f"New video has been resized and saved to {video_to_resize_path}.")
-        return video_to_resize_path
+        print(f"Target has been resized and saved to {target_video_path}.")
 
 
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
@@ -234,7 +230,6 @@ def save_config(output_path, data_config, event_config):
             f.write(line)
     print(f"Config saved to {config_path}")
 
-
 def save_plots(mean_attention_map, output_path, display_results, event_config):
     fig, axs = plt.subplots(
         nrows=event_config["grid_num_rows"],
@@ -273,8 +268,7 @@ def process_video_and_generate_attention_map(
     data_config,
     event_config,
 ) -> dict:
-    # Resize the heatmap video to have the same dimensions as the original video
-    match_video_resolutions(heatmap_video_path, original_video_path)
+    ensure_matching_video_resolution(original_video_path, heatmap_video_path)
 
     cap_heatmap = cv2.VideoCapture(heatmap_video_path)
     cap_original = cv2.VideoCapture(original_video_path)
@@ -292,7 +286,7 @@ def process_video_and_generate_attention_map(
         exit(1)
 
     if not ret_heatmap and ret_original:
-        print("Unable to read video(s)")
+        print("Unable to read video(s).")
         exit(1)
 
     out = cv2.VideoWriter(
@@ -307,36 +301,33 @@ def process_video_and_generate_attention_map(
 
     cell_positions = calculate_cell_positions(frame_heatmap, event_config)
 
-    with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
-        while ret_heatmap and ret_original:
-            frame_number += 1
+    while ret_heatmap and ret_original:
+        frame_number += 1
 
-            mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, event_config["saliency_threshold"]
-            )
-            combined_frame = overlay_heatmap(frame_heatmap, frame_original)
+        mean_attention_map[frame_number] = calculate_cell_values(
+            frame_heatmap, cell_positions, event_config["saliency_threshold"]
+        )
+        combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-            draw_grid(combined_frame, cell_positions)
+        draw_grid(combined_frame, cell_positions)
 
-            annotate_frame(
-                combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
-                (10, 30),
-            )
+        annotate_frame(
+            combined_frame,
+            f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
+            (10, 30),
+        )
 
-            out.write(combined_frame)
+        out.write(combined_frame)
 
-            if args.display_results:
-                cv2.imshow("Saliency grid", combined_frame)
+        if args.display_results:
+            cv2.imshow("Saliency grid", combined_frame)
 
-            ret_heatmap, frame_heatmap = cap_heatmap.read()
-            ret_original, frame_original = cap_original.read()
+        ret_heatmap, frame_heatmap = cap_heatmap.read()
+        ret_original, frame_original = cap_original.read()
 
-            progress.update(1)
-
-            if cv2.waitKey(30) & 0xFF == ord("q"):
-                print("Interrupted by user")
-                break
+        if cv2.waitKey(30) & 0xFF == ord("q"):
+            print("Interrupted by user")
+            break
 
     cap_heatmap.release()
     cap_original.release()
@@ -356,11 +347,12 @@ def main(data_path, output_path, data_config, event_config, display_results):
         if os.path.isdir(os.path.join(data_path, name))
     ]
 
-    for video_id in video_dirs:
+    pbar = tqdm(video_dirs, desc="Processing videos")
+    for video_id in pbar:
+        pbar.set_description(f"Processing folder {video_id}")
         video_path = os.path.join(data_path, video_id)
         target_path = os.path.join(output_path, video_id)
 
-        print(f"Processing folder {video_id}")
         if os.path.isdir(video_path) and os.path.isdir(target_path):
             original_video_path = os.path.join(video_path, f"{video_id}.avi")
             heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
@@ -378,20 +370,17 @@ def main(data_path, output_path, data_config, event_config, display_results):
                 )
 
                 save_csv(mean_attention_map, target_path, event_config)
-                save_plots(
-                    mean_attention_map, target_path, display_results, event_config
-                )
-                print(f"Done. Results saved in {target_path}.")
+                save_plots(mean_attention_map, target_path, display_results, event_config)
             else:
                 print("Skipped. Source or heatmap video does not exist.")
         else:
             print("Skipped. Source or output video directory does not exist.")
+        pbar.set_description("Processed folders")
 
-        print("--------------------------")
 
     save_config(output_path, data_config, event_config)
 
-    print("Done")
+    print("Done.")
 
 
 if __name__ == "__main__":
