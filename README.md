@@ -19,17 +19,19 @@ data/
 │   ├── n/             # folder for video n, must include the video
 ```
 
-### Create conda environment and install requirements
+### Create environments
 
-// TODO: Add cudatoolkit, etc
+**TODO: Add cudatoolkit, etc**
 
 ```bash
-conda create -n DRIVE_SFC python=3.7 -y
-conda activate DRIVE_SFC
+# Create the environment for DRIVE
+conda create -n pyRL python=3.7 -y
+```
 
+```bash
+# Create the environment for SFCs
+conda create -n TED-SFC python=3.10
 pip install -r requirements.txt
-pip install -r SFC/requirements.txt
-pip install -r DRIVE/requirements.txt
 ```
 
 ### Setup DRIVE
@@ -39,5 +41,5 @@ Download saliency model [here]() and place in `DRIVE/models/saliency/saliency_mo
 ## Run the complete pipeline
 
 ```bash
-./run_pipeline.sh path/to/dataset/config path/to/event/config
+./run_pipeline.sh path/to/dataset path/to/output path/to/dataset/config path/to/event/config
 ```
