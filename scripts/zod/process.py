@@ -42,7 +42,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def check_data_exists(video_id: str, output_path: str) -> bool:
+def data_exists(video_id: str, output_path: str) -> bool:
     """Given a video ID, check if it already exists in the data directory"""
     video_path = os.path.join(output_path, video_id, f"{video_id}.avi")
     return os.path.exists(video_path)
@@ -59,65 +59,58 @@ def process_data(data_path, output_path, mode, max_videos):
     else:
         sequence_names.sort()
 
-    total_sequences = (
-        min(len(sequence_names), max_videos) if max_videos else len(sequence_names)
-    )
+    # Get the number of videos specified, 0 for all videos
+    if max_videos > 0:
+        max_videos = min(len(sequence_names, max_videos))
+        sequence_names = sequence_names[:max_videos]
 
-    processed_videos = 0
+    pbar = tqdm(sequence_names, desc="Processing folders")
 
-    with tqdm(total=total_sequences, desc="Processing Videos") as progress:
-        for sequence_name in sequence_names:
-            if processed_videos >= max_videos:
-                break
+    for sequence_name in pbar:
+        pbar.set_description(f"Processing folder {sequence_name}")
 
-            if check_data_exists(sequence_name, output_path):
-                processed_videos += 1
-                progress.update(1)
-                continue
+        if data_exists(sequence_name, output_path):
+            continue
 
-            sequence_dir = os.path.join(sequences_dir, sequence_name)
-            camera_front_blur_dir = os.path.join(sequence_dir, "camera_front_blur")
+        sequence_dir = os.path.join(sequences_dir, sequence_name)
+        camera_front_blur_dir = os.path.join(sequence_dir, "camera_front_blur")
 
-            if os.path.isdir(camera_front_blur_dir):
-                sequence_output_dir = os.path.join(output_path, sequence_name)
-                os.makedirs(sequence_output_dir, exist_ok=True)
+        if os.path.isdir(camera_front_blur_dir):
+            sequence_output_dir = os.path.join(output_path, sequence_name)
+            os.makedirs(sequence_output_dir, exist_ok=True)
 
-                ffmpeg_command = [
-                    "ffmpeg",
-                    "-framerate",
-                    str(FPS),
-                    "-pattern_type",
-                    "glob",
-                    "-i",
-                    os.path.join(camera_front_blur_dir, "*.jpg"),
-                    "-vf",
-                    f"scale={SCALE}",
-                    "-c:v",
-                    "libx264",
-                    "-crf",
-                    "23",
-                    "-preset",
-                    "veryfast",
-                    os.path.join(sequence_output_dir, f"{sequence_name}.avi"),
-                ]
+            ffmpeg_command = [
+                "ffmpeg",
+                "-framerate",
+                str(FPS),
+                "-pattern_type",
+                "glob",
+                "-i",
+                os.path.join(camera_front_blur_dir, "*.jpg"),
+                "-vf",
+                f"scale={SCALE}",
+                "-c:v",
+                "libx264",
+                "-crf",
+                "23",
+                "-preset",
+                "veryfast",
+                os.path.join(sequence_output_dir, f"{sequence_name}.avi"),
+            ]
 
-                subprocess.run(
-                    ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-                processed_videos += 1
-            else:
-                print(f"Skipped {sequence_dir}, camera front_blur directory not found.")
+            subprocess.run(
+                ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        else:
+            print(f"Skipped {sequence_dir}, camera front_blur directory not found.")
 
-            progress.update(1)
+        pbar.set_description("Processing folders")
 
 
 def main():
     args = parse_arguments()
 
-    # If max_videos is not specified or specified as 0, process all videos
-    max_videos = args.max_videos if args.max_videos > 0 else float("inf")
-
-    process_data(args.data_path, args.output_path, args.mode, max_videos)
+    process_data(args.data_path, args.output_path, args.mode, args.max_videos)
 
 
 if __name__ == "__main__":
