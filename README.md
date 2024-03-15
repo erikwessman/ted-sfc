@@ -4,14 +4,19 @@
 
 ### Clone with submodules
 
-Clone the repository with the DRIVE submodule
+**Important** Clone the repository with the DRIVE submodule
 
 `git clone --recurse-submodules git@github.com:erikwessman/ted-sfc.git`
 
 ### Prepare data
 
-1. Make sure the dataset follows the structure below.
-1. Scripts for processing datasets into the correct structure are provided in `scripts/`
+The project currently supports the following datasets:
+
+* [SMIRK](https://www.ai.se/en/labs/data-factory/datasets/smirk-dataset)
+* [VAS-HD](https://www.ai.se/en/labs/data-factory/datasets/highway-dataset)
+* [ZOD (for testing)](https://www.zod.zenseact.com)
+
+Make sure the dataset follows the structure below.
 
 ```txt
 data/
@@ -23,6 +28,13 @@ data/
 │   │   ├── file_n
 │   ├── ...
 │   ├── n/             # folder for video n, must include the video
+```
+
+Scripts for processing datasets into the correct structure are provided in `scripts/`
+
+```bash
+# Running the script to format the ZOD dataset, for example
+python scripts/zod/process.py data/zod --mode random --max_videos 10
 ```
 
 ### Create environments
@@ -42,10 +54,16 @@ pip install -r requirements.txt
 
 ### Setup DRIVE
 
-Download saliency model [here]() and place in `DRIVE/models/saliency/saliency_model.pth`
+Download saliency model [here]() and place in `DRIVE/models/saliency/mlnet_25.pth`
 
-## Run the complete pipeline
+## Run the processing pipeline
 
 ```bash
 ./run_pipeline.sh path/to/dataset path/to/output path/to/dataset_config path/to/event_config
 ```
+
+The results will be placed in the output directory.
+
+## Evaluate
+
+Run the script `python SFC/evaluate.py` 

@@ -8,6 +8,28 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument(
+        "dataset_path",
+        help="Path to the folder containing the dataset, e.g. ./data/{dataset_name}",
+    )
+    parser.add_argument(
+        "output_path",
+        help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
+    )
+    parser.add_argument(
+        "dataset_config_path",
+        help="Path to dataset config yml file",
+    )
+    parser.add_argument(
+        "event_config_path",
+        help="Path to event config yml file",
+    )
+    parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
+    return parser.parse_args()
+
+
 def load_config(file_path) -> dict:
     with open(file_path, "r") as f:
         return yaml.safe_load(f)
@@ -200,20 +222,23 @@ def save_csv(mean_attention_map, output_path):
             writer.writerow(row)
 
 
-def save_config(output_path, args, config):
+def save_config(output_path, dataset_config, event_config):
     config_path = os.path.join(output_path, "config.txt")
     with open(config_path, "w") as f:
-        for key, value in config.items():
+        for key, value in dataset_config.items():
+            line = f"{key}: {value}\n"
+            f.write(line)
+        for key, value in event_config.items():
             line = f"{key}: {value}\n"
             f.write(line)
     print(f"Config saved to {config_path}")
 
 
-def save_plots(mean_attention_map, output_path, display_results, config):
+def save_plots(mean_attention_map, output_path, display_results, event_config):
     fig, axs = plt.subplots(
-        nrows=config["grid_num_rows"],
-        ncols=config["grid_num_cols"],
-        figsize=(config["grid_num_cols"] * 4, config["grid_num_rows"] * 3),
+        nrows=event_config["grid_num_rows"],
+        ncols=event_config["grid_num_cols"],
+        figsize=(event_config["grid_num_cols"] * 4, event_config["grid_num_rows"] * 3),
     )
 
     for cell_index, ax in enumerate(axs.flat):
@@ -240,7 +265,7 @@ def save_plots(mean_attention_map, output_path, display_results, config):
 
 
 def process_video_and_generate_attention_map(
-    heatmap_video_path, original_video_path, target_path, video_id, config
+    heatmap_video_path, original_video_path, target_path, video_id, dataset_config, event_config
 ) -> dict:
     # Resize the heatmap video to have the same dimensions as the original video
     match_video_resolutions(heatmap_video_path, original_video_path)
@@ -267,21 +292,21 @@ def process_video_and_generate_attention_map(
     out = cv2.VideoWriter(
         os.path.join(target_path, f"{video_id}_attention_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
-        20.0,
+        dataset_config["fps"],
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
     frame_number = 0
     mean_attention_map = {}
 
-    cell_positions = calculate_cell_positions(frame_heatmap, config)
+    cell_positions = calculate_cell_positions(frame_heatmap, event_config)
 
     with tqdm(total=total_frames_heatmap, desc="Processing frames") as progress:
         while ret_heatmap and ret_original:
             frame_number += 1
 
             mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, config["saliency_threshold"]
+                frame_heatmap, cell_positions, event_config["saliency_threshold"]
             )
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
@@ -289,7 +314,7 @@ def process_video_and_generate_attention_map(
 
             annotate_frame(
                 combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {config['saliency_threshold']}",
+                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
                 (10, 30),
             )
 
@@ -315,12 +340,7 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(args):
-    config = load_config(args.grid_config_path)
-
-    dataset_path = args.dataset_path
-    output_path = args.output_path
-
+def main(dataset_path, output_path, dataset_config, event_config, display_results):
     assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist."
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
@@ -347,13 +367,12 @@ def main(args):
                     original_video_path,
                     target_path,
                     video_id,
-                    config,
+                    dataset_config,
+                    event_config,
                 )
 
                 save_csv(mean_attention_map, target_path)
-                save_plots(
-                    mean_attention_map, target_path, args.display_results, config
-                )
+                save_plots(mean_attention_map, target_path, display_results, event_config)
                 print(f"Done. Results saved in {target_path}.")
             else:
                 print("Skipped. Source or heatmap video does not exist.")
@@ -362,27 +381,13 @@ def main(args):
 
         print("--------------------------")
 
-    save_config(output_path, args, config)
+    save_config(output_path, dataset_config, event_config)
 
     print("Done")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "dataset_path",
-        help="Path to the folder containing the dataset, e.g. ./data/{dataset_name}",
-    )
-    parser.add_argument(
-        "output_path",
-        help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
-    )
-    parser.add_argument(
-        "grid_config_path",
-        help="Path to config yml file",
-    )
-    parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
-
-    args = parser.parse_args()
-
-    main(args)
+    args = parse_arguments()
+    dataset_config = load_config(args.dataset_config_path)
+    event_config = load_config(args.event_config_path)
+    main(args.dataset_path, args.output_path, dataset_config, event_config, args.display_results)
