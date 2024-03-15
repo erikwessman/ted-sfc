@@ -6,17 +6,11 @@ import matplotlib.pyplot as plt
 import zCurve as z
 
 
-def calculateMortonFrom6D_with_zCurve(a, b, c, d, e, f):
-    # Cap floating point numbers to one decimal place
-    a_int = int(round(a, 1) * 10)
-    b_int = int(round(b, 1) * 10)
-    c_int = int(round(c, 1) * 10)
-    d_int = int(round(d, 1) * 10)
-    e_int = int(round(e, 1) * 10)
-    f_int = int(round(f, 1) * 10)
-    value = z.interlace(a_int, b_int, c_int, d_int, e_int, f_int, dims=6)
+def calculateMortonFromList_with_zCurve(values):
+    # Cap floating point numbers to one decimal place and convert to integers
+    int_values = [int(round(value, 1) * 10) for value in values]
+    value = z.interlace(*int_values, dims=len(int_values))
     return value
-
 
 def calculateMortonFrom1D_with_zCurve(a):
     a_int = int(round(a, 1) * 10)
@@ -31,8 +25,8 @@ def compute_morton_codes_for_cells(df):
     morton_frame_pairs = []
     for _, row in df.iterrows():
         # Generate a Morton code from the cell values in the row.
-        morton_code = calculateMortonFrom6D_with_zCurve(
-            *(row[col] for col in cell_columns)
+        morton_code = calculateMortonFromList_with_zCurve(
+            (row[col] for col in cell_columns)
         )
         morton_frame_pairs.append({"morton": morton_code, "frame_id": row["frame_id"]})
 
