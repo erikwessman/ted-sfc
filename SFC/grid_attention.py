@@ -11,7 +11,7 @@ from tqdm import tqdm
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "dataset_path",
+        "data_path",
         help="Path to the folder containing the dataset, e.g. ./data/{dataset_name}",
     )
     parser.add_argument(
@@ -19,14 +19,14 @@ def parse_arguments():
         help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
     )
     parser.add_argument(
-        "dataset_config_path",
+        "data_config_path",
         help="Path to dataset config yml file",
     )
     parser.add_argument(
         "event_config_path",
         help="Path to event config yml file",
     )
-    parser.add_argument("--display-results", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
 
 
@@ -223,10 +223,10 @@ def save_csv(mean_attention_map, output_path, config):
             writer.writerow(row)
 
 
-def save_config(output_path, dataset_config, event_config):
+def save_config(output_path, data_config, event_config):
     config_path = os.path.join(output_path, "config.txt")
     with open(config_path, "w") as f:
-        for key, value in dataset_config.items():
+        for key, value in data_config.items():
             line = f"{key}: {value}\n"
             f.write(line)
         for key, value in event_config.items():
@@ -266,7 +266,12 @@ def save_plots(mean_attention_map, output_path, display_results, event_config):
 
 
 def process_video_and_generate_attention_map(
-    heatmap_video_path, original_video_path, target_path, video_id, dataset_config, event_config
+    heatmap_video_path,
+    original_video_path,
+    target_path,
+    video_id,
+    data_config,
+    event_config,
 ) -> dict:
     # Resize the heatmap video to have the same dimensions as the original video
     match_video_resolutions(heatmap_video_path, original_video_path)
@@ -293,7 +298,7 @@ def process_video_and_generate_attention_map(
     out = cv2.VideoWriter(
         os.path.join(target_path, f"{video_id}_attention_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
-        dataset_config["fps"],
+        data_config["fps"],
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
@@ -341,18 +346,18 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(dataset_path, output_path, dataset_config, event_config, display_results):
-    assert os.path.exists(dataset_path), f"Dataset path {dataset_path} does not exist."
+def main(data_path, output_path, data_config, event_config, display_results):
+    assert os.path.exists(data_path), f"Dataset path {data_path} does not exist."
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     video_dirs = [
         name
-        for name in os.listdir(dataset_path)
-        if os.path.isdir(os.path.join(dataset_path, name))
+        for name in os.listdir(data_path)
+        if os.path.isdir(os.path.join(data_path, name))
     ]
 
     for video_id in video_dirs:
-        video_path = os.path.join(dataset_path, video_id)
+        video_path = os.path.join(data_path, video_id)
         target_path = os.path.join(output_path, video_id)
 
         print(f"Processing folder {video_id}")
@@ -368,12 +373,14 @@ def main(dataset_path, output_path, dataset_config, event_config, display_result
                     original_video_path,
                     target_path,
                     video_id,
-                    dataset_config,
+                    data_config,
                     event_config,
                 )
 
                 save_csv(mean_attention_map, target_path, event_config)
-                save_plots(mean_attention_map, target_path, display_results, event_config)
+                save_plots(
+                    mean_attention_map, target_path, display_results, event_config
+                )
                 print(f"Done. Results saved in {target_path}.")
             else:
                 print("Skipped. Source or heatmap video does not exist.")
@@ -382,13 +389,19 @@ def main(dataset_path, output_path, dataset_config, event_config, display_result
 
         print("--------------------------")
 
-    save_config(output_path, dataset_config, event_config)
+    save_config(output_path, data_config, event_config)
 
     print("Done")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    dataset_config = load_config(args.dataset_config_path)
+    data_config = load_config(args.data_config_path)
     event_config = load_config(args.event_config_path)
-    main(args.dataset_path, args.output_path, dataset_config, event_config, args.display_results)
+    main(
+        args.data_path,
+        args.output_path,
+        data_config,
+        event_config,
+        args.display_results,
+    )

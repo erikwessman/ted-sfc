@@ -1,9 +1,18 @@
 import os
-from datetime import datetime
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import zCurve as z
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument(
+        "output_path",
+        help="Path to the directory containing the output for each video, including cell_values.csv.",
+    )
+    parser.add_argument("--display_plots", action=argparse.BooleanOptionalAction)
+    return parser.parse_args()
 
 
 def calculateMortonFromList_with_zCurve(values):
@@ -11,6 +20,7 @@ def calculateMortonFromList_with_zCurve(values):
     int_values = [int(round(value, 1) * 10) for value in values]
     value = z.interlace(*int_values, dims=len(int_values))
     return value
+
 
 def calculateMortonFrom1D_with_zCurve(a):
     a_int = int(round(a, 1) * 10)
@@ -72,11 +82,8 @@ def create_and_save_red_stripes(df, output_path, display_plots):
         plt.show()
 
 
-def main(args):
-    output_path = args.output_path
-
-    if not os.path.exists(output_path):
-        raise ValueError(f"Output path {output_path} does not exist.")
+def main(output_path, display_plots):
+    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     video_dirs = [
         name
@@ -95,8 +102,8 @@ def main(args):
 
             cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
-            create_and_save_morton_codes(morton_codes, target_path, args.display_plots)
-            create_and_save_red_stripes(cell_values, target_path, args.display_plots)
+            create_and_save_morton_codes(morton_codes, target_path, display_plots)
+            create_and_save_red_stripes(cell_values, target_path, display_plots)
             print(f"Done. Results saved in {target_path}.")
         else:
             print(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
@@ -107,13 +114,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "output_path",
-        help="Path to the directory containing the output for each video, including cell_values.csv.",
-    )
-    parser.add_argument("--display_plots", action=argparse.BooleanOptionalAction)
+    args = parse_arguments()
 
-    args = parser.parse_args()
-
-    main(args)
+    main(args.output_path, args.display_plots)
