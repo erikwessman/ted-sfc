@@ -11,7 +11,7 @@ Clone the repository with the DRIVE submodule
 ### Prepare data
 
 1. Make sure the dataset follows the structure below.
-1. Scripts for processing datasets into the correct structure are provided in `/scripts`
+1. Scripts for processing datasets into the correct structure are provided in `scripts/`
 
 ```txt
 data/
@@ -47,5 +47,5 @@ Download saliency model [here]() and place in `DRIVE/models/saliency/saliency_mo
 ## Run the complete pipeline
 
 ```bash
-./run_pipeline.sh path/to/dataset path/to/output path/to/dataset/config path/to/event/config
+./run_pipeline.sh path/to/dataset path/to/output path/to/dataset_config path/to/event_config
 ```
