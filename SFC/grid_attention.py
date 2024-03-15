@@ -190,13 +190,14 @@ def annotate_frame(
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
 
 
-def save_csv(mean_attention_map, output_path):
+def save_csv(mean_attention_map, output_path, config):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
-        writer.writerow(["frame_id"] + [f"cell{i+1}" for i in range(6)])
+        number_of_cells = config["grid_num_rows"] * config["grid_num_cols"]
+        writer.writerow(["frame_id"] + [f"cell{i+1}" for i in range(number_of_cells)])
         for key, values in mean_attention_map.items():
-            row = [key] + values[0:6]
+            row = [key] + values
             writer.writerow(row)
 
 
@@ -350,7 +351,7 @@ def main(args):
                     config,
                 )
 
-                save_csv(mean_attention_map, target_path)
+                save_csv(mean_attention_map, target_path, config)
                 save_plots(
                     mean_attention_map, target_path, args.display_results, config
                 )
