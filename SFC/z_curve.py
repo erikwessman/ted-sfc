@@ -111,6 +111,8 @@ def main(output_path, display_plots):
 
         pbar.set_description("Processing folders")
 
+    print("z_curve.py completed.")
+
 
 if __name__ == "__main__":
     args = parse_arguments()

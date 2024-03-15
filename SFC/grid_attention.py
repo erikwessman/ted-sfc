@@ -228,7 +228,6 @@ def save_config(output_path, data_config, event_config):
         for key, value in event_config.items():
             line = f"{key}: {value}\n"
             f.write(line)
-    print(f"Config saved to {config_path}")
 
 def save_plots(mean_attention_map, output_path, display_results, event_config):
     fig, axs = plt.subplots(
@@ -380,7 +379,7 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
     save_config(output_path, data_config, event_config)
 
-    print("Done.")
+    print("grid_attention.py completed.")
 
 
 if __name__ == "__main__":
