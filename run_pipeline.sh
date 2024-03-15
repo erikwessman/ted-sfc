@@ -73,7 +73,7 @@ fi
 conda activate TED-SFC
 
 echo "Executing grid_attention.py..."
-python SFC/grid_attention.py "$data_path" "$output_path" "$event_config_path"
+python SFC/grid_attention.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
 
 echo "Executing z_curve.py..."
 python SFC/z_curve.py "$output_path"
