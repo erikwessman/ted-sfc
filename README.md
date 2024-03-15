@@ -1,6 +1,6 @@
 # ted-sfc
 
-## Prerquisites
+## Prerequisites
 
 ### Prepare data
 
