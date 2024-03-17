@@ -61,7 +61,7 @@ def process_data(data_path, output_path, mode, max_videos):
 
     # Get the number of videos specified, 0 for all videos
     if max_videos > 0:
-        max_videos = min(len(sequence_names, max_videos))
+        max_videos = min(len(sequence_names), max_videos)
         sequence_names = sequence_names[:max_videos]
 
     pbar = tqdm(sequence_names, desc="Processing folders")
