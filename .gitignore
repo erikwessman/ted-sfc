@@ -162,6 +162,8 @@ cython_debug/
 # data
 data/*
 output/*
+# don't gitignore data/annotations
+!data/annotations/
 
 
 # OS Specific
