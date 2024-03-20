@@ -56,8 +56,11 @@ def create_and_save_morton_codes(df, output_path, display_plots):
     plt.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
 
     plt.savefig(os.path.join(output_path, "morton_codes.png"))
+
     if display_plots:
         plt.show()
+    else:
+        plt.close()
 
 
 def create_and_save_red_stripes(df, output_path, display_plots):
@@ -79,8 +82,11 @@ def create_and_save_red_stripes(df, output_path, display_plots):
         )
 
     plt.savefig(os.path.join(output_path, "morton_codes_event_plot.png"))
+
     if display_plots:
         plt.show()
+    else:
+        plt.close()
 
 
 def main(output_path, display_plots):

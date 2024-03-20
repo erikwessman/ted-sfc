@@ -34,6 +34,7 @@ def load_config(file_path) -> dict:
     with open(file_path, "r") as f:
         return yaml.safe_load(f)
 
+
 def ensure_matching_video_resolution(original_video_path: str, target_video_path: str):
     # Open the original video and get its resolution
     original_cap = cv2.VideoCapture(original_video_path)
@@ -229,6 +230,7 @@ def save_config(output_path, data_config, event_config):
             line = f"{key}: {value}\n"
             f.write(line)
 
+
 def save_plots(mean_attention_map, output_path, display_results, event_config):
     fig, axs = plt.subplots(
         nrows=event_config["grid_num_rows"],
@@ -257,6 +259,8 @@ def save_plots(mean_attention_map, output_path, display_results, event_config):
 
     if display_results:
         plt.show()
+    else:
+        plt.close()
 
 
 def process_video_and_generate_attention_map(
@@ -369,13 +373,14 @@ def main(data_path, output_path, data_config, event_config, display_results):
                 )
 
                 save_csv(mean_attention_map, target_path, event_config)
-                save_plots(mean_attention_map, target_path, display_results, event_config)
+                save_plots(
+                    mean_attention_map, target_path, display_results, event_config
+                )
             else:
                 print("Skipped. Source or heatmap video does not exist.")
         else:
             print("Skipped. Source or output video directory does not exist.")
         pbar.set_description("Processed folders")
-
 
     save_config(output_path, data_config, event_config)
 

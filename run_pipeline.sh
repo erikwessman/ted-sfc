@@ -62,9 +62,10 @@ fi
 
 if [ "$skip_heatmap" -eq 0 ]; then
     conda activate pyRL
+    echo "----------------------------------------"
     echo "Starting main_saliency.py..."
+    echo "----------------------------------------"
     python DRIVE/main_saliency.py "$data_path" "$output_path" "$dataset_config_path"
-    echo "main_saliency.py completed."
 fi
 
 conda activate TED-SFC
