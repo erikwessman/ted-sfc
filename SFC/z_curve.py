@@ -47,13 +47,37 @@ def compute_morton_codes_for_cells(df):
     return df, pd.DataFrame(morton_frame_pairs, columns=["morton", "frame_id"])
 
 
-def create_and_save_morton_codes(df, output_path, display_plots):
+def create_and_save_CSP(df, output_path, display_plots):
     data = df["morton"] / 1000000000000
     plt.figure()
     plt.xlabel("Morton")
     plt.ylabel("frequency")
     plt.ylim((0, 1))
     plt.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
+
+    plt.savefig(os.path.join(output_path, "morton_codes.png"))
+
+    if display_plots:
+        plt.show()
+    else:
+        plt.close()
+
+def create_and_save_CSP_with_dots(df, output_path, display_plots):
+    data = df["morton"] / 1000000000000
+    frame_numbers = df["frame_number"]  # Assuming there's a 'frame_number' column in your DataFrame
+
+    fig, ax1 = plt.subplots()
+
+    ax1.set_xlabel("Morton")
+    ax1.set_ylabel("Frequency")
+    ax1.set_ylim((0, 1))
+    ax1.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
+
+    ax1.scatter(data, [0.5]*len(data), color='k')  # Scatter plot on the primary y-axis
+
+    ax2 = ax1.twinx()  # Create a second y-axis
+    ax2.set_ylabel('Frame Number')
+    ax2.set_ylim([df["frame_number"].min(), df["frame_number"].max()])  # Set the limit for the frame numbers
 
     plt.savefig(os.path.join(output_path, "morton_codes.png"))
 
@@ -110,7 +134,8 @@ def main(output_path, display_plots):
 
             cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
-            create_and_save_morton_codes(morton_codes, target_path, display_plots)
+            create_and_save_CSP(morton_codes, target_path, display_plots)
+            create_and_save_CSP_with_dots(morton_codes, target_path, display_plots)
             create_and_save_red_stripes(cell_values, target_path, display_plots)
         else:
             tqdm.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
