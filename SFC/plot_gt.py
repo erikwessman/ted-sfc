@@ -23,47 +23,69 @@ def load_yml(file_path) -> dict:
         return yaml.safe_load(f)
 
 
-def create_and_save_CSP_with_ground_truth(df, ground_truth, output_path):
+def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path):
     frame_start = ground_truth["event_window"][0]
     frame_end = ground_truth["event_window"][1]
 
     group_A = []
     group_B = []
+    x_A, y_A, x_B, y_B = (
+        [],
+        [],
+        [],
+        [],
+    )  # Lists to store Morton codes and frame IDs for dots plotting
+
     for _, row in df.iterrows():
-        morton = row['morton']
-        frame_id = row['frame_id']
+        morton = row["morton"]
+        frame_id = row["frame_id"]
+        if morton == 0:
+            continue
         if frame_id in range(frame_start, frame_end):
             group_A.append(morton)
+            x_A.append(morton)
+            y_A.append(frame_id)
         else:
             group_B.append(morton)
+            x_B.append(morton)
+            y_B.append(frame_id)
 
     data = [group_A, group_B]
-    data_colors = ['red', 'lightgray']
+    data_colors = ["red", "lightgray"]
 
-    plt.figure()
-    plt.xlabel('Morton')
-    plt.ylabel('frequency')
-    plt.ylim((0, 1))
-    plt.eventplot(data, orientation='horizontal', colors=data_colors, lineoffsets=[0.5, 0.5])
+    fig, ax1 = plt.subplots()
+    ax1.set_xlabel("Morton")
+    ax1.set_ylabel("Frequency")
+    ax1.set_ylim((0, 1))
+    ax1.eventplot(
+        data, orientation="horizontal", colors=data_colors, lineoffsets=[0.5, 0.5]
+    )
 
-    plt.savefig(os.path.join(output_path, "morton_codes_ground_truth.png"))
+    # Additional ax2 for dot plots
+    ax2 = ax1.twinx()
+    ax2.scatter(x_A, y_A, s=5, color="red")  # Dots for group A in red
+    ax2.scatter(x_B, y_B, s=5, color="lightgray")  # Dots for group B in lightgray
+    ax2.set_ylabel("Frame Number")
+    ax2.set_ylim(
+        [min(y_A + y_B), max(y_A + y_B)]
+    )  # Adjusting the y limits based on frame ID data
+
+    plt.title(
+        f"{output_path} \n Video ID: {ground_truth['id']}. Event window: {frame_start}-{frame_end}"
+    )
+    plt.savefig(os.path.join(output_path, "morton_codes_ground_truth_with_dots.png"))
     plt.close()
-
-
-def create_search_mask(morton_codes, ground_truth):
-    """Use the ground truth to create a search mask as a YML file"""
-    pass
 
 
 def get_ground_truth(ground_truth, video_id):
     for video in ground_truth:
-        if video['id'] == video_id:
+        if video["id"] == video_id:
             return video
     return None
 
 
 def main(data_path: str, ground_truth: dict):
-    assert (os.path.exists(data_path)), "Path does not exist"
+    assert os.path.exists(data_path), "Path does not exist"
 
     video_id = os.path.basename(data_path)
     morton_codes_path = os.path.join(data_path, "morton_codes.csv")
@@ -71,7 +93,9 @@ def main(data_path: str, ground_truth: dict):
 
     if os.path.isfile(morton_codes_path) and ground_truth:
         morton_codes_df = pd.read_csv(morton_codes_path, sep=";")
-        create_and_save_CSP_with_ground_truth(morton_codes_df, video_ground_truth, data_path)
+        create_and_save_CSP_with_ground_truth_and_dots(
+            morton_codes_df, video_ground_truth, data_path
+        )
     else:
         print(f"Morton codes or ground truth does not exist for video {video_id}")
         exit(1)

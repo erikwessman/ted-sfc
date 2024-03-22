@@ -107,6 +107,8 @@ def main(data_path, display_plots):
                 os.path.join(target_path, "cell_values.csv"), sep=";"
             )
 
+            cell_values.drop(columns=["cell4", "cell5"], inplace=True, errors="ignore")
+
             cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
             morton_codes.to_csv(f"{target_path}/morton_codes.csv", sep=";")
