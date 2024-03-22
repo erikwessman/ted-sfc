@@ -9,7 +9,7 @@ from tqdm import tqdm
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "output_path",
+        "data_path",
         help="Path to the directory containing the output for each video, including cell_values.csv.",
     )
     parser.add_argument("--display_plots", action=argparse.BooleanOptionalAction)
@@ -48,12 +48,11 @@ def compute_morton_codes_for_cells(df):
 
 
 def create_and_save_CSP(df, output_path, display_plots):
-    data = df["morton"] / 1000000000000
     plt.figure()
     plt.xlabel("Morton")
     plt.ylabel("frequency")
     plt.ylim((0, 1))
-    plt.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
+    plt.eventplot(df["morton"], orientation="horizontal", colors="b", lineoffsets=0.5)
 
     plt.savefig(os.path.join(output_path, "morton_codes.png"))
 
@@ -62,50 +61,26 @@ def create_and_save_CSP(df, output_path, display_plots):
     else:
         plt.close()
 
-def create_and_save_CSP_with_dots(df, output_path, display_plots):
-    data = df["morton"] / 1000000000000
-    frame_numbers = df["frame_number"]  # Assuming there's a 'frame_number' column in your DataFrame
 
+def create_and_save_CSP_with_dots(df, output_path, display_plots):
     fig, ax1 = plt.subplots()
 
+    # Plot the blue lines
     ax1.set_xlabel("Morton")
     ax1.set_ylabel("Frequency")
     ax1.set_ylim((0, 1))
-    ax1.eventplot(data, orientation="horizontal", colors="b", lineoffsets=0.5)
+    ax1.eventplot([df["morton"].values], orientation="horizontal", colors="b", lineoffsets=0.5)
 
-    ax1.scatter(data, [0.5]*len(data), color='k')  # Scatter plot on the primary y-axis
+    # Plot one dot for each Morton code at each frame
+    x = df["morton"]
+    y = df["frame_id"]
 
-    ax2 = ax1.twinx()  # Create a second y-axis
+    ax2 = ax1.twinx()
+    ax2.scatter(x, y, s=5, color='black')
     ax2.set_ylabel('Frame Number')
-    ax2.set_ylim([df["frame_number"].min(), df["frame_number"].max()])  # Set the limit for the frame numbers
+    ax2.set_ylim([y.min(), y.max()])
 
-    plt.savefig(os.path.join(output_path, "morton_codes.png"))
-
-    if display_plots:
-        plt.show()
-    else:
-        plt.close()
-
-
-def create_and_save_red_stripes(df, output_path, display_plots):
-    colors = ["b", "orange", "orange", "g", "r", "r"]
-
-    plt.figure()
-    plt.xlabel("Morton")
-    plt.ylabel("Frequency")
-    plt.ylim((0, 1))
-
-    # Dynamically generate event plots for each cell's Morton code.
-    for i, col in enumerate(df.columns[df.columns.str.contains("_morton")]):
-        data = df[col] / 1000000000000
-        plt.eventplot(
-            data,
-            orientation="horizontal",
-            colors=colors[i % len(colors)],
-            lineoffsets=0.5,
-        )
-
-    plt.savefig(os.path.join(output_path, "morton_codes_event_plot.png"))
+    plt.savefig(os.path.join(output_path, "morton_codes_with_dots.png"))
 
     if display_plots:
         plt.show()
@@ -113,19 +88,19 @@ def create_and_save_red_stripes(df, output_path, display_plots):
         plt.close()
 
 
-def main(output_path, display_plots):
-    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
+def main(data_path, display_plots):
+    assert os.path.exists(data_path), f"Data path {data_path} does not exist."
 
     video_dirs = [
         name
-        for name in os.listdir(output_path)
-        if os.path.isdir(os.path.join(output_path, name))
+        for name in os.listdir(data_path)
+        if os.path.isdir(os.path.join(data_path, name))
     ]
 
     pbar = tqdm(video_dirs, desc="Processing folders")
     for video_id in pbar:
         pbar.set_description(f"Processing folder {video_id}")
-        target_path = os.path.join(output_path, video_id)
+        target_path = os.path.join(data_path, video_id)
 
         if os.path.isfile(os.path.join(target_path, "cell_values.csv")):
             cell_values = pd.read_csv(
@@ -134,18 +109,18 @@ def main(output_path, display_plots):
 
             cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
+            morton_codes.to_csv(f"{target_path}/morton_codes.csv", sep=";")
             create_and_save_CSP(morton_codes, target_path, display_plots)
             create_and_save_CSP_with_dots(morton_codes, target_path, display_plots)
-            create_and_save_red_stripes(cell_values, target_path, display_plots)
         else:
             tqdm.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
 
         pbar.set_description("Processing folders")
 
-    print("z_curve.py completed.")
+    print("morton.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
 
-    main(args.output_path, args.display_plots)
+    main(args.data_path, args.display_plots)

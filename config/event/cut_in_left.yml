@@ -1,3 +1,4 @@
+# A vehicle performs a cut-in maneuver, cutting in from the left to the right
 saliency_threshold: 0.4
 grid_top_left:
   - 0

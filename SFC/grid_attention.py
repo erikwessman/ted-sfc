@@ -176,9 +176,7 @@ def calculate_cell_values(frame, cell_positions, saliency_threshold):
         cell_mean_value = np.mean(cell_region) / 255
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
-        cell_mean_value = (
-            cell_mean_value if cell_mean_value >= saliency_threshold else 0
-        )
+        cell_mean_value = (cell_mean_value if cell_mean_value >= saliency_threshold else 0)
 
         heatmap_mean_values.append(cell_mean_value)
 

@@ -1,0 +1,11 @@
+# A pedestrian crosses the road from the right to the left
+saliency_threshold: 0.3
+grid_top_left:
+  - 0.15
+  - 0.45
+grid_bottom_right:
+  - 0.85
+  - 0.7
+grid_num_rows: 1
+grid_num_cols: 8
+grid_direction: left
