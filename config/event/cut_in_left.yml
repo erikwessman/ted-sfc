@@ -1,5 +1,5 @@
-saliency_threshold: 0.4   # For running with attention
-angle_threshold: 114      # For running with OF
+saliency_threshold: 0.4 # A vehicle performs a cut-in maneuver, cutting in from the left to the right
+angle_threshold: 114    # For running with OF
 grid_top_left:
   - 0
   - 0.35

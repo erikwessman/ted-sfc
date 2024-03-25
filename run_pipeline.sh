@@ -76,9 +76,9 @@ echo "----------------------------------------"
 python SFC/grid_attention.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
 
 echo "----------------------------------------"
-echo "Starting z_curve.py..."
+echo "Starting morton.py..."
 echo "----------------------------------------"
-python SFC/z_curve.py "$output_path"
+python SFC/morton.py "$output_path"
 
 echo "========================================"
 echo "Pipeline completed."
