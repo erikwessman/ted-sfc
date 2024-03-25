@@ -141,16 +141,17 @@ def calculate_cell_positions(image, config):
 
 
 def calculate_cell_values(
-    curr_frame,
-    prev_frame,
+    frame,
+    frame_gray,
+    frame_gray_prev,
     cell_angles,
     angle_differences,
     cell_positions,
     angle_threshold,
 ):
-    h, w = curr_frame.shape[:3]
+    h, w = frame_gray.shape[:3]
 
-    flow = cv2.calcOpticalFlowFarneback(prev_frame, curr_frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    flow = cv2.calcOpticalFlowFarneback(frame_gray_prev, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
     sum_vectors = np.array([0.0, 0.0])
     vector_sum = np.zeros(2)
@@ -221,7 +222,7 @@ def calculate_cell_values(
                 # This means clamped_angle_diff is -angle_diff and meets the threshold condition
                 # Draw a bounding box around the cell
                 cv2.rectangle(
-                    curr_frame,
+                    frame,
                     (cell_start_x, cell_start_y),
                     (cell_end_x, cell_end_y),
                     (0, 255, 0),
@@ -231,13 +232,11 @@ def calculate_cell_values(
             current_frame_differences.append(clamped_angle_diff)
 
         # Draw the mean vector at the center of the cell
-        center_x = ((cell_end_x - cell_start_x) // 2,)
-        center_y = (cell_end_y - cell_start_y) // 2
+        center_x = int((cell_end_x - cell_start_x) // 2)
+        center_y = int((cell_end_y - cell_start_y) // 2)
         end_x = int(center_x + mean_flow[0])
         end_y = int(center_y + mean_flow[1])
-        cv2.arrowedLine(
-            curr_frame, (center_x, center_y), (end_x, end_y), arrow_color, THICKNESS
-        )
+        cv2.arrowedLine(frame, (center_x, center_y), (end_x, end_y), arrow_color, THICKNESS)
 
     angle_differences_per_frame.append(current_frame_differences)
 
@@ -354,13 +353,13 @@ def process_video(
         exit(1)
 
     out = cv2.VideoWriter(
-        os.path.join(target_path),
+        os.path.join(target_path, f"{video_id}.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
         data_config["fps"],
         (frame.shape[1], frame.shape[0]),
     )
 
-    prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    frame_gray_prev = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     frame_number = 0
     angle_diff_map = {}
@@ -375,17 +374,20 @@ def process_video(
     while ret:
         frame_number += 1
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        print(f"processing frame nr {frame_number}")
+
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         angle_diff_map[frame_number] = calculate_cell_values(
-            gray,
-            prev_gray,
+            frame,
+            frame_gray,
+            frame_gray_prev,
             cell_angles,
             angle_differences,
             cell_positions,
             angle_threshold,
         )
-        prev_gray = gray
+        frame_gray_prev = frame_gray
 
         draw_grid(frame, cell_positions)
 
@@ -429,7 +431,9 @@ def main(data_path, output_path, data_config, event_config, display_results):
         pbar.set_description(f"Processing folder {video_id}")
 
         video_path = os.path.join(data_path, video_id, f"{video_id}.avi")
-        target_path = os.path.join(output_path, video_id, f"{video_id}.avi")
+        target_path = os.path.join(output_path, video_id)
+
+        os.makedirs(os.path.join(output_path, video_id))
 
         assert os.path.exists(video_path), f"Video {video_path} does not exist"
 

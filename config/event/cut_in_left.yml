@@ -1,4 +1,5 @@
-saliency_threshold: 0.4
+saliency_threshold: 0.4   # For running with attention
+angle_threshold: 114      # For running with OF
 grid_top_left:
   - 0
   - 0.35
