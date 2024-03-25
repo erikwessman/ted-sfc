@@ -1,5 +1,6 @@
 # A pedestrian crosses the road from the left to the right
 saliency_threshold: 0.3
+angle_threshold: 90 # For running with OF
 grid_top_left:
   - 0.15
   - 0.45
