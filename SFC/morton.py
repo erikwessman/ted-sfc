@@ -111,7 +111,9 @@ def main(data_path, display_plots):
 
             cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
+            morton_codes["morton"] = morton_codes["morton"].div(10000000000)
             morton_codes.to_csv(f"{target_path}/morton_codes.csv", sep=";")
+
             create_and_save_CSP(morton_codes, target_path, display_plots)
             create_and_save_CSP_with_dots(morton_codes, target_path, display_plots)
         else:

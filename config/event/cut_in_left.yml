@@ -1,11 +1,12 @@
 # A vehicle performs a cut-in maneuver, cutting in from the left to the right
 saliency_threshold: 0.4
+angle_threshold: 114    # For running with OF
 grid_top_left:
   - 0
-  - 0.35
+  - 0.4
 grid_bottom_right:
-  - 0.5
   - 0.6
-grid_num_rows: 2
+  - 0.5
+grid_num_rows: 1
 grid_num_cols: 6
 grid_direction: right

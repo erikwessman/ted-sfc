@@ -18,14 +18,28 @@ data_path=$1
 output_path=$2
 dataset_config_path=$3
 event_config_path=$4
+attention=0
+optical_flow=0
 skip_heatmap=0
 
 for arg in "$@"
 do
+    if [ "$arg" == "--attention" ]; then
+        attention=1
+    fi
+    if [ "$arg" == "--optical-flow" ]; then
+        optical_flow=1
+        skip_heatmap=1
+    fi
     if [ "$arg" == "--no-heatmap" ]; then
         skip_heatmap=1
     fi
 done
+
+if [[ ($attention -eq 0 && $optical_flow -eq 0) || ($attention -eq 1 && $optical_flow -eq 1) ]]; then
+    echo "Must set either --attention or --optical-flow"
+    exit 1
+fi
 
 if [ ! -d "$data_path" ]; then
     echo "Data path does not exist."
@@ -70,10 +84,19 @@ fi
 
 conda activate TED-SFC
 
-echo "----------------------------------------"
-echo "Starting grid_attention.py..."
-echo "----------------------------------------"
-python SFC/grid_attention.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
+if [ "$attention" -eq 1 ]; then
+    echo "----------------------------------------"
+    echo "Starting grid_attention.py..."
+    echo "----------------------------------------"
+    python SFC/grid_attention.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
+fi
+
+if [ "$optical_flow" -eq 1 ]; then
+    echo "----------------------------------------"
+    echo "Starting grid_optical_flow.py..."
+    echo "----------------------------------------"
+    python SFC/grid_optical_flow.py "$data_path" "$output_path" "$dataset_config_path" "$event_config_path"
+fi
 
 echo "----------------------------------------"
 echo "Starting morton.py..."
