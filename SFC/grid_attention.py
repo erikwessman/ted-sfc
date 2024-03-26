@@ -229,7 +229,7 @@ def save_config(output_path, data_config, event_config):
             f.write(line)
 
 
-def save_plots(mean_attention_map, output_path, display_results, event_config):
+def save_cell_value_subplots(mean_attention_map, output_path, display_results, event_config):
     fig, axs = plt.subplots(
         nrows=event_config["grid_num_rows"],
         ncols=event_config["grid_num_cols"],
@@ -253,13 +253,39 @@ def save_plots(mean_attention_map, output_path, display_results, event_config):
         left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4
     )
 
-    plt.savefig(os.path.join(output_path, "all_cells.png"))
+    plt.savefig(os.path.join(output_path, "cell_value_subplots.png"))
 
     if display_results:
         plt.show()
     else:
         plt.close()
 
+def save_combined_plot(mean_attention_map, output_path, display_results, event_config):
+    fig, ax = plt.subplots(figsize=(10, 7))  # Adjust the figure size as needed
+
+    # Generate a color cycle or define a list of colors if specific ones are desired
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    for cell_index in range(event_config["grid_num_rows"] * event_config["grid_num_cols"]):
+        ax.plot(
+            [value[cell_index] for value in mean_attention_map.values()],
+            label=f"Cell {cell_index + 1}",
+            color=color_cycle[cell_index % len(color_cycle)]  # Cycle through colors
+        )
+
+    ax.set_title("Cell Values Over Time")
+    ax.set_xlabel("Frame")
+    ax.set_ylabel("Mean Attention")
+    ax.legend()  # Show legend for all lines
+
+    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9)
+
+    plt.savefig(os.path.join(output_path, "combined_cell_values_plot.png"))
+
+    if display_results:
+        plt.show()
+    else:
+        plt.close()
 
 def process_video_and_generate_attention_map(
     heatmap_video_path,
@@ -371,9 +397,10 @@ def main(data_path, output_path, data_config, event_config, display_results):
                 )
 
                 save_csv(mean_attention_map, target_path, event_config)
-                save_plots(
+                save_cell_value_subplots(
                     mean_attention_map, target_path, display_results, event_config
                 )
+                save_combined_plot(mean_attention_map, target_path, display_results, event_config)
             else:
                 print("Skipped. Source or heatmap video does not exist.")
         else:
