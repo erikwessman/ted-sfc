@@ -248,8 +248,7 @@ def get_total_cells(event_config) -> int:
 
 
 def save_cell_value_subplots(mean_attention_map, output_path, display_results, total_cells):
-    # Find a reasonable number of rows and columns for the subplot grid
-    plot_cols = math.ceil(math.sqrt(total_cells))
+    plot_cols = 6
     plot_rows = math.ceil(total_cells / plot_cols)
 
     fig, axs = plt.subplots(
@@ -289,6 +288,7 @@ def save_cell_value_subplots(mean_attention_map, output_path, display_results, t
         plt.show()
     else:
         plt.close()
+
 def save_combined_plot(mean_attention_map, output_path, display_results, total_cells):
     fig, ax = plt.subplots(figsize=(10, 7))
 
