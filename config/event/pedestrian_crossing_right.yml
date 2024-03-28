@@ -1,5 +1,6 @@
 # A pedestrian crosses the road from the right to the left
 saliency_threshold: 0.3
+angle_threshold: 114
 grids:
   - top_left: [0.15, 0.45]
     bottom_right: [0.4, 0.7]

@@ -342,39 +342,43 @@ def process_video(
     nr_cells = len(cell_positions)
     cell_angles = {cell_index: [] for cell_index in range(nr_cells)}
 
-    while ret:
-        frame_number += 1
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    with tqdm(total=total_frames, desc="Frame progress         ", leave=False) as pbar_frames:
+        while ret:
+            frame_number += 1
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        angle_diff_map[frame_number] = calculate_cell_values(
-            frame,
-            frame_gray,
-            frame_gray_prev,
-            cell_angles,
-            cell_positions,
-            angle_threshold,
-        )
-        frame_gray_prev = frame_gray
+            angle_diff_map[frame_number] = calculate_cell_values(
+                frame,
+                frame_gray,
+                frame_gray_prev,
+                cell_angles,
+                cell_positions,
+                angle_threshold,
+            )
+            frame_gray_prev = frame_gray
 
-        draw_grid(frame, cell_positions)
+            draw_grid(frame, cell_positions)
 
-        annotate_frame(
-            frame,
-            f"frame: {frame_number}. angle_threshold: {angle_threshold}",
-            (10, 30),
-        )
+            annotate_frame(
+                frame,
+                f"frame: {frame_number}. angle_threshold: {angle_threshold}",
+                (10, 30),
+            )
 
-        out.write(frame)
+            out.write(frame)
 
-        if args.display_results:
-            cv2.imshow("Grid", frame)
+            if args.display_results:
+                cv2.imshow("Grid", frame)
 
-        ret, frame = cap.read()
+            ret, frame = cap.read()
 
-        if cv2.waitKey(30) & 0xFF == ord("q"):
-            print("Interrupted by user")
-            break
+            if cv2.waitKey(30) & 0xFF == ord("q"):
+                print("Interrupted by user")
+                break
+
+            pbar_frames.update(1)
 
     cap.release()
     out.release()
@@ -396,7 +400,7 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
     pbar = tqdm(video_dirs, desc="Processing videos")
     for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
+        pbar.set_description(f"Processing video {video_id}")
 
         video_path = os.path.join(data_path, video_id, f"{video_id}.avi")
         target_path = os.path.join(output_path, video_id)
@@ -415,8 +419,6 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
         save_csv(angle_diff_map, target_path, event_config)
         save_plots(angle_diff_map, target_path, display_results, event_config)
-
-        pbar.set_description("Processed folders")
 
     save_config(output_path, data_config, event_config)
 

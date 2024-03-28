@@ -352,38 +352,41 @@ def process_video_and_generate_attention_map(
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
-    frame_number = 0
-    mean_attention_map = {}
 
     cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config["grids"])
+    mean_attention_map = {}
 
-    while ret_heatmap and ret_original:
-        frame_number += 1
+    frame_number = 0
+    with tqdm(total=total_frames_heatmap, desc="Frame progress         ", leave=False) as pbar_frames:
+        while ret_heatmap and ret_original:
+            frame_number += 1
 
-        mean_attention_map[frame_number] = calculate_cell_values(
-            frame_heatmap, cell_positions, event_config["saliency_threshold"]
-        )
-        combined_frame = overlay_heatmap(frame_heatmap, frame_original)
+            mean_attention_map[frame_number] = calculate_cell_values(
+                frame_heatmap, cell_positions, event_config["saliency_threshold"]
+            )
+            combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-        draw_grid(combined_frame, cell_positions)
+            draw_grid(combined_frame, cell_positions)
 
-        annotate_frame(
-            combined_frame,
-            f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
-            (10, 30),
-        )
+            annotate_frame(
+                combined_frame,
+                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
+                (10, 30),
+            )
 
-        out.write(combined_frame)
+            out.write(combined_frame)
 
-        if args.display_results:
-            cv2.imshow("Saliency grid", combined_frame)
+            if args.display_results:
+                cv2.imshow("Saliency grid", combined_frame)
 
-        ret_heatmap, frame_heatmap = cap_heatmap.read()
-        ret_original, frame_original = cap_original.read()
+            ret_heatmap, frame_heatmap = cap_heatmap.read()
+            ret_original, frame_original = cap_original.read()
 
-        if cv2.waitKey(30) & 0xFF == ord("q"):
-            print("Interrupted by user")
-            break
+            if cv2.waitKey(30) & 0xFF == ord("q"):
+                print("Interrupted by user")
+                break
+
+            pbar_frames.update(1)
 
     cap_heatmap.release()
     cap_original.release()
@@ -406,7 +409,7 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
     pbar = tqdm(video_dirs, desc="Processing videos")
     for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
+        pbar.set_description(f"Processing video {video_id}")
         video_path = os.path.join(data_path, video_id)
         target_path = os.path.join(output_path, video_id)
 
@@ -435,7 +438,6 @@ def main(data_path, output_path, data_config, event_config, display_results):
                 print("Skipped. Source or heatmap video does not exist.")
         else:
             print("Skipped. Source or output video directory does not exist.")
-        pbar.set_description("Processed folders")
 
     save_config(output_path, data_config, event_config)
 
