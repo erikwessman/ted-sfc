@@ -2,13 +2,13 @@
 saliency_threshold: 0.4
 angle_threshold: 90 # For running with Optical Flow
 grids:
-  - top_left: [0.2, 0.47]
-    bottom_right: [0.45, 0.62]
+  - top_left: [0.2, 0.45]
+    bottom_right: [0.45, 0.7]
     rows: 1
     cols: 3
     direction: "right"
-  - top_left: [0.55, 0.47]
-    bottom_right: [0.8, 0.62]
+  - top_left: [0.55, 0.45]
+    bottom_right: [0.8, 0.7]
     rows: 1
     cols: 3
     direction: "right"
