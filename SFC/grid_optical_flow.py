@@ -1,11 +1,11 @@
 import os
 import csv
 import cv2
-import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+
+import helper
 
 NR_FRAMES_MOVING_AVG = 4
 SCALE = 10
@@ -49,11 +49,6 @@ def parse_arguments():
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
@@ -384,24 +379,10 @@ def process_video(
 
 
 def main(data_path, output_path, data_config, event_config, display_results):
-    assert os.path.exists(data_path), f"Dataset path {data_path} does not exist."
-
     os.makedirs(output_path, exist_ok=True)
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
-
-    pbar = tqdm(video_dirs, desc="Processing videos")
-    for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
-
-        video_path = os.path.join(data_path, video_id, f"{video_id}.avi")
+    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
-
-        assert os.path.exists(video_path), f"Video {video_path} does not exist"
 
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
 
@@ -416,15 +397,13 @@ def main(data_path, output_path, data_config, event_config, display_results):
         save_csv(angle_diff_map, target_path, event_config)
         save_plots(angle_diff_map, target_path, display_results, event_config)
 
-        pbar.set_description("Processed folders")
-
     save_config(output_path, data_config, event_config)
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = load_config(args.data_config_path)
-    event_config = load_config(args.event_config_path)
+    data_config = helper.load_yml(args.data_config_path)
+    event_config = helper.load_yml(args.event_config_path)
     main(
         args.data_path,
         args.output_path,

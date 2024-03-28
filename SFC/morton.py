@@ -3,7 +3,8 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import zCurve as z
-from tqdm import tqdm
+
+import helper
 
 
 def parse_arguments():
@@ -89,37 +90,22 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
 
 
 def main(data_path, display_plots):
-    assert os.path.exists(data_path), f"Data path {data_path} does not exist."
+    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+        cell_value_path = os.path.join(video_path, "cell_values.csv")
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
+        if not os.path.isfile(cell_value_path):
+            tqdm.write(f"Skipping {video_id}: Cell value CSV does not exist")
+            continue
 
-    pbar = tqdm(video_dirs, desc="Processing folders")
-    for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
-        target_path = os.path.join(data_path, video_id)
+        cell_values = pd.read_csv(os.path.join(video_path, "cell_values.csv"), sep=";")
+        cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
 
-        if os.path.isfile(os.path.join(target_path, "cell_values.csv")):
-            cell_values = pd.read_csv(
-                os.path.join(target_path, "cell_values.csv"), sep=";"
-            )
+        # The values get very big, reduce the size
+        morton_codes["morton"] = morton_codes["morton"].div(10000000000)
+        morton_codes.to_csv(f"{video_path}/morton_codes.csv", sep=";")
 
-            cell_values.drop(columns=["cell4", "cell5"], inplace=True, errors="ignore")
-
-            cell_values, morton_codes = compute_morton_codes_for_cells(cell_values)
-
-            morton_codes["morton"] = morton_codes["morton"].div(10000000000)
-            morton_codes.to_csv(f"{target_path}/morton_codes.csv", sep=";")
-
-            create_and_save_CSP(morton_codes, target_path, display_plots)
-            create_and_save_CSP_with_dots(morton_codes, target_path, display_plots)
-        else:
-            tqdm.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
-
-        pbar.set_description("Processing folders")
+        create_and_save_CSP(morton_codes, video_path, display_plots)
+        create_and_save_CSP_with_dots(morton_codes, video_path, display_plots)
 
     print("morton.py completed.")
 

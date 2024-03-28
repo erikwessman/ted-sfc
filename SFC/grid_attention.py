@@ -1,11 +1,11 @@
 import os
 import csv
 import cv2
-import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+
+import helper
 
 
 def parse_arguments():
@@ -28,11 +28,6 @@ def parse_arguments():
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def ensure_matching_video_resolution(original_video_path: str, target_video_path: str):
@@ -365,47 +360,34 @@ def process_video_and_generate_attention_map(
 
 
 def main(data_path, output_path, data_config, event_config, display_results):
-    assert os.path.exists(data_path), f"Dataset path {data_path} does not exist."
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
-
-    pbar = tqdm(video_dirs, desc="Processing videos")
-    for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
-        video_path = os.path.join(data_path, video_id)
+    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
 
-        if os.path.isdir(video_path) and os.path.isdir(target_path):
-            original_video_path = os.path.join(video_path, f"{video_id}.avi")
-            heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
+        if not os.path.isdir(video_path) or not os.path.isdir(target_path):
+            tqdm.write(f"Skipping {video_id}: Output or original directories do not exist")
+            continue
 
-            if os.path.exists(heatmap_video_path) and os.path.exists(
-                original_video_path
-            ):
-                mean_attention_map = process_video_and_generate_attention_map(
-                    heatmap_video_path,
-                    original_video_path,
-                    target_path,
-                    video_id,
-                    data_config,
-                    event_config,
-                )
+        original_video_path = os.path.join(video_path, f"{video_id}.avi")
+        heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-                save_csv(mean_attention_map, target_path, event_config)
-                save_cell_value_subplots(
-                    mean_attention_map, target_path, display_results, event_config
-                )
-                save_combined_plot(mean_attention_map, target_path, display_results, event_config)
-            else:
-                print("Skipped. Source or heatmap video does not exist.")
-        else:
-            print("Skipped. Source or output video directory does not exist.")
-        pbar.set_description("Processed folders")
+        if not os.path.exists(heatmap_video_path) or not os.path.exists(original_video_path):
+            tqdm.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
+            continue
+
+        mean_attention_map = process_video_and_generate_attention_map(
+            heatmap_video_path,
+            original_video_path,
+            target_path,
+            video_id,
+            data_config,
+            event_config,
+        )
+
+        save_csv(mean_attention_map, target_path, event_config)
+        save_cell_value_subplots(mean_attention_map, target_path, display_results, event_config)
+        save_combined_plot(mean_attention_map, target_path, display_results, event_config)
 
     save_config(output_path, data_config, event_config)
 
@@ -414,8 +396,8 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = load_config(args.data_config_path)
-    event_config = load_config(args.event_config_path)
+    data_config = helper.load_yml(args.data_config_path)
+    event_config = helper.load_yml(args.event_config_path)
     main(
         args.data_path,
         args.output_path,

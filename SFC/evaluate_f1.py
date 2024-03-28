@@ -1,76 +1,66 @@
 import os
-import yaml
 import argparse
-from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
+
+import helper
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Calculate F1 scores based on ground truth and prediction data.")
+    parser.add_argument("data_path", type=str, help="Path to the root folder containing prediction subfolders")
     parser.add_argument("ground_truth_path", type=str, help="Path to the ground truth YML file")
-    parser.add_argument("predictions_root_path", type=str, help="Path to the root folder containing prediction subfolders")
+    parser.add_argument("event_config_path", type=str, help="Path to the event config YML file")
     return parser.parse_args()
 
 
-def load_yml(path):
-    with open(path, 'r') as file:
-        return yaml.safe_load(file)
-
-
-def calculate_overlap(gt_window, pred_start, pred_end):
-    gt_start, gt_end = gt_window
-    overlap = max(0, min(gt_end, pred_end) - max(gt_start, pred_start))
+def is_overlapping(true_window, pred_window):
+    true_start, true_end = true_window
+    pred_start, pred_end = pred_window
+    overlap = max(0, min(true_end, pred_end) - max(true_start, pred_start))
     return overlap > 0
 
 
-def main(data_path: str, ground_truth: dict):
-    assert os.path.exists(data_path), f"Data path {data_path} does not exist."
+def main(data_path: str, ground_truth: dict, config: dict):
+    TP, FP, FN = 0, 0, 0
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
+    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+        prediction_path = os.path.join(video_path, "predicted_event_window.yml")
 
-    pbar = tqdm(video_dirs, desc="Processing folders")
-    for video_id in pbar:
-        pbar.set_description(f"Processing folder {video_id}")
-        target_path = os.path.join(data_path, video_id)
-        prediction_path = os.path.join(target_path, "predicted_event_window.yml")
+        if not prediction_path.exists():
+            tqdm.write(f"Skipping {video_id}: Predicted event window does not exist")
+            continue
 
-        if prediction_path.exists():
-            prediction = load_yml(prediction_path)
+        prediction = helper.load_yml(prediction_path)
+        event_direction = config["grid_direction"]
+        video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
 
-            # Initialize counters
-            TP, FP, FN = 0, 0, 0
+        if not video_ground_truth:
+            tqdm.write(f"Skipping {video_id}: Ground truth does not exist")
+            continue
 
-            gt_events = [item for item in ground_truth if item['id'] == video_id]
-            if not gt_events:
-                FP += 1
-            else:
-                for gt_event in gt_events:
-                    if calculate_overlap(gt_event['event_window'], prediction['event_start'], prediction['event_end']):
-                        TP += 1
-                    else:
-                        FN += 1
-                if TP == 0:
-                    FP += 1
-
-            precision, recall, f1_score, _ = precision_recall_fscore_support([1]*TP + [0]*FN, [1]*TP + [0]*FP, average='binary')
-
-            # Save the F1 score
-            with open("evaluation.txt", "w") as f:
-                f.write(f'F1 Score: {f1_score}\n')
-                f.write(f'Precision Score: {precision}\n')
-                f.write(f'Recall Score: {recall}\n')
+        if is_overlapping(ground_truth['event_window'], prediction['event_window']):
+            TP += 1
         else:
-            print(f"Prediction for {video_id} does not exist, skipping")
+            FN += 1
 
-        pbar.set_description("Processing folders")
+        # TODO fix this
+        if TP == 0:
+            FP += 1
+
+    precision, recall, f1_score, _ = precision_recall_fscore_support([1]*TP + [0]*FN, [1]*TP + [0]*FP, average='binary')
+
+    output_path = os.path.join(data_path, "evaluation.txt")
+    with open(output_path, "w") as f:
+        f.write(f'F1 Score: {f1_score}\n')
+        f.write(f'Precision Score: {precision}\n')
+        f.write(f'Recall Score: {recall}\n')
+
+    print("evaluate_f1.py completed")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    ground_truth = load_yml(args.ground_truth_path)
+    ground_truth = helper.load_yml(args.ground_truth_path)
+    config = helper.load_yml(args.event_config_path)
 
-    main(args.data_path, ground_truth)
+    main(args.data_path, ground_truth, config)

@@ -1,8 +1,9 @@
 import os
-import yaml
 import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
+
+import helper
 
 
 def parse_arguments():
@@ -15,12 +16,11 @@ def parse_arguments():
         "ground_truth_path",
         help="Path to the ground truth YML file.",
     )
+    parser.add_argument(
+        "event_config_path",
+        help="Path to the event config YML file.",
+    )
     return parser.parse_args()
-
-
-def load_yml(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path):
@@ -77,32 +77,30 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
     plt.close()
 
 
-def get_ground_truth(ground_truth, video_id):
-    for video in ground_truth:
-        if video["id"] == video_id:
-            return video
-    return None
+def main(data_path: str, ground_truth: dict, config: dict):
+    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+        morton_codes_path = os.path.join(video_path, "morton_codes.csv")
 
+        if not os.path.exists(morton_codes_path):
+            tqdm.write(f"Skipping {video_id}: Morton codes CSV does not exist")
+            continue
 
-def main(data_path: str, ground_truth: dict):
-    assert os.path.exists(data_path), "Path does not exist"
+        event_direction = config["grid_direction"]
+        video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
 
-    video_id = os.path.basename(data_path)
-    morton_codes_path = os.path.join(data_path, "morton_codes.csv")
-    video_ground_truth = get_ground_truth(ground_truth, video_id)
+        if not video_ground_truth:
+            tqdm.write(f"Skipping {video_id}: Ground truth does not exist")
+            continue
 
-    if os.path.isfile(morton_codes_path) and ground_truth:
         morton_codes_df = pd.read_csv(morton_codes_path, sep=";")
-        create_and_save_CSP_with_ground_truth_and_dots(
-            morton_codes_df, video_ground_truth, data_path
-        )
-    else:
-        print(f"Morton codes or ground truth does not exist for video {video_id}")
-        exit(1)
+        create_and_save_CSP_with_ground_truth_and_dots(morton_codes_df, video_ground_truth, data_path)
+
+    print("plot_gt.py completed")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    ground_truth = load_yml(args.ground_truth_path)
+    ground_truth = helper.load_yml(args.ground_truth_path)
+    config = helper.load_yml(args.event_config_path)
 
-    main(args.data_path, ground_truth)
+    main(args.data_path, ground_truth, config)
