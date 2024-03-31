@@ -7,8 +7,10 @@ import math
 import glob
 import cv2
 from tqdm import tqdm
-from matplotlib.animation import FFMpegWriter
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+import helper
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -17,6 +19,7 @@ def parse_arguments():
         help="Path to the directory containing the output for each video, including video and cell values to visualize",
     )
     return parser.parse_args()
+
 
 def visualize_cell_values(video_path, cell_values, output_path):
     total_cells = cell_values.shape[1] - 1
@@ -78,28 +81,16 @@ def visualize_cell_values(video_path, cell_values, output_path):
         cap.release()
         out.release()
 
-def main(data_path):
-    assert os.path.exists(data_path), f"Data path {data_path} does not exist."
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
-
-    pbar = tqdm(video_dirs, desc="Creating visualizations")
-    for video_id in pbar:
-        pbar.set_description(f"Visualizing video {video_id}")
+def main(data_path: str):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "cell_values.csv")):
-            tqdm.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
-            pbar.set_description("Creating visualizations")
+            tqdm_obj.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
             continue
 
-        cell_values = pd.read_csv(
-            os.path.join(target_path, "cell_values.csv"), sep=";"
-        )
+        cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
 
         attention_grid_path = glob.glob(os.path.join(target_path, "*attention_grid.avi"))
         optical_flow_grid_path = glob.glob(os.path.join(target_path, "*optical_flow_grid.avi"))
@@ -111,9 +102,7 @@ def main(data_path):
         elif optical_flow_grid_path:
             visualize_cell_values(optical_flow_grid_path[0], cell_values, output_path)
         else:
-            tqdm.write(f"Skipped. No source video found in {target_path}.")
-
-        pbar.set_description("Creating visualizations")
+            tqdm_obj.write(f"Skipped. No source video found in {target_path}.")
 
     print("visualize.py completed.")
 

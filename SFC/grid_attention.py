@@ -1,12 +1,13 @@
 import os
 import csv
 import cv2
-import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 import math
+
+import helper
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -28,11 +29,6 @@ def parse_arguments():
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def ensure_matching_video_resolution(original_video_path: str, target_video_path: str):
@@ -157,6 +153,7 @@ def calculate_grid_cell_positions(image, grid_configs):
 
     return all_cell_positions
 
+
 def calculate_cell_values(frame, cell_positions, saliency_threshold):
     h, w = frame.shape[:2]
 
@@ -229,6 +226,7 @@ def save_csv(mean_attention_map, output_path, grids_config):
             row = [key] + values
             writer.writerow(row)
 
+
 def save_config(output_path, data_config, event_config):
     config_path = os.path.join(output_path, "config.txt")
     with open(config_path, "w") as f:
@@ -238,6 +236,7 @@ def save_config(output_path, data_config, event_config):
         for key, value in event_config.items():
             line = f"{key}: {value}\n"
             f.write(line)
+
 
 def get_total_cells(event_config) -> int:
     total_cells = 0
@@ -289,6 +288,7 @@ def save_cell_value_subplots(mean_attention_map, output_path, display_results, t
     else:
         plt.close()
 
+
 def save_combined_plot(mean_attention_map, output_path, display_results, total_cells):
     fig, ax = plt.subplots(figsize=(10, 7))
 
@@ -315,6 +315,7 @@ def save_combined_plot(mean_attention_map, output_path, display_results, total_c
         plt.show()
     else:
         plt.close()
+
 
 def process_video_and_generate_attention_map(
     heatmap_video_path,
@@ -352,41 +353,37 @@ def process_video_and_generate_attention_map(
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
-
     cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config["grids"])
     mean_attention_map = {}
 
     frame_number = 0
-    with tqdm(total=total_frames_heatmap, desc="Frame progress         ", leave=False) as pbar_frames:
-        while ret_heatmap and ret_original:
-            frame_number += 1
+    while ret_heatmap and ret_original:
+        frame_number += 1
 
-            mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, event_config["saliency_threshold"]
-            )
-            combined_frame = overlay_heatmap(frame_heatmap, frame_original)
+        mean_attention_map[frame_number] = calculate_cell_values(
+            frame_heatmap, cell_positions, event_config["saliency_threshold"]
+        )
+        combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-            draw_grid(combined_frame, cell_positions)
+        draw_grid(combined_frame, cell_positions)
 
-            annotate_frame(
-                combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
-                (10, 30),
-            )
+        annotate_frame(
+            combined_frame,
+            f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
+            (10, 30),
+        )
 
-            out.write(combined_frame)
+        out.write(combined_frame)
 
-            if args.display_results:
-                cv2.imshow("Saliency grid", combined_frame)
+        if args.display_results:
+            cv2.imshow("Saliency grid", combined_frame)
 
-            ret_heatmap, frame_heatmap = cap_heatmap.read()
-            ret_original, frame_original = cap_original.read()
+        ret_heatmap, frame_heatmap = cap_heatmap.read()
+        ret_original, frame_original = cap_original.read()
 
-            if cv2.waitKey(30) & 0xFF == ord("q"):
-                print("Interrupted by user")
-                break
-
-            pbar_frames.update(1)
+        if cv2.waitKey(30) & 0xFF == ord("q"):
+            print("Interrupted by user")
+            break
 
     cap_heatmap.release()
     cap_original.release()
@@ -395,49 +392,38 @@ def process_video_and_generate_attention_map(
 
     return mean_attention_map
 
-def main(data_path, output_path, data_config, event_config, display_results):
-    assert os.path.exists(data_path), f"Dataset path {data_path} does not exist."
-    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
+def main(data_path, output_path, data_config, event_config, display_results):
+    assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     total_cells = get_total_cells(event_config)
 
-    pbar = tqdm(video_dirs, desc="Processing videos")
-    for video_id in pbar:
-        pbar.set_description(f"Processing video {video_id}")
-        video_path = os.path.join(data_path, video_id)
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
 
-        if os.path.isdir(video_path) and os.path.isdir(target_path):
-            original_video_path = os.path.join(video_path, f"{video_id}.avi")
-            heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
+        if not os.path.isdir(target_path):
+            tqdm_obj.write(f"Skipping {video_id}: Output directory does not exist")
+            continue
 
-            if os.path.exists(heatmap_video_path) and os.path.exists(
-                original_video_path
-            ):
-                mean_attention_map = process_video_and_generate_attention_map(
-                    heatmap_video_path,
-                    original_video_path,
-                    target_path,
-                    video_id,
-                    data_config,
-                    event_config,
-                )
+        original_video_path = os.path.join(video_path, f"{video_id}.avi")
+        heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-                save_csv(mean_attention_map, target_path, event_config)
-                save_cell_value_subplots(
-                    mean_attention_map, target_path, display_results, total_cells
-                )
-                save_combined_plot(mean_attention_map, target_path, display_results, total_cells)
-            else:
-                print("Skipped. Source or heatmap video does not exist.")
-        else:
-            print("Skipped. Source or output video directory does not exist.")
+        if not os.path.exists(heatmap_video_path) or not os.path.exists(original_video_path):
+            tqdm_obj.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
+            continue
+
+        mean_attention_map = process_video_and_generate_attention_map(
+            heatmap_video_path,
+            original_video_path,
+            target_path,
+            video_id,
+            data_config,
+            event_config,
+        )
+
+        save_csv(mean_attention_map, target_path, event_config)
+        save_cell_value_subplots(mean_attention_map, target_path, display_results, total_cells)
+        save_combined_plot(mean_attention_map, target_path, display_results, total_cells)
 
     save_config(output_path, data_config, event_config)
 
@@ -446,8 +432,8 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = load_config(args.data_config_path)
-    event_config = load_config(args.event_config_path)
+    data_config = helper.load_yml(args.data_config_path)
+    event_config = helper.load_yml(args.event_config_path)
     main(
         args.data_path,
         args.output_path,

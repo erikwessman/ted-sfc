@@ -1,11 +1,11 @@
 import os
 import csv
 import cv2
-import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+
+import helper
 
 NR_FRAMES_MOVING_AVG = 4
 SCALE = 10
@@ -49,11 +49,6 @@ def parse_arguments():
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
@@ -342,43 +337,39 @@ def process_video(
     nr_cells = len(cell_positions)
     cell_angles = {cell_index: [] for cell_index in range(nr_cells)}
 
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    with tqdm(total=total_frames, desc="Frame progress         ", leave=False) as pbar_frames:
-        while ret:
-            frame_number += 1
+    while ret:
+        frame_number += 1
 
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            angle_diff_map[frame_number] = calculate_cell_values(
-                frame,
-                frame_gray,
-                frame_gray_prev,
-                cell_angles,
-                cell_positions,
-                angle_threshold,
-            )
-            frame_gray_prev = frame_gray
+        angle_diff_map[frame_number] = calculate_cell_values(
+            frame,
+            frame_gray,
+            frame_gray_prev,
+            cell_angles,
+            cell_positions,
+            angle_threshold,
+        )
+        frame_gray_prev = frame_gray
 
-            draw_grid(frame, cell_positions)
+        draw_grid(frame, cell_positions)
 
-            annotate_frame(
-                frame,
-                f"frame: {frame_number}. angle_threshold: {angle_threshold}",
-                (10, 30),
-            )
+        annotate_frame(
+            frame,
+            f"frame: {frame_number}. angle_threshold: {angle_threshold}",
+            (10, 30),
+        )
 
-            out.write(frame)
+        out.write(frame)
 
-            if args.display_results:
-                cv2.imshow("Grid", frame)
+        if args.display_results:
+            cv2.imshow("Grid", frame)
 
-            ret, frame = cap.read()
+        ret, frame = cap.read()
 
-            if cv2.waitKey(30) & 0xFF == ord("q"):
-                print("Interrupted by user")
-                break
-
-            pbar_frames.update(1)
+        if cv2.waitKey(30) & 0xFF == ord("q"):
+            print("Interrupted by user")
+            break
 
     cap.release()
     out.release()
@@ -388,24 +379,10 @@ def process_video(
 
 
 def main(data_path, output_path, data_config, event_config, display_results):
-    assert os.path.exists(data_path), f"Dataset path {data_path} does not exist."
-
     os.makedirs(output_path, exist_ok=True)
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
-
-    pbar = tqdm(video_dirs, desc="Processing videos")
-    for video_id in pbar:
-        pbar.set_description(f"Processing video {video_id}")
-
-        video_path = os.path.join(data_path, video_id, f"{video_id}.avi")
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
-
-        assert os.path.exists(video_path), f"Video {video_path} does not exist"
 
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
 
@@ -425,8 +402,8 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = load_config(args.data_config_path)
-    event_config = load_config(args.event_config_path)
+    data_config = helper.load_yml(args.data_config_path)
+    event_config = helper.load_yml(args.event_config_path)
     main(
         args.data_path,
         args.output_path,
