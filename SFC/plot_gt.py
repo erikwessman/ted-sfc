@@ -78,18 +78,18 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
 
 
 def main(data_path: str, ground_truth: dict, config: dict):
-    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         morton_codes_path = os.path.join(video_path, "morton_codes.csv")
 
         if not os.path.exists(morton_codes_path):
-            tqdm.write(f"Skipping {video_id}: Morton codes CSV does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Morton codes CSV does not exist")
             continue
 
-        event_direction = config["grid_direction"]
+        event_direction = config["direction"]
         video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
 
         if not video_ground_truth:
-            tqdm.write(f"Skipping {video_id}: Ground truth does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Ground truth does not exist")
             continue
 
         morton_codes_df = pd.read_csv(morton_codes_path, sep=";")

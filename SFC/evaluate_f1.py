@@ -23,19 +23,19 @@ def is_overlapping(true_window, pred_window):
 def main(data_path: str, ground_truth: dict, config: dict):
     TP, FP, FN = 0, 0, 0
 
-    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         prediction_path = os.path.join(video_path, "predicted_event_window.yml")
 
         if not prediction_path.exists():
-            tqdm.write(f"Skipping {video_id}: Predicted event window does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Predicted event window does not exist")
             continue
 
         prediction = helper.load_yml(prediction_path)
-        event_direction = config["grid_direction"]
+        event_direction = config["direction"]
         video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
 
         if not video_ground_truth:
-            tqdm.write(f"Skipping {video_id}: Ground truth does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Ground truth does not exist")
             continue
 
         if is_overlapping(ground_truth['event_window'], prediction['event_window']):

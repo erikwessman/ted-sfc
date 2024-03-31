@@ -381,7 +381,7 @@ def process_video(
 def main(data_path, output_path, data_config, event_config, display_results):
     os.makedirs(output_path, exist_ok=True)
 
-    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
 
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)

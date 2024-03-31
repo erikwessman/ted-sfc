@@ -90,11 +90,11 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
 
 
 def main(data_path, display_plots):
-    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         cell_value_path = os.path.join(video_path, "cell_values.csv")
 
         if not os.path.isfile(cell_value_path):
-            tqdm.write(f"Skipping {video_id}: Cell value CSV does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Cell value CSV does not exist")
             continue
 
         cell_values = pd.read_csv(os.path.join(video_path, "cell_values.csv"), sep=";")

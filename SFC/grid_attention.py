@@ -353,11 +353,10 @@ def process_video_and_generate_attention_map(
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
-    frame_number = 0
+    cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config["grids"])
     mean_attention_map = {}
 
-    cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config["grids"])
-
+    frame_number = 0
     while ret_heatmap and ret_original:
         frame_number += 1
 
@@ -399,18 +398,18 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
     total_cells = get_total_cells(event_config)
 
-    for video_path, video_id, tqdm in helper.traverse_videos(data_path):
+    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
 
         if not os.path.isdir(target_path):
-            tqdm.write(f"Skipping {video_id}: Output directory does not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Output directory does not exist")
             continue
 
         original_video_path = os.path.join(video_path, f"{video_id}.avi")
         heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
         if not os.path.exists(heatmap_video_path) or not os.path.exists(original_video_path):
-            tqdm.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
+            tqdm_obj.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
             continue
 
         mean_attention_map = process_video_and_generate_attention_map(
