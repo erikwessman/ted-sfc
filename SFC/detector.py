@@ -1,8 +1,15 @@
+"""
+This script attempts to find the event window in a video from a set of cell values.
+"""
 import os
 import argparse
 import pandas as pd
 
 import helper
+
+
+# Constants
+CONST = 1
 
 
 def parse_arguments():
@@ -11,14 +18,18 @@ def parse_arguments():
         "data_path",
         help="Path to the directory containing the output for each video",
     )
-    parser.add_argument(
-        "search_mask_path",
-        help="Path to the directory containing the output for each video",
-    )
     return parser.parse_args()
 
 
-def main(data_path, search_mask):
+def detect_event(cell_values):
+    """
+    Returns the event window frame interval, e.g. [140, 175]
+    In case there is no event, returns [-1, -1]
+    """
+    pass
+
+
+def main(data_path):
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
@@ -28,10 +39,14 @@ def main(data_path, search_mask):
 
         cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
 
+        event_window = detect_event(cell_values)
+
+        # Save the event window somewhere
+
     print("detector.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
 
-    main(args.data_path, args.search_mask_path)
+    main(args.data_path)
