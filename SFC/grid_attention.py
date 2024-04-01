@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import tqdm as tqdm
 
 import helper
 
@@ -116,11 +117,12 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_grid_cell_positions(image, grid_configs):
+def calculate_grid_cell_positions(image, grid_config):
     h, w, _ = image.shape
     all_cell_positions = []
+    grid_direction = grid_config["direction"]
 
-    for grid_config in grid_configs:
+    for grid_config in grid_config["grids"]:
         # Convert proportional positions to pixel positions for each grid
         start_x = int(w * grid_config["top_left"][0])
         start_y = int(h * grid_config["top_left"][1])
@@ -132,7 +134,7 @@ def calculate_grid_cell_positions(image, grid_configs):
 
         cell_positions = []
 
-        if grid_config["direction"] == "right":
+        if grid_direction == "right":
             col_range = range(grid_config["cols"])
         else:
             col_range = range(grid_config["cols"] - 1, -1, -1)
@@ -353,37 +355,40 @@ def process_video_and_generate_attention_map(
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
-    cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config["grids"])
+    cell_positions = calculate_grid_cell_positions(frame_heatmap, event_config)
     mean_attention_map = {}
 
     frame_number = 0
-    while ret_heatmap and ret_original:
-        frame_number += 1
+    with tqdm(total=total_frames_heatmap, desc="Frame progress", leave=False) as pbar_frames:
+        while ret_heatmap and ret_original:
+            frame_number += 1
 
-        mean_attention_map[frame_number] = calculate_cell_values(
-            frame_heatmap, cell_positions, event_config["saliency_threshold"]
-        )
-        combined_frame = overlay_heatmap(frame_heatmap, frame_original)
+            mean_attention_map[frame_number] = calculate_cell_values(
+                frame_heatmap, cell_positions, event_config["saliency_threshold"]
+            )
+            combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
-        draw_grid(combined_frame, cell_positions)
+            draw_grid(combined_frame, cell_positions)
 
-        annotate_frame(
-            combined_frame,
-            f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
-            (10, 30),
-        )
+            annotate_frame(
+                combined_frame,
+                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
+                (10, 30),
+            )
 
-        out.write(combined_frame)
+            out.write(combined_frame)
 
-        if args.display_results:
-            cv2.imshow("Saliency grid", combined_frame)
+            if args.display_results:
+                cv2.imshow("Saliency grid", combined_frame)
 
-        ret_heatmap, frame_heatmap = cap_heatmap.read()
-        ret_original, frame_original = cap_original.read()
+            ret_heatmap, frame_heatmap = cap_heatmap.read()
+            ret_original, frame_original = cap_original.read()
 
-        if cv2.waitKey(30) & 0xFF == ord("q"):
-            print("Interrupted by user")
-            break
+            if cv2.waitKey(30) & 0xFF == ord("q"):
+                print("Interrupted by user")
+                break
+
+            pbar_frames.update(1)
 
     cap_heatmap.release()
     cap_original.release()

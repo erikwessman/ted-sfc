@@ -1,9 +1,11 @@
 import os
 import csv
 import cv2
+import math
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 import helper
 
@@ -101,38 +103,43 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_cell_positions(image, config):
+def calculate_grid_cell_positions(image, grid_config):
     h, w, _ = image.shape
+    all_cell_positions = []
+    grid_direction = grid_config["direction"]
 
-    # Convert proportional positions to pixel positions
-    start_x = int(w * config["grid_top_left"][0])
-    start_y = int(h * config["grid_top_left"][1])
-    end_x = int(w * config["grid_bottom_right"][0])
-    end_y = int(h * config["grid_bottom_right"][1])
+    for grid_config in grid_config["grids"]:
+        # Convert proportional positions to pixel positions for each grid
+        start_x = int(w * grid_config["top_left"][0])
+        start_y = int(h * grid_config["top_left"][1])
+        end_x = int(w * grid_config["bottom_right"][0])
+        end_y = int(h * grid_config["bottom_right"][1])
 
-    cell_width = (end_x - start_x) // config["grid_num_cols"]
-    cell_height = (end_y - start_y) // config["grid_num_rows"]
+        cell_width = (end_x - start_x) // grid_config["cols"]
+        cell_height = (end_y - start_y) // grid_config["rows"]
 
-    cell_positions = []
+        cell_positions = []
 
-    if config["grid_direction"] == "right":
-        col_range = range(config["grid_num_cols"])
-    else:
-        col_range = range(config["grid_num_cols"] - 1, -1, -1)
+        if grid_direction == "right":
+            col_range = range(grid_config["cols"])
+        else:
+            col_range = range(grid_config["cols"] - 1, -1, -1)
 
-    for row in range(config["grid_num_rows"]):
-        for col in col_range:
-            cell_start_x = start_x + col * cell_width
-            cell_start_y = start_y + row * cell_height
+        for row in range(grid_config["rows"]):
+            for col in col_range:
+                cell_start_x = start_x + col * cell_width
+                cell_start_y = start_y + row * cell_height
 
-            cell_end_x = cell_start_x + cell_width
-            cell_end_y = cell_start_y + cell_height
+                cell_end_x = cell_start_x + cell_width
+                cell_end_y = cell_start_y + cell_height
 
-            cell_positions.append(
-                ((cell_start_x, cell_start_y), (cell_end_x, cell_end_y))
-            )
+                cell_positions.append(
+                    ((cell_start_x, cell_start_y), (cell_end_x, cell_end_y))
+                )
 
-    return cell_positions
+        all_cell_positions.extend(cell_positions)
+
+    return all_cell_positions
 
 
 def calculate_cell_values(
@@ -250,13 +257,22 @@ def angle_to_vector(angle_degrees, scale=1):
     return (x, y)
 
 
-def save_csv(angle_diff_map, output_path, config):
+def save_csv(mean_attention_map, output_path, grids_config):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
-        number_of_cells = config["grid_num_rows"] * config["grid_num_cols"]
-        writer.writerow(["frame_id"] + [f"cell{i+1}" for i in range(number_of_cells)])
-        for key, values in angle_diff_map.items():
+
+        # Calculate the total number of cells based on the individual grids
+        cell_headers = []
+        cell_counter = 0
+        for grid in grids_config['grids']:
+            cells_in_grid = grid["rows"] * grid["cols"]
+            cell_headers.extend([f"cell{cell_counter + i + 1}" for i in range(cells_in_grid)])
+            cell_counter += cells_in_grid
+
+        writer.writerow(["frame_id"] + cell_headers)
+
+        for key, values in mean_attention_map.items():
             row = [key] + values
             writer.writerow(row)
 
@@ -272,33 +288,83 @@ def save_config(output_path, data_config, event_config):
             f.write(line)
 
 
-def save_plots(angle_diff_map, output_path, display_results, event_config):
+def save_cell_value_subplots(angle_diff_map, output_path, display_results, total_cells):
+    plot_cols = 6
+    plot_rows = math.ceil(total_cells / plot_cols)
+
     fig, axs = plt.subplots(
-        nrows=event_config["grid_num_rows"],
-        ncols=event_config["grid_num_cols"],
-        figsize=(event_config["grid_num_cols"] * 4, event_config["grid_num_rows"] * 3),
+        nrows=plot_rows,
+        ncols=plot_cols,
+        figsize=(plot_cols * 4, plot_rows * 3),
     )
 
-    for cell_index, ax in enumerate(axs.flat):
-        ax.plot([value[cell_index] for value in angle_diff_map.values()], label=f"Cell {cell_index+1}",)
+    # Flatten the axes array for easy iteration, in case of a single row/column
+    axs = np.atleast_2d(axs).reshape(-1)
+
+    for cell_index in range(total_cells):
+        ax = axs[cell_index]
+        ax.plot(
+            [value[cell_index] for value in angle_diff_map.values()],
+            label=f"Cell {cell_index+1}",
+        )
         ax.set_title(f"Cell {cell_index+1}")
 
         if cell_index == 0:
             ax.legend()
 
-    plt.legend()
+    # Hide unused subplots if any
+    for ax in axs[total_cells:]:
+        ax.axis('off')
 
     fig.text(0.5, 0.04, "Frame", ha="center")
-    fig.text(0.04, 0.5, "Angle Differences", va="center", rotation="vertical")
+    fig.text(0.04, 0.5, "Angle Difference", va="center", rotation="vertical")
 
-    plt.subplots_adjust(left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+    plt.subplots_adjust(
+        left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4
+    )
 
-    plt.savefig(os.path.join(output_path, "all_cells.png"))
+    plt.savefig(os.path.join(output_path, "cell_value_subplots.png"))
 
     if display_results:
         plt.show()
     else:
         plt.close()
+
+
+def save_combined_plot(angle_diff_map, output_path, display_results, total_cells):
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    # Generate a color cycle or define a list of colors if specific ones are desired
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    for cell_index in range(total_cells):
+        ax.plot(
+            [value[cell_index] for value in angle_diff_map.values()],
+            label=f"Cell {cell_index + 1}",
+            color=color_cycle[cell_index % len(color_cycle)]
+        )
+
+    ax.set_title("Cell Values Over Time")
+    ax.set_xlabel("Frame")
+    ax.set_ylabel("Angle Difference")
+    ax.legend()
+
+    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9)
+
+    plt.savefig(os.path.join(output_path, "combined_cell_values_plot.png"))
+
+    if display_results:
+        plt.show()
+    else:
+        plt.close()
+
+
+def get_total_cells(event_config) -> int:
+    total_cells = 0
+    for grid in event_config['grids']:
+        cells = grid["rows"] * grid["cols"]
+        total_cells += cells
+    return total_cells
 
 
 def process_video(
@@ -331,45 +397,50 @@ def process_video(
     # Maps a frame number to a list of cell values
     angle_diff_map = {}
 
-    cell_positions = calculate_cell_positions(frame, event_config)
+    cell_positions = calculate_grid_cell_positions(frame, event_config)
 
     # Keep track of cell angles to calculate average cell angles
     nr_cells = len(cell_positions)
     cell_angles = {cell_index: [] for cell_index in range(nr_cells)}
 
-    while ret:
-        frame_number += 1
+    frame_number = 0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    with tqdm(total=total_frames, desc="Frame progress", leave=False) as pbar_frames:
+        while ret:
+            frame_number += 1
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        angle_diff_map[frame_number] = calculate_cell_values(
-            frame,
-            frame_gray,
-            frame_gray_prev,
-            cell_angles,
-            cell_positions,
-            angle_threshold,
-        )
-        frame_gray_prev = frame_gray
+            angle_diff_map[frame_number] = calculate_cell_values(
+                frame,
+                frame_gray,
+                frame_gray_prev,
+                cell_angles,
+                cell_positions,
+                angle_threshold,
+            )
+            frame_gray_prev = frame_gray
 
-        draw_grid(frame, cell_positions)
+            draw_grid(frame, cell_positions)
 
-        annotate_frame(
-            frame,
-            f"frame: {frame_number}. angle_threshold: {angle_threshold}",
-            (10, 30),
-        )
+            annotate_frame(
+                frame,
+                f"frame: {frame_number}. angle_threshold: {angle_threshold}",
+                (10, 30),
+            )
 
-        out.write(frame)
+            out.write(frame)
 
-        if args.display_results:
-            cv2.imshow("Grid", frame)
+            if args.display_results:
+                cv2.imshow("Grid", frame)
 
-        ret, frame = cap.read()
+            ret, frame = cap.read()
 
-        if cv2.waitKey(30) & 0xFF == ord("q"):
-            print("Interrupted by user")
-            break
+            if cv2.waitKey(30) & 0xFF == ord("q"):
+                print("Interrupted by user")
+                break
+
+            pbar_frames.update(1)
 
     cap.release()
     out.release()
@@ -381,7 +452,10 @@ def process_video(
 def main(data_path, output_path, data_config, event_config, display_results):
     os.makedirs(output_path, exist_ok=True)
 
-    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
+    total_cells = get_total_cells(event_config)
+
+    for video_dir, video_id, tqdm_obj in helper.traverse_videos(data_path):
+        video_path = os.path.join(video_dir, f"{video_id}.avi")
         target_path = os.path.join(output_path, video_id)
 
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
@@ -395,7 +469,8 @@ def main(data_path, output_path, data_config, event_config, display_results):
         )
 
         save_csv(angle_diff_map, target_path, event_config)
-        save_plots(angle_diff_map, target_path, display_results, event_config)
+        save_cell_value_subplots(angle_diff_map, target_path, display_results, total_cells)
+        save_combined_plot(angle_diff_map, target_path, display_results, total_cells)
 
     save_config(output_path, data_config, event_config)
 

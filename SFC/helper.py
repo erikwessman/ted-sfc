@@ -24,9 +24,9 @@ def traverse_videos(data_path: str):
     for video_id in video_dirs:
         video_dirs.set_description(f"Processing folder {video_id}")
 
-        target_path = os.path.join(data_path, video_id)
+        video_dir = os.path.join(data_path, video_id)
 
-        yield target_path, video_id, tqdm
+        yield video_dir, video_id, tqdm
 
         video_dirs.set_description("Processing folders")
 
