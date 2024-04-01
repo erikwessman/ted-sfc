@@ -82,8 +82,9 @@ def save_config(output_path, data_config, event_config):
             line = f"{key}: {value}\n"
             f.write(line)
 
+def save_cell_value_subplots(cell_value_map, output_path, display_results, y_label):
+    total_cells = len(list(cell_value_map.values())[0])
 
-def save_cell_value_subplots(cell_value_map, output_path, display_results, total_cells, y_label):
     plot_cols = 6
     plot_rows = math.ceil(total_cells / plot_cols)
 
@@ -126,8 +127,9 @@ def save_cell_value_subplots(cell_value_map, output_path, display_results, total
         plt.close()
 
 
-def save_combined_plot(cell_value_map, output_path, display_results, total_cells, y_label):
+def save_combined_plot(cell_value_map, output_path, display_results, y_label):
     fig, ax = plt.subplots(figsize=(10, 7))
+    total_cells = len(list(cell_value_map.values())[0])
 
     # Generate a color cycle or define a list of colors if specific ones are desired
     color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']

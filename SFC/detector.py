@@ -1,5 +1,5 @@
 """
-This script attempts to find the event window in a video from a set of cell values.
+This script attempts to find the event window in a video from a set of morton codes
 """
 import os
 import argparse
@@ -21,7 +21,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def detect_event(cell_values):
+def detect_event(morton_codes):
     """
     Returns the event window frame interval, e.g. [140, 175]
     In case there is no event, returns [-1, -1]
@@ -33,13 +33,13 @@ def main(data_path):
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
-        if os.path.isfile(os.path.join(target_path, "cell_values.csv")):
-            tqdm_obj.write(f"Skipping {video_id}: Cell values CSV does not exist")
+        if os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
+            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist")
             continue
 
-        cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
+        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
 
-        event_window = detect_event(cell_values)
+        event_window = detect_event(morton_codes)
 
         # Save the event window somewhere
 

@@ -19,7 +19,6 @@ def is_overlapping(true_window, pred_window):
     overlap = max(0, min(true_end, pred_end) - max(true_start, pred_start))
     return overlap > 0
 
-
 def main(data_path: str, ground_truth: dict, config: dict):
     TP, FP, FN = 0, 0, 0
 
