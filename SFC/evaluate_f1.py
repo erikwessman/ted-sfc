@@ -52,12 +52,11 @@ def main(event_window_path: str, ground_truth: dict, config: dict):
             else:
                 TN += 1
 
-    print([1]*TP + [0]*FN)
-    print([1]*TP + [0]*FP)
+    print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
 
-    f1 = f1_score([1]*TP + [0]*FN, [1]*TP + [0]*FP, average='binary')
+    f1_score = 2 * TP / (2 * TP + FP + FN)
 
-    print(f1)
+    print(f1_score)
 
 
 if __name__ == "__main__":

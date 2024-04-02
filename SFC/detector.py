@@ -103,8 +103,6 @@ def main(data_path):
         df_event_window = df_event_window._append({'video_id': video_id, 'event_detected': event_detected,
                        'start_frame': start_frame, 'end_frame': end_frame}, ignore_index=True)
 
-        print(f"Event window for {video_id}: {event_window}")
-
     df_event_window.to_csv(os.path.join(
         data_path, "event_window.csv"), sep=";", index=False)
 
