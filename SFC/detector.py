@@ -9,7 +9,14 @@ import helper
 
 
 # Constants
-CONST = 1
+CELL_MORTON = {
+        "1": (),
+        "2": (),
+        "3": (),
+        "4": (),
+        "5": (),
+        "6": (),
+}
 
 
 def parse_arguments():
