@@ -52,7 +52,7 @@ def get_ground_truth(ground_truth: dict, video_id: str, direction: str):
             return video
     return None
 
-def save_csv(cell_value_map, output_path, grids_config):
+def save_cell_value_csv(cell_value_map, output_path, grids_config):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")

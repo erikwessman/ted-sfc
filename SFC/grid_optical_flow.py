@@ -259,7 +259,7 @@ def main(data_path, output_path, data_config, event_config, display_results):
             event_config,
         )
 
-        helper.save_csv(angle_diff_map, target_path, event_config)
+        helper.save_cell_value_csv(angle_diff_map, target_path, event_config)
         helper.save_cell_value_subplots(angle_diff_map, target_path, display_results, total_cells, "Angle difference")
         helper.save_combined_plot(angle_diff_map, target_path, display_results, total_cells, "Angle difference")
 

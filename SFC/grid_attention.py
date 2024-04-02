@@ -218,7 +218,7 @@ def main(data_path, output_path, data_config, event_config, display_results):
             event_config,
         )
 
-        helper.save_csv(mean_attention_map, target_path, event_config)
+        helper.save_cell_value_csv(mean_attention_map, target_path, event_config)
         helper.save_cell_value_subplots(mean_attention_map, target_path, display_results, "Mean attention")
         helper.save_combined_plot(mean_attention_map, target_path, display_results, "Mean attention")
 

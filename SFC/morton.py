@@ -40,9 +40,9 @@ def compute_morton_codes_for_cells(df):
         morton_code = calculateMortonFromList_with_zCurve(
             (row[col] for col in cell_columns)
         )
-        morton_frame_pairs.append({"morton": morton_code, "frame_id": row["frame_id"]})
+        morton_frame_pairs.append({"frame_id": int(row["frame_id"]), "morton": morton_code})
 
-    return pd.DataFrame(morton_frame_pairs, columns=["morton", "frame_id"])
+    return pd.DataFrame(morton_frame_pairs, columns=["frame_id", "morton"])
 
 
 def create_and_save_CSP(df, output_path, display_plots):
@@ -138,7 +138,7 @@ def main(data_path, display_plots):
 
         # The values get very big, reduce the size
         morton_codes["morton"] = morton_codes["morton"].div(10000000000)
-        morton_codes.to_csv(f"{video_path}/morton_codes.csv", sep=";")
+        morton_codes.to_csv(f"{video_path}/morton_codes.csv", sep=";", index=False)
 
         create_and_save_CSP(morton_codes, video_path, display_plots)
         create_and_save_CSP_with_dots(morton_codes, video_path, display_plots)
