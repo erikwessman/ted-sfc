@@ -4,19 +4,23 @@ This script attempts to find the event window in a video from a set of morton co
 import os
 import argparse
 import pandas as pd
+from typing import Union, Tuple
 
 import helper
 
 CELL_MORTON = {
-        "1": (4.096e-07, 4.096e-07),
-        "2": (8.192e-07, 8.192e-07),
-        "3": (1.6384e-06, 1.6388e-06),
-        "4": (5.2e-08, 3.2768e-06),
-        "5": (6.5536e-06, 6.5536e-06),
-        "6": (1.31072e-05, 1.31104e-05),
+        1: (4.096e-07, 4.096e-07),
+        2: (8.192e-07, 8.192e-07),
+        3: (1.6384e-06, 1.6388e-06),
+        4: (5.2e-08, 3.2768e-06),
+        5: (6.5536e-06, 6.5536e-06),
+        6: (1.31072e-05, 1.31104e-05),
 }
 
-MARGIN = 0.000
+MARGIN = 0
+ALLOWED_GAP = 30
+ENTER_CELLS = set([1, 2, 3])
+EXIT_CELLS = set([4, 5, 6])
 
 
 def parse_arguments():
@@ -27,46 +31,52 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+def get_matching_cell_key(morton_code: float, cell_morton: dict) -> Union[int, None]:
+    for cell, (min_value, max_value) in cell_morton.items():
+        if min_value - MARGIN <= morton_code <= max_value + MARGIN:
+            return cell
+    return None
 
-def detect_event(morton_codes) -> list[int]:
+def detect_event(morton_codes) -> Union[Tuple[int, int], None]:
     """
     Returns the event window frame interval, e.g. [140, 175]
-    In case there is no event, returns [-1, -1]
+    In case there is no event, returns None
     """
 
-    temp_dict = CELL_MORTON.copy()
-    event_window = []
+    event_start = None
+    event_end = None
+    cells_matched = set()
+    last_matching_frame = None
+    temp_cell_morton = CELL_MORTON.copy()
 
     for index, row in morton_codes.iterrows():
-        matching_cell_key = next((cell for cell, (min_value, max_value) in temp_dict.items()
-                                       if min_value - MARGIN <= row["morton"] <= max_value + MARGIN), None)
-
-        # print(f"Frame: {row['frame_id']}, Morton: {row['morton']}, Matching cell: {matching_cell_key}")
+        matching_cell_key = get_matching_cell_key(row["morton"], temp_cell_morton)
 
         if matching_cell_key is not None:
-            # start the event window
-            event_window.append(row["frame_id"])
+            cells_matched.add(matching_cell_key)
 
-            # remove the cells before the matching one from the temp_dict
-            # matching_index = list(temp_dict).index(matching_cell_key)
-            # keys_to_delete = list(temp_dict)[:matching_index + 1]
-            # for key in keys_to_delete:
-            #     del temp_dict[key]
-            pass
-        else:
-            event_window.append(row["frame_id"])
-            if len(event_window) > 2: # should maybe be more than 2, and might instead be based on event window duration aka abs(start - end)
-                start = event_window[0]
-                end = event_window[-1]
-                return [start, end]
+            # delete cells before the matching cell, since we are looking in a particular direction
+            # NOT WORKING since we may, for example, get a match with a noisey 4 before a correct match with cell 1
+            # for i in range(matching_cell_key):
+            #     if i in temp_cell_morton:
+            #         del temp_cell_morton[i]
 
-            event_window = []
-            temp_dict = CELL_MORTON.copy()
+            if not event_start:
+                event_start = row["frame_id"]
+            elif row["frame_id"] - last_matching_frame <= ALLOWED_GAP:
+                event_end = row["frame_id"]
 
-    return [-1, -1]
+            last_matching_frame = row["frame_id"]
 
+    has_enter = bool(ENTER_CELLS & cells_matched)
+    has_exit = bool(EXIT_CELLS & cells_matched)
+    if event_start and event_end and has_enter and has_exit:
+        return (event_start, event_end)
+    else:
+        return None
 
 def main(data_path):
+    event_window_map = {}
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
@@ -78,10 +88,11 @@ def main(data_path):
 
         event_window = detect_event(morton_codes)
 
+        event_window_map[video_id] = event_window
+
         print(f"Event window for {video_id}: {event_window}")
 
-        # Save the event window somewhere
-
+    # event_window_map.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
     print("detector.py completed.")
 
 
