@@ -43,7 +43,7 @@ def visualize_cell_values(video_path, cell_values, output_path):
     out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height + subplot_height))
 
     frame_number = 0
-    with tqdm(total=number_of_frames, desc="Frame progress          ", leave=False) as pbar_frames:
+    with tqdm(total=number_of_frames, desc="Frame progress", leave=False) as pbar_frames:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
