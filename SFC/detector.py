@@ -51,27 +51,24 @@ def detect_event(morton_codes) -> Union[Tuple[int, int], None]:
     sequence = []
 
     for index, row in morton_codes.iterrows():
-        frame_id = row["frame_id"]
-        matching_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON)
+        current_frame_id = row["frame_id"]
+        current_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON)
 
-        # The Morton code does not match any range for any cell
-        if not matching_cell_key:
+        if not current_cell_key:
             continue
 
-        # In case there is no sequence, add current values
         if not sequence:
-            sequence.append((matching_cell_key, frame_id))
+            sequence.append((current_cell_key, current_frame_id))
             continue
 
         prev_cell_key, prev_frame_id = sequence[-1]
 
         # TODO add FRAME_GAP
 
-        # If values make sense, add them
-        if prev_cell_key <= matching_cell_key and prev_frame_id <= frame_id:
-            sequence.append((matching_cell_key, frame_id))
+        if prev_cell_key <= current_cell_key and prev_frame_id <= current_frame_id:
+            sequence.append((current_cell_key, current_frame_id))
         elif not valid_sequence(sequence):
-            sequence = [(matching_cell_key, frame_id)]
+            sequence = [(current_cell_key, current_frame_id)]
 
     has_enter_cells = any(tup[0] in ENTER_CELLS for tup in sequence)
     has_exit_cells = any(tup[0] in EXIT_CELLS for tup in sequence)
