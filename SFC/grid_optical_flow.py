@@ -243,8 +243,6 @@ def process_video(
 def main(data_path, output_path, data_config, event_config, display_results):
     os.makedirs(output_path, exist_ok=True)
 
-    total_cells = helper.get_total_cells(event_config)
-
     for video_dir, video_id, tqdm_obj in helper.traverse_videos(data_path):
         video_path = os.path.join(video_dir, f"{video_id}.avi")
         target_path = os.path.join(output_path, video_id)
@@ -260,8 +258,8 @@ def main(data_path, output_path, data_config, event_config, display_results):
         )
 
         helper.save_cell_value_csv(angle_diff_map, target_path, event_config)
-        helper.save_cell_value_subplots(angle_diff_map, target_path, display_results, total_cells, "Angle difference")
-        helper.save_combined_plot(angle_diff_map, target_path, display_results, total_cells, "Angle difference")
+        helper.save_cell_value_subplots(angle_diff_map, target_path, display_results, "Angle difference")
+        helper.save_combined_plot(angle_diff_map, target_path, display_results, "Angle difference")
 
     helper.save_config(output_path, data_config, event_config)
 

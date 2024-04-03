@@ -71,6 +71,7 @@ def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
         os.makedirs(video_output_dir, exist_ok=True)
 
         if data_exists(video_id, video_output_dir):
+            tqdm.write(f"Skipping {video_id}: The output video already exists")
             continue
 
         sequence_dir = os.path.join(data_path, video_id)
@@ -78,6 +79,10 @@ def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         out = cv2.VideoWriter(video_output_path, fourcc, FPS, SCALE)
+
+        if not os.path.isdir(sequence_dir):
+            tqdm.write(f"Skipping file {sequence_dir} as it's not a directory.")
+            continue
 
         image_files = [f for f in sorted(os.listdir(sequence_dir)) if f.endswith('.png') and not f.endswith('.labels.png')]
 

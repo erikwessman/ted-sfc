@@ -193,8 +193,6 @@ def process_video_and_generate_attention_map(
 def main(data_path, output_path, data_config, event_config, display_results):
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
-    total_cells = helper.get_total_cells(event_config)
-
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(output_path, video_id)
 
