@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import argparse
-from sklearn.metrics import precision_recall_fscore_support, f1_score
 
 import helper
 
@@ -24,6 +23,8 @@ def is_overlapping(true_window, pred_window):
 def main(event_window_path: str, ground_truth: dict, config: dict):
     TP, FP, FN, TN = 0, 0, 0, 0
 
+    TP_videos, FP_videos, FN_videos, TN_videos = [], [], [], []
+
     assert os.path.exists(event_window_path), "Event window file does not exist"
 
     df_event_window = pd.read_csv(event_window_path, sep=";")
@@ -42,21 +43,27 @@ def main(event_window_path: str, ground_truth: dict, config: dict):
                 true_start, true_end = video_ground_truth["event_window"]
                 if is_overlapping((true_start, true_end), (start_frame, end_frame)):
                     TP += 1
+                    TP_videos.append(video_id)
                 else:
                     FP += 1
+                    FP_videos.append(video_id)
             else:
                 FP += 1
+                FP_videos.append(video_id)
         else:
             if video_ground_truth:
                 FN += 1
+                FN_videos.append(video_id)
             else:
                 TN += 1
+                TN_videos.append(video_id)
 
     print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
+    print(f"TP: {TP_videos}\n, FP: {FP_videos}\n, FN: {FN_videos}\n, TN: {TN_videos}\n")
 
     f1_score = 2 * TP / (2 * TP + FP + FN)
 
-    print(f1_score)
+    print(f"F1: {f1_score}")
 
 
 if __name__ == "__main__":

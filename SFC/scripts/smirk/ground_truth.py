@@ -92,6 +92,7 @@ def main(labels_path: str, output_path: str):
     filtered_df = df[df["scenario_type"] == "left"]
 
     # TODO: only get those that start and end a reasonable distance from the camera
+    # TODO: maybe get events for both directions
 
     # Map video IDs to ground truths
     video_map = {}
@@ -129,7 +130,9 @@ def main(labels_path: str, output_path: str):
         }
         annotations.append(annotation_map)
 
-    save_yml(output_path, annotations)
+    # save_yml(output_path, annotations)
+
+    print(annotations)
 
 
 if __name__ == "__main__":
