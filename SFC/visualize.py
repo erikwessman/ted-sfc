@@ -18,6 +18,7 @@ def parse_arguments():
         "data_path",
         help="Path to the directory containing the output for each video, including video and cell values to visualize",
     )
+
     return parser.parse_args()
 
 
@@ -82,8 +83,8 @@ def visualize_cell_values(video_path, cell_values, output_path):
         out.release()
 
 
-def main(data_path: str):
-    for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
+def main(data_path: str, args):
+    for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "cell_values.csv")):
@@ -92,23 +93,25 @@ def main(data_path: str):
 
         cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
 
-        attention_grid_path = glob.glob(os.path.join(target_path, "*attention_grid.avi"))
-        optical_flow_grid_path = glob.glob(os.path.join(target_path, "*optical_flow_grid.avi"))
+        grid_video_path = glob.glob(os.path.join(target_path, "*_grid.avi"))
 
-        output_path = os.path.join(target_path, f"{video_id}_plot_viz.avi")
-
-        if attention_grid_path:
-            visualize_cell_values(attention_grid_path[0], cell_values, output_path)
-        elif optical_flow_grid_path:
-            visualize_cell_values(optical_flow_grid_path[0], cell_values, output_path)
+        if len(grid_video_path) > 1:
+            tqdm_obj.write(f"Skipped. Multiple grid videos found in {target_path}.")
+            continue
+        elif len(grid_video_path) == 0:
+            tqdm_obj.write(f"Skipped. No source grid video found in {target_path}.")
+            continue
         else:
-            tqdm_obj.write(f"Skipped. No source video found in {target_path}.")
+            output_path = os.path.join(target_path, f"{video_id}_plot_viz.avi")
+            visualize_cell_values(grid_video_path[0], cell_values, output_path)
 
     print("visualize.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
+
     main(
-        args.data_path
+        args.data_path,
+        args
     )
