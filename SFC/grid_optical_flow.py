@@ -27,9 +27,9 @@ COLORS = [
     (128, 0, 128),  # Purple
 ]
 
-EVENT_ANGLE = 0
-EVENT_ANGLE_RANGE = 10
-FLOW_THRESHOLD = 7
+EVENT_ANGLES = [0, 180]
+EVENT_ANGLE_RANGE = 30
+FLOW_THRESHOLD = 3
 
 
 def parse_arguments():
@@ -59,7 +59,7 @@ def calculate_cell_values(
     frame_gray,
     frame_gray_prev,
     cell_positions,
-    event_angle,
+    event_angles,
     event_angle_range,
     flow_threshold,
 ):
@@ -94,26 +94,33 @@ def calculate_cell_values(
         if angle_degrees < 0:
             angle_degrees += 360  # Normalize angle
 
-        distance_to_event_angle = abs(angle_degrees - event_angle)
+        cell_value = 0
+        for angle in event_angles:
+            distance_to_event_angle = abs(angle_degrees - angle)
 
-        is_event_cell = (
-            distance_to_event_angle < event_angle_range
-            and np.linalg.norm(cell_mean_flow) > flow_threshold
-        )
+            is_event_cell = (
+                distance_to_event_angle < event_angle_range
+                and np.linalg.norm(cell_mean_flow) > flow_threshold
+            )
 
-        cell_value = 1 - (distance_to_event_angle / 360) if is_event_cell else 0
+            if is_event_cell:
+                cell_value = 1 - (distance_to_event_angle / 360)
+
+                if is_event_cell:
+                    # Draw a bounding box around the cell
+                    cv2.rectangle(
+                        frame,
+                        (cell_start_x, cell_start_y),
+                        (cell_end_x, cell_end_y),
+                        (0, 255, 0),
+                        2,
+                    )
+
+                break
+            else:
+                cell_value = 0
 
         frame_cell_values.append(cell_value)
-
-        if is_event_cell:
-            # Draw a bounding box around the cell
-            cv2.rectangle(
-                frame,
-                (cell_start_x, cell_start_y),
-                (cell_end_x, cell_end_y),
-                (0, 255, 0),
-                2,
-            )
 
         # Draw the mean vector at the center of the cell
         center_x = (cell_start_x + cell_end_x) // 2
@@ -182,7 +189,7 @@ def process_video(
                 frame_gray,
                 frame_gray_prev,
                 cell_positions,
-                EVENT_ANGLE,
+                EVENT_ANGLES,
                 EVENT_ANGLE_RANGE,
                 FLOW_THRESHOLD,
             )
@@ -192,7 +199,7 @@ def process_video(
 
             helper.annotate_frame(
                 frame,
-                f"frame: {frame_number}. angle range: {EVENT_ANGLE_RANGE}, flow threshold: {FLOW_THRESHOLD}",
+                f"frame: {frame_number}, event angles: {EVENT_ANGLES}, angle range: {EVENT_ANGLE_RANGE}, flow threshold: {FLOW_THRESHOLD}",
                 (10, 30),
             )
 
@@ -235,10 +242,10 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, event_config)
         helper.save_cell_value_subplots(
-            output_cell_value_map, target_path, display_results, "Angle difference"
+            output_cell_value_map, target_path, display_results, "Cell value"
         )
         helper.save_combined_plot(
-            output_cell_value_map, target_path, display_results, "Angle difference"
+            output_cell_value_map, target_path, display_results, "Cell value"
         )
 
     helper.save_config(output_path, data_config, event_config)
