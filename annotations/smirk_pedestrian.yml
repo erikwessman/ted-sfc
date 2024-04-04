@@ -1,0 +1,800 @@
+- id: 04CMeTF1YqpA4JrsYLRdh
+  event_window:
+  - 36
+  - 66
+  type: right
+- id: 07yroVSIThQdTpWhADFVF
+  event_window:
+  - 29
+  - 54
+  type: right
+- id: 1EDCySCwUUtRcMreqfSsM
+  event_window:
+  - 18
+  - 34
+  type: right
+- id: 1LlallUK8NsBsmmULmljY
+  event_window:
+  - 58
+  - 108
+  type: left
+- id: 3BBK0VsUfk4tfFdslriHp
+  event_window:
+  - 58
+  - 107
+  type: left
+- id: 4cDf22ktzwkaP4gYwN7Bw
+  event_window:
+  - 14
+  - 27
+  type: right
+- id: 50so11LbhmNlLSSi8xwzt
+  event_window:
+  - 57
+  - 108
+  type: right
+- id: 575GmllvlVfnEGqrGBOFj
+  event_window:
+  - 15
+  - 27
+  type: right
+- id: 60dUeav3710V87oK1SOi4
+  event_window:
+  - 57
+  - 108
+  type: right
+- id: 6SXsfD00jcldHK6cB2qeN
+  event_window:
+  - 19
+  - 33
+  type: right
+- id: 6i38JtJwzYtr9MzqNKa0F
+  event_window:
+  - 29
+  - 54
+  type: right
+- id: 8UFZRMn4amyzaEw0rjlvF
+  event_window:
+  - 28
+  - 50
+  type: left
+- id: 8dV7bgkIzMz2b34YFpE2A
+  event_window:
+  - 20
+  - 36
+  type: left
+- id: A8kH5376NozaWh1Njlx1c
+  event_window:
+  - 27
+  - 49
+  type: left
+- id: AR22Lbv7yDGJYVrlf65pd
+  event_window:
+  - 18
+  - 31
+  type: left
+- id: BfcNBc6AW2b83oocRvatl
+  event_window:
+  - 58
+  - 107
+  type: right
+- id: Bw53K7H35Nl2yGg0ykkb4
+  event_window:
+  - 36
+  - 66
+  type: right
+- id: CzgIdo3Giq5YqRUrrsPGb
+  event_window:
+  - 14
+  - 27
+  type: left
+- id: DJecSGu0C3TG2LFsK0FhE
+  event_window:
+  - 54
+  - 100
+  type: left
+- id: DcaL5EbThwDh5g5TYwjSf
+  event_window:
+  - 53
+  - 102
+  type: left
+- id: EVUhzRKULVQBthX4cLwjx
+  event_window:
+  - 71
+  - 133
+  type: left
+- id: EZIqFsQIIxFfSYlTWSJ8a
+  event_window:
+  - 55
+  - 101
+  type: right
+- id: FHAp9VrOUdjycG3ChoOCB
+  event_window:
+  - 27
+  - 49
+  type: right
+- id: FRn1bShKhZO7lsus1rdRI
+  event_window:
+  - 17
+  - 31
+  type: right
+- id: FT9KZ5bjKyVCzl4cEqGTC
+  event_window:
+  - 55
+  - 101
+  type: left
+- id: GEteKR9aTOEA8VQguwHxm
+  event_window:
+  - 14
+  - 25
+  type: right
+- id: GfHBN85D10FqocfAcAbvx
+  event_window:
+  - 19
+  - 36
+  type: left
+- id: Gie4ekZvd2awQdI8Vxumg
+  event_window:
+  - 19
+  - 33
+  type: left
+- id: HbRBshZL4TLFtrtnqXikc
+  event_window:
+  - 23
+  - 42
+  type: right
+- id: HhsSkoHIJb7CJyAA96mXt
+  event_window:
+  - 27
+  - 51
+  type: left
+- id: I0foXDJ10tobj4wYrmaYJ
+  event_window:
+  - 19
+  - 37
+  type: right
+- id: JyGBgSvyBe3KY1FCqgRpr
+  event_window:
+  - 106
+  - 197
+  type: right
+- id: KlDggifcvDNDmu44B3gJC
+  event_window:
+  - 56
+  - 110
+  type: left
+- id: MjMLmTHdp6OCp1Qj7BwqN
+  event_window:
+  - 34
+  - 62
+  type: left
+- id: PWm0jseUDpirpvk2rjePh
+  event_window:
+  - 15
+  - 27
+  type: left
+- id: Qh4TY06r6xr1MamlLNiuv
+  event_window:
+  - 30
+  - 54
+  type: right
+- id: R7epC4nLi08OiQcYcMWgr
+  event_window:
+  - 14
+  - 25
+  type: left
+- id: SWbiVM1aji8nI5h9YIjXB
+  event_window:
+  - 14
+  - 27
+  type: left
+- id: TSPQltYSAWdNeSSIXSrni
+  event_window:
+  - 27
+  - 50
+  type: right
+- id: TXHeOYjjev4snW5ldKX2q
+  event_window:
+  - 53
+  - 102
+  type: right
+- id: V7eyFIlb3GjZGyMsDlP7v
+  event_window:
+  - 28
+  - 55
+  type: left
+- id: VFuvnCb0Ijs3aCorDnpKn
+  event_window:
+  - 56
+  - 110
+  type: right
+- id: WjItYFTTS0r4CYFSqV6H1
+  event_window:
+  - 14
+  - 25
+  type: right
+- id: WkcoNkth9jJPm6FHugRm0
+  event_window:
+  - 18
+  - 34
+  type: left
+- id: XNeHCs9hTlTqfiHBGvHqq
+  event_window:
+  - 20
+  - 36
+  type: right
+- id: Y4Bm5OE0aicNLwedKI2Ab
+  event_window:
+  - 36
+  - 66
+  type: right
+- id: Y4cN09EDhiLt0rqTpikZ3
+  event_window:
+  - 27
+  - 51
+  type: right
+- id: YJVFRv7UHvm8gy5NWyzi2
+  event_window:
+  - 28
+  - 55
+  type: right
+- id: Yx64YYYr07Fkkpl3DVORw
+  event_window:
+  - 29
+  - 54
+  type: left
+- id: Zo4WWDV9a67Swy72dhNmh
+  event_window:
+  - 24
+  - 44
+  type: left
+- id: aklfyfYJLhB6WIg5B89k0
+  event_window:
+  - 57
+  - 108
+  type: left
+- id: b9zkyYH2GY76nBr4O5yGz
+  event_window:
+  - 68
+  - 124
+  type: right
+- id: bWjucDD8z3cJUCXQqgvJ5
+  event_window:
+  - 18
+  - 33
+  type: left
+- id: bi1bOHZJNiw9AJyqUP3KO
+  event_window:
+  - 18
+  - 33
+  type: right
+- id: dGO6PWt7RkpugSuh4Xkj3
+  event_window:
+  - 35
+  - 67
+  type: left
+- id: dOL70nn93QRzVcLxrsZST
+  event_window:
+  - 53
+  - 99
+  type: right
+- id: fAW6im95EwW6d2ebxXuW1
+  event_window:
+  - 15
+  - 27
+  type: right
+- id: fV3muLUxsNp5FG4E0lyUB
+  event_window:
+  - 24
+  - 44
+  type: left
+- id: gzHXjDdoB0qZTxMkglUz4
+  event_window:
+  - 36
+  - 66
+  type: left
+- id: imetfUYDv4FFbFlEEiNZm
+  event_window:
+  - 34
+  - 62
+  type: right
+- id: jKXfODXjpYOnV9lyOdtBz
+  event_window:
+  - 23
+  - 42
+  type: left
+- id: mXMLVEQ29G4iv5Uh5QZie
+  event_window:
+  - 68
+  - 124
+  type: left
+- id: mhH1xK6sYxiKTMw8BAVFE
+  event_window:
+  - 14
+  - 25
+  type: left
+- id: ofCHL7sExW43kO65NCbMK
+  event_window:
+  - 70
+  - 134
+  type: right
+- id: pHfWwNKQGjkIDaDIgNZ49
+  event_window:
+  - 29
+  - 54
+  type: left
+- id: qBt71L39MaYHN2v6wiKVm
+  event_window:
+  - 71
+  - 132
+  type: right
+- id: qKC5h5dY4fBTqBK1F980G
+  event_window:
+  - 30
+  - 54
+  type: left
+- id: r6O3dIK1iX0IblzUTmDYg
+  event_window:
+  - 15
+  - 27
+  type: left
+- id: s6Wt5yvaMd8DICh70I5QM
+  event_window:
+  - 20
+  - 35
+  type: right
+- id: swQA4JRbgh87G7JIUhbLS
+  event_window:
+  - 107
+  - 199
+  type: left
+- id: tPoYNQStWga9qzBczdJuy
+  event_window:
+  - 36
+  - 67
+  type: left
+- id: vvDMXHjeA9IU6XVxcIGvr
+  event_window:
+  - 20
+  - 35
+  type: left
+- id: wC8wxIzSqEBNYNvV9cd85
+  event_window:
+  - 70
+  - 132
+  type: left
+- id: wJywt82yOIFKLs5ep26Si
+  event_window:
+  - 18
+  - 33
+  type: left
+- id: wT2VHCR4OEhGtI1foLTEA
+  event_window:
+  - 24
+  - 44
+  type: right
+- id: wkwF74rn0VqijFsPqMhVC
+  event_window:
+  - 18
+  - 33
+  type: right
+- id: wsPBnDXj9FJHeQe1pI9DP
+  event_window:
+  - 19
+  - 36
+  type: right
+- id: ww5s0yzSzy0l55qiTk3bz
+  event_window:
+  - 15
+  - 27
+  type: right
+- id: xpUYFJ77Ll3TFkBXgCy5R
+  event_window:
+  - 19
+  - 37
+  type: left
+- id: zFtXRfNDa86UvjBGlApwa
+  event_window:
+  - 24
+  - 44
+  type: right
+- id: 00Jyiy3E2DstQTcaaRHsI
+  event_window:
+  - 19
+  - 37
+  type: left
+- id: 0tlWHQ8R2AJMklHA4du3c
+  event_window:
+  - 36
+  - 66
+  type: right
+- id: 10QbqJD7zPMrL3oq4J4yH
+  event_window:
+  - 70
+  - 132
+  type: left
+- id: 1KIGitKyAbsQCXw66UGFU
+  event_window:
+  - 56
+  - 110
+  type: left
+- id: 1pL6GwkVw1rtUZ20kiPmY
+  event_window:
+  - 68
+  - 125
+  type: right
+- id: 4jl2TolHXVz4oO46DEHjw
+  event_window:
+  - 18
+  - 33
+  type: left
+- id: 7n6ldmwFrsQkYBSo5Wqq0
+  event_window:
+  - 53
+  - 99
+  type: right
+- id: 8aHoOwMQhxZGXtZ7s8IP5
+  event_window:
+  - 57
+  - 107
+  type: left
+- id: 8uwNRifiocYgagy1Iz2z7
+  event_window:
+  - 20
+  - 36
+  type: right
+- id: B0akZYLqdc47yhkzDYbtn
+  event_window:
+  - 107
+  - 198
+  type: right
+- id: BCuWpV68DwzMEeTpdrtIT
+  event_window:
+  - 27
+  - 49
+  type: right
+- id: BhCYPN6lzTYg2jSydsHnQ
+  event_window:
+  - 15
+  - 27
+  type: right
+- id: BsbbC4rR5gHnI2QrwpVWN
+  event_window:
+  - 14
+  - 27
+  type: right
+- id: Dwu4P7AnOONv5yNcBrHPg
+  event_window:
+  - 27
+  - 49
+  type: left
+- id: EIsfkzjKVUUM2k27NI6Hn
+  event_window:
+  - 14
+  - 27
+  type: right
+- id: F7YrNbNACB06EEbq4i0En
+  event_window:
+  - 53
+  - 100
+  type: left
+- id: GWHGau1K6nBhxMkGlzaEr
+  event_window:
+  - 18
+  - 34
+  type: left
+- id: GjM5rH09x4S4nm00J4UGN
+  event_window:
+  - 15
+  - 27
+  type: right
+- id: IFGmZTtK9U3ntir243GGt
+  event_window:
+  - 34
+  - 63
+  type: left
+- id: IbUlwOWkGtI0N6KEG4tbX
+  event_window:
+  - 30
+  - 54
+  type: left
+- id: KDsiHHz1rd4VIvsSUOcVV
+  event_window:
+  - 26
+  - 51
+  type: left
+- id: MGDxvgfXTZX03mSr6rfyu
+  event_window:
+  - 29
+  - 54
+  type: right
+- id: MGxTvbTIKWoOkN3MyCPmR
+  event_window:
+  - 14
+  - 25
+  type: right
+- id: MX3Y9pFgMds16U2sKNUdw
+  event_window:
+  - 53
+  - 101
+  type: right
+- id: MylXkdl3xoYFD92nMf9GF
+  event_window:
+  - 27
+  - 50
+  type: right
+- id: MzAcuQSIxrD4ueH9Jymno
+  event_window:
+  - 19
+  - 33
+  type: left
+- id: O5oXcEIfFkZnzkiKYONjw
+  event_window:
+  - 18
+  - 31
+  type: left
+- id: O8KqNkNfxCQBCjYnLQDmT
+  event_window:
+  - 18
+  - 33
+  type: right
+- id: OjS0RlsLVqjMf6FBWCikP
+  event_window:
+  - 15
+  - 27
+  type: left
+- id: PNLzDWg7CROLITny6oxzD
+  event_window:
+  - 20
+  - 35
+  type: left
+- id: Rl3HaQ9heq47rfedSJVLE
+  event_window:
+  - 23
+  - 42
+  type: left
+- id: SIVskXu16WwvB08xyQaYu
+  event_window:
+  - 26
+  - 50
+  type: right
+- id: So83IdH78TDumy5E7In7z
+  event_window:
+  - 18
+  - 33
+  type: right
+- id: UEu7LvtATS4oqUMMRFDCA
+  event_window:
+  - 18
+  - 33
+  type: right
+- id: UHAlTj23z71CZjp6LgO1g
+  event_window:
+  - 36
+  - 67
+  type: right
+- id: VM6xFVVdgiTz2mfSLRJIj
+  event_window:
+  - 52
+  - 102
+  type: left
+- id: WSQ0pzaXHQ1JFPOwBNn64
+  event_window:
+  - 57
+  - 107
+  type: right
+- id: Wwh84o4yBVSMkV9RSGAFj
+  event_window:
+  - 29
+  - 54
+  type: right
+- id: Zkz6L94DJ4PO0L9hoCxwq
+  event_window:
+  - 24
+  - 44
+  type: right
+- id: aLPlaVhO74HkPeYco8TlR
+  event_window:
+  - 28
+  - 55
+  type: left
+- id: aLTdMI1hZum1D6cJIzUfS
+  event_window:
+  - 14
+  - 25
+  type: left
+- id: aZTExHSPj9NqdPcXwy598
+  event_window:
+  - 106
+  - 200
+  type: left
+- id: bQYRBVPNvTWy9NqHICvqr
+  event_window:
+  - 35
+  - 68
+  type: left
+- id: bvxX8wKbuEo8sDDkWkZFd
+  event_window:
+  - 55
+  - 100
+  type: right
+- id: cgQeSlyVAyjoFR8OvWzzo
+  event_window:
+  - 56
+  - 108
+  type: right
+- id: fazdo0JsyH9qVCW90EJmW
+  event_window:
+  - 15
+  - 27
+  type: left
+- id: fnJP9mjoJnMMkcRqqaFHI
+  event_window:
+  - 14
+  - 25
+  type: right
+- id: hOLDEjtMRQKRQPmniToUm
+  event_window:
+  - 70
+  - 132
+  type: left
+- id: hRQQ4VJSbLGWoEqpxIHGl
+  event_window:
+  - 29
+  - 54
+  type: left
+- id: hoNjZiVcTGSZ6A0svdTZl
+  event_window:
+  - 27
+  - 50
+  type: left
+- id: i4udfbCdFI6GqcLDzEa1j
+  event_window:
+  - 19
+  - 36
+  type: left
+- id: i9oE30XXB0NVB0GhJkTXl
+  event_window:
+  - 70
+  - 132
+  type: right
+- id: iGIbstkGDfSNP1Qg81Xvm
+  event_window:
+  - 19
+  - 36
+  type: right
+- id: iUG3CW0Zy7FBBedgzC7xL
+  event_window:
+  - 28
+  - 55
+  type: right
+- id: iW8fiqIsZs7b6jEVPcTtq
+  event_window:
+  - 34
+  - 63
+  type: right
+- id: jcHsXVdrv1UYimY2V0FIl
+  event_window:
+  - 54
+  - 101
+  type: left
+- id: jijz3rqgPxNubCtzFBDm7
+  event_window:
+  - 19
+  - 36
+  type: right
+- id: kuZPLJfcI6A9bE5cKRxVG
+  event_window:
+  - 35
+  - 67
+  type: left
+- id: lzldY8c9CAs1Mb1xm4FWB
+  event_window:
+  - 56
+  - 107
+  type: left
+- id: m2GDtR0Gt3o8qmzDmYvu7
+  event_window:
+  - 70
+  - 134
+  type: right
+- id: mmvsZhv06ynRV1u9hNXfP
+  event_window:
+  - 18
+  - 34
+  type: right
+- id: ms4N0G3yh3HGdb5cSQKUD
+  event_window:
+  - 14
+  - 25
+  type: left
+- id: nooCbUlzm1fXXC0yzsL7O
+  event_window:
+  - 36
+  - 66
+  type: left
+- id: pBAOz7pLoxkZBZCvc4x5F
+  event_window:
+  - 24
+  - 44
+  type: left
+- id: q6uleHxxLqgwOAQieFdnG
+  event_window:
+  - 23
+  - 43
+  type: right
+- id: qRhljoxNRfyDQwD2FE5WF
+  event_window:
+  - 58
+  - 107
+  type: right
+- id: qe6fASosd4oIr3DNlB48O
+  event_window:
+  - 29
+  - 54
+  type: left
+- id: rP5OoZfdld3N4fLk7kwMx
+  event_window:
+  - 14
+  - 27
+  type: left
+- id: rnJNd5QWKIVkmLLqyeJAX
+  event_window:
+  - 20
+  - 35
+  type: right
+- id: rslTvjADdsnaVK7YVL911
+  event_window:
+  - 17
+  - 32
+  type: right
+- id: sZwjKjfRnoL0F6NrEHdT2
+  event_window:
+  - 18
+  - 33
+  type: left
+- id: tgOIzpooxMCSM0CptW9rX
+  event_window:
+  - 24
+  - 44
+  type: left
+- id: u3MovsjgBBsfLaq4AFBT1
+  event_window:
+  - 24
+  - 44
+  type: right
+- id: uvMOAqozjLlgoAyl8jLK7
+  event_window:
+  - 29
+  - 53
+  type: right
+- id: vS40IK3HXanjCzzveKnZE
+  event_window:
+  - 58
+  - 108
+  type: left
+- id: xQycYeCA8bTJgldFqvyak
+  event_window:
+  - 68
+  - 124
+  type: left
+- id: yIYIvinobbNJYXVnsw5TI
+  event_window:
+  - 14
+  - 27
+  type: left
+- id: yoYaVbNBpPwHm0A5pK7WC
+  event_window:
+  - 20
+  - 35
+  type: left
+- id: zWd5ld44OLCgjqESgRHM6
+  event_window:
+  - 35
+  - 66
+  type: right
+- id: zX5kHUULGq8Bdx9AXqBcv
+  event_window:
+  - 56
+  - 110
+  type: right

@@ -1,7 +1,6 @@
 """
 Processes the SMIRK dataset.
 Combines the individual frame sequences into AVI videos.
-Outputs the result in the data/smirk directory.
 """
 
 import os

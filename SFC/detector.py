@@ -18,7 +18,6 @@ CELL_MORTON = {
 }
 
 MARGIN = 0
-ALLOWED_GAP = 30
 ENTER_CELLS = {1, 2, 3}
 EXIT_CELLS = {4, 5, 6}
 
@@ -43,42 +42,53 @@ def valid_sequence(sequence):
     return len(sequence) > 2
 
 
-def detect_event(morton_codes) -> Union[Tuple[int, int], None]:
+def get_sequence(morton_codes):
     """
-    Returns the event window frame interval, e.g. [140, 175]
-    In case there is no event, returns None
+    Gets a "reasonable" sequence from a list of Morton codes and a direction
     """
     sequence = []
 
     for index, row in morton_codes.iterrows():
-        current_frame_id = row["frame_id"]
-        current_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON)
+        curr_frame_id = row["frame_id"]
+        curr_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON)
 
-        if not current_cell_key:
+        if not curr_cell_key:
             continue
 
         if not sequence:
-            sequence.append((current_cell_key, current_frame_id))
+            sequence.append((curr_cell_key, curr_frame_id))
             continue
 
         prev_cell_key, prev_frame_id = sequence[-1]
 
-        # TODO add FRAME_GAP
-
-        if prev_cell_key <= current_cell_key and prev_frame_id <= current_frame_id:
-            sequence.append((current_cell_key, current_frame_id))
+        if prev_cell_key <= curr_cell_key:
+            sequence.append((curr_cell_key, curr_frame_id))
         elif not valid_sequence(sequence):
-            sequence = [(current_cell_key, current_frame_id)]
+            sequence = [(curr_cell_key, curr_frame_id)]
 
     has_enter_cells = any(tup[0] in ENTER_CELLS for tup in sequence)
     has_exit_cells = any(tup[0] in EXIT_CELLS for tup in sequence)
 
     if valid_sequence(sequence) and has_enter_cells and has_exit_cells:
-        event_start = sequence[0][1]
-        event_end = sequence[-1][1]
-        return (event_start, event_end)
+        return sequence
     else:
         return None
+
+
+def detect_event(morton_codes) -> Union[Tuple[Tuple[int, int], str], None]:
+    """
+    Returns the event window frame interval and the type, e.g. (30, 50, "left")
+    In case there is no event, returns: None, None
+    """
+    sequence_left = get_sequence(morton_codes)
+    sequence_right = get_sequence(morton_codes[::-1])
+
+    if sequence_left:
+        return (sequence_left[0][1], sequence_left[-1][1]), "left"
+    elif sequence_right:
+        return (sequence_right[-1][1], sequence_right[0][1]), "right"
+    else:
+        return None, None
 
 
 def main(data_path):
@@ -93,16 +103,17 @@ def main(data_path):
                 f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
             continue
 
-        morton_codes = pd.read_csv(os.path.join(
-            target_path, "morton_codes.csv"), sep=";")
+        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
 
-        event_window = detect_event(morton_codes)
+        event_window, scenario_type = detect_event(morton_codes)
 
         event_detected = event_window is not None
         start_frame, end_frame = event_window if event_window is not None else (-1, -1)
+        scenario_type = scenario_type if scenario_type is not None else ""
 
         df_event_window = df_event_window._append({'video_id': video_id, 'event_detected': event_detected,
-                       'start_frame': start_frame, 'end_frame': end_frame}, ignore_index=True)
+                                                   'start_frame': start_frame, 'end_frame': end_frame,
+                                                   'scenario_type': scenario_type}, ignore_index=True)
 
     df_event_window.to_csv(os.path.join(
         data_path, "event_window.csv"), sep=";", index=False)

@@ -43,14 +43,15 @@ def load_yml(file_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def get_ground_truth(ground_truth: dict, video_id: str, direction: str):
+def get_ground_truth(ground_truth: dict, video_id: str):
     """
-    Gets the ground truth associated with a video ID and an event direction
+    Gets the ground truth associated with a video ID
     """
     for video in ground_truth:
-        if video["id"] == video_id and video["direction"] == direction:
+        if video["id"] == video_id:
             return video
     return None
+
 
 def save_cell_value_csv(cell_value_map, output_path, grids_config):
     csv_path = os.path.join(output_path, "cell_values.csv")
@@ -216,7 +217,6 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
 def calculate_grid_cell_positions(image, grid_config):
     h, w, _ = image.shape
     all_cell_positions = []
-    grid_direction = grid_config["direction"]
 
     for grid_config in grid_config["grids"]:
         # Convert proportional positions to pixel positions for each grid
@@ -230,13 +230,8 @@ def calculate_grid_cell_positions(image, grid_config):
 
         cell_positions = []
 
-        if grid_direction == "right":
-            col_range = range(grid_config["cols"])
-        else:
-            col_range = range(grid_config["cols"] - 1, -1, -1)
-
         for row in range(grid_config["rows"]):
-            for col in col_range:
+            for col in range(grid_config["cols"]):
                 cell_start_x = start_x + col * cell_width
                 cell_start_y = start_y + row * cell_height
 

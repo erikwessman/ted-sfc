@@ -1,7 +1,6 @@
-# A pedestrian crosses the road from the left to the right
-direction: "right"
-saliency_threshold: 0.2
-angle_threshold: 90 # For running with Optical Flow
+# A pedestrian crosses the road
+saliency_threshold: 0.2 # Saliency
+angle_threshold: 90 # Optical flow
 grids:
   - top_left: [0.2, 0.45]
     bottom_right: [0.45, 0.7]
