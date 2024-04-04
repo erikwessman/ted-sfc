@@ -1,0 +1,801 @@
+# Contains GTs for "child" and "female_business"
+- id: 04CMeTF1YqpA4JrsYLRdh
+  event_window:
+  - 36
+  - 66
+  direction: left
+- id: 07yroVSIThQdTpWhADFVF
+  event_window:
+  - 29
+  - 54
+  direction: left
+- id: 1EDCySCwUUtRcMreqfSsM
+  event_window:
+  - 18
+  - 34
+  direction: left
+- id: 1LlallUK8NsBsmmULmljY
+  event_window:
+  - 58
+  - 108
+  direction: right
+- id: 3BBK0VsUfk4tfFdslriHp
+  event_window:
+  - 58
+  - 107
+  direction: right
+- id: 4cDf22ktzwkaP4gYwN7Bw
+  event_window:
+  - 14
+  - 27
+  direction: left
+- id: 50so11LbhmNlLSSi8xwzt
+  event_window:
+  - 57
+  - 108
+  direction: left
+- id: 575GmllvlVfnEGqrGBOFj
+  event_window:
+  - 15
+  - 27
+  direction: left
+- id: 60dUeav3710V87oK1SOi4
+  event_window:
+  - 57
+  - 108
+  direction: left
+- id: 6SXsfD00jcldHK6cB2qeN
+  event_window:
+  - 19
+  - 33
+  direction: left
+- id: 6i38JtJwzYtr9MzqNKa0F
+  event_window:
+  - 29
+  - 54
+  direction: left
+- id: 8UFZRMn4amyzaEw0rjlvF
+  event_window:
+  - 28
+  - 50
+  direction: right
+- id: 8dV7bgkIzMz2b34YFpE2A
+  event_window:
+  - 20
+  - 36
+  direction: right
+- id: A8kH5376NozaWh1Njlx1c
+  event_window:
+  - 27
+  - 49
+  direction: right
+- id: AR22Lbv7yDGJYVrlf65pd
+  event_window:
+  - 18
+  - 31
+  direction: right
+- id: BfcNBc6AW2b83oocRvatl
+  event_window:
+  - 58
+  - 107
+  direction: left
+- id: Bw53K7H35Nl2yGg0ykkb4
+  event_window:
+  - 36
+  - 66
+  direction: left
+- id: CzgIdo3Giq5YqRUrrsPGb
+  event_window:
+  - 14
+  - 27
+  direction: right
+- id: DJecSGu0C3TG2LFsK0FhE
+  event_window:
+  - 54
+  - 100
+  direction: right
+- id: DcaL5EbThwDh5g5TYwjSf
+  event_window:
+  - 53
+  - 102
+  direction: right
+- id: EVUhzRKULVQBthX4cLwjx
+  event_window:
+  - 71
+  - 133
+  direction: right
+- id: EZIqFsQIIxFfSYlTWSJ8a
+  event_window:
+  - 55
+  - 101
+  direction: left
+- id: FHAp9VrOUdjycG3ChoOCB
+  event_window:
+  - 27
+  - 49
+  direction: left
+- id: FRn1bShKhZO7lsus1rdRI
+  event_window:
+  - 17
+  - 31
+  direction: left
+- id: FT9KZ5bjKyVCzl4cEqGTC
+  event_window:
+  - 55
+  - 101
+  direction: right
+- id: GEteKR9aTOEA8VQguwHxm
+  event_window:
+  - 14
+  - 25
+  direction: left
+- id: GfHBN85D10FqocfAcAbvx
+  event_window:
+  - 19
+  - 36
+  direction: right
+- id: Gie4ekZvd2awQdI8Vxumg
+  event_window:
+  - 19
+  - 33
+  direction: right
+- id: HbRBshZL4TLFtrtnqXikc
+  event_window:
+  - 23
+  - 42
+  direction: left
+- id: HhsSkoHIJb7CJyAA96mXt
+  event_window:
+  - 27
+  - 51
+  direction: right
+- id: I0foXDJ10tobj4wYrmaYJ
+  event_window:
+  - 19
+  - 37
+  direction: left
+- id: JyGBgSvyBe3KY1FCqgRpr
+  event_window:
+  - 106
+  - 197
+  direction: left
+- id: KlDggifcvDNDmu44B3gJC
+  event_window:
+  - 56
+  - 110
+  direction: right
+- id: MjMLmTHdp6OCp1Qj7BwqN
+  event_window:
+  - 34
+  - 62
+  direction: right
+- id: PWm0jseUDpirpvk2rjePh
+  event_window:
+  - 15
+  - 27
+  direction: right
+- id: Qh4TY06r6xr1MamlLNiuv
+  event_window:
+  - 30
+  - 54
+  direction: left
+- id: R7epC4nLi08OiQcYcMWgr
+  event_window:
+  - 14
+  - 25
+  direction: right
+- id: SWbiVM1aji8nI5h9YIjXB
+  event_window:
+  - 14
+  - 27
+  direction: right
+- id: TSPQltYSAWdNeSSIXSrni
+  event_window:
+  - 27
+  - 50
+  direction: left
+- id: TXHeOYjjev4snW5ldKX2q
+  event_window:
+  - 53
+  - 102
+  direction: left
+- id: V7eyFIlb3GjZGyMsDlP7v
+  event_window:
+  - 28
+  - 55
+  direction: right
+- id: VFuvnCb0Ijs3aCorDnpKn
+  event_window:
+  - 56
+  - 110
+  direction: left
+- id: WjItYFTTS0r4CYFSqV6H1
+  event_window:
+  - 14
+  - 25
+  direction: left
+- id: WkcoNkth9jJPm6FHugRm0
+  event_window:
+  - 18
+  - 34
+  direction: right
+- id: XNeHCs9hTlTqfiHBGvHqq
+  event_window:
+  - 20
+  - 36
+  direction: left
+- id: Y4Bm5OE0aicNLwedKI2Ab
+  event_window:
+  - 36
+  - 66
+  direction: left
+- id: Y4cN09EDhiLt0rqTpikZ3
+  event_window:
+  - 27
+  - 51
+  direction: left
+- id: YJVFRv7UHvm8gy5NWyzi2
+  event_window:
+  - 28
+  - 55
+  direction: left
+- id: Yx64YYYr07Fkkpl3DVORw
+  event_window:
+  - 29
+  - 54
+  direction: right
+- id: Zo4WWDV9a67Swy72dhNmh
+  event_window:
+  - 24
+  - 44
+  direction: right
+- id: aklfyfYJLhB6WIg5B89k0
+  event_window:
+  - 57
+  - 108
+  direction: right
+- id: b9zkyYH2GY76nBr4O5yGz
+  event_window:
+  - 68
+  - 124
+  direction: left
+- id: bWjucDD8z3cJUCXQqgvJ5
+  event_window:
+  - 18
+  - 33
+  direction: right
+- id: bi1bOHZJNiw9AJyqUP3KO
+  event_window:
+  - 18
+  - 33
+  direction: left
+- id: dGO6PWt7RkpugSuh4Xkj3
+  event_window:
+  - 35
+  - 67
+  direction: right
+- id: dOL70nn93QRzVcLxrsZST
+  event_window:
+  - 53
+  - 99
+  direction: left
+- id: fAW6im95EwW6d2ebxXuW1
+  event_window:
+  - 15
+  - 27
+  direction: left
+- id: fV3muLUxsNp5FG4E0lyUB
+  event_window:
+  - 24
+  - 44
+  direction: right
+- id: gzHXjDdoB0qZTxMkglUz4
+  event_window:
+  - 36
+  - 66
+  direction: right
+- id: imetfUYDv4FFbFlEEiNZm
+  event_window:
+  - 34
+  - 62
+  direction: left
+- id: jKXfODXjpYOnV9lyOdtBz
+  event_window:
+  - 23
+  - 42
+  direction: right
+- id: mXMLVEQ29G4iv5Uh5QZie
+  event_window:
+  - 68
+  - 124
+  direction: right
+- id: mhH1xK6sYxiKTMw8BAVFE
+  event_window:
+  - 14
+  - 25
+  direction: right
+- id: ofCHL7sExW43kO65NCbMK
+  event_window:
+  - 70
+  - 134
+  direction: left
+- id: pHfWwNKQGjkIDaDIgNZ49
+  event_window:
+  - 29
+  - 54
+  direction: right
+- id: qBt71L39MaYHN2v6wiKVm
+  event_window:
+  - 71
+  - 132
+  direction: left
+- id: qKC5h5dY4fBTqBK1F980G
+  event_window:
+  - 30
+  - 54
+  direction: right
+- id: r6O3dIK1iX0IblzUTmDYg
+  event_window:
+  - 15
+  - 27
+  direction: right
+- id: s6Wt5yvaMd8DICh70I5QM
+  event_window:
+  - 20
+  - 35
+  direction: left
+- id: swQA4JRbgh87G7JIUhbLS
+  event_window:
+  - 107
+  - 199
+  direction: right
+- id: tPoYNQStWga9qzBczdJuy
+  event_window:
+  - 36
+  - 67
+  direction: right
+- id: vvDMXHjeA9IU6XVxcIGvr
+  event_window:
+  - 20
+  - 35
+  direction: right
+- id: wC8wxIzSqEBNYNvV9cd85
+  event_window:
+  - 70
+  - 132
+  direction: right
+- id: wJywt82yOIFKLs5ep26Si
+  event_window:
+  - 18
+  - 33
+  direction: right
+- id: wT2VHCR4OEhGtI1foLTEA
+  event_window:
+  - 24
+  - 44
+  direction: left
+- id: wkwF74rn0VqijFsPqMhVC
+  event_window:
+  - 18
+  - 33
+  direction: left
+- id: wsPBnDXj9FJHeQe1pI9DP
+  event_window:
+  - 19
+  - 36
+  direction: left
+- id: ww5s0yzSzy0l55qiTk3bz
+  event_window:
+  - 15
+  - 27
+  direction: left
+- id: xpUYFJ77Ll3TFkBXgCy5R
+  event_window:
+  - 19
+  - 37
+  direction: right
+- id: zFtXRfNDa86UvjBGlApwa
+  event_window:
+  - 24
+  - 44
+  direction: left
+- id: 00Jyiy3E2DstQTcaaRHsI
+  event_window:
+  - 19
+  - 37
+  direction: right
+- id: 0tlWHQ8R2AJMklHA4du3c
+  event_window:
+  - 36
+  - 66
+  direction: left
+- id: 10QbqJD7zPMrL3oq4J4yH
+  event_window:
+  - 70
+  - 132
+  direction: right
+- id: 1KIGitKyAbsQCXw66UGFU
+  event_window:
+  - 56
+  - 110
+  direction: right
+- id: 1pL6GwkVw1rtUZ20kiPmY
+  event_window:
+  - 68
+  - 125
+  direction: left
+- id: 4jl2TolHXVz4oO46DEHjw
+  event_window:
+  - 18
+  - 33
+  direction: right
+- id: 7n6ldmwFrsQkYBSo5Wqq0
+  event_window:
+  - 53
+  - 99
+  direction: left
+- id: 8aHoOwMQhxZGXtZ7s8IP5
+  event_window:
+  - 57
+  - 107
+  direction: right
+- id: 8uwNRifiocYgagy1Iz2z7
+  event_window:
+  - 20
+  - 36
+  direction: left
+- id: B0akZYLqdc47yhkzDYbtn
+  event_window:
+  - 107
+  - 198
+  direction: left
+- id: BCuWpV68DwzMEeTpdrtIT
+  event_window:
+  - 27
+  - 49
+  direction: left
+- id: BhCYPN6lzTYg2jSydsHnQ
+  event_window:
+  - 15
+  - 27
+  direction: left
+- id: BsbbC4rR5gHnI2QrwpVWN
+  event_window:
+  - 14
+  - 27
+  direction: left
+- id: Dwu4P7AnOONv5yNcBrHPg
+  event_window:
+  - 27
+  - 49
+  direction: right
+- id: EIsfkzjKVUUM2k27NI6Hn
+  event_window:
+  - 14
+  - 27
+  direction: left
+- id: F7YrNbNACB06EEbq4i0En
+  event_window:
+  - 53
+  - 100
+  direction: right
+- id: GWHGau1K6nBhxMkGlzaEr
+  event_window:
+  - 18
+  - 34
+  direction: right
+- id: GjM5rH09x4S4nm00J4UGN
+  event_window:
+  - 15
+  - 27
+  direction: left
+- id: IFGmZTtK9U3ntir243GGt
+  event_window:
+  - 34
+  - 63
+  direction: right
+- id: IbUlwOWkGtI0N6KEG4tbX
+  event_window:
+  - 30
+  - 54
+  direction: right
+- id: KDsiHHz1rd4VIvsSUOcVV
+  event_window:
+  - 26
+  - 51
+  direction: right
+- id: MGDxvgfXTZX03mSr6rfyu
+  event_window:
+  - 29
+  - 54
+  direction: left
+- id: MGxTvbTIKWoOkN3MyCPmR
+  event_window:
+  - 14
+  - 25
+  direction: left
+- id: MX3Y9pFgMds16U2sKNUdw
+  event_window:
+  - 53
+  - 101
+  direction: left
+- id: MylXkdl3xoYFD92nMf9GF
+  event_window:
+  - 27
+  - 50
+  direction: left
+- id: MzAcuQSIxrD4ueH9Jymno
+  event_window:
+  - 19
+  - 33
+  direction: right
+- id: O5oXcEIfFkZnzkiKYONjw
+  event_window:
+  - 18
+  - 31
+  direction: right
+- id: O8KqNkNfxCQBCjYnLQDmT
+  event_window:
+  - 18
+  - 33
+  direction: left
+- id: OjS0RlsLVqjMf6FBWCikP
+  event_window:
+  - 15
+  - 27
+  direction: right
+- id: PNLzDWg7CROLITny6oxzD
+  event_window:
+  - 20
+  - 35
+  direction: right
+- id: Rl3HaQ9heq47rfedSJVLE
+  event_window:
+  - 23
+  - 42
+  direction: right
+- id: SIVskXu16WwvB08xyQaYu
+  event_window:
+  - 26
+  - 50
+  direction: left
+- id: So83IdH78TDumy5E7In7z
+  event_window:
+  - 18
+  - 33
+  direction: left
+- id: UEu7LvtATS4oqUMMRFDCA
+  event_window:
+  - 18
+  - 33
+  direction: left
+- id: UHAlTj23z71CZjp6LgO1g
+  event_window:
+  - 36
+  - 67
+  direction: left
+- id: VM6xFVVdgiTz2mfSLRJIj
+  event_window:
+  - 52
+  - 102
+  direction: right
+- id: WSQ0pzaXHQ1JFPOwBNn64
+  event_window:
+  - 57
+  - 107
+  direction: left
+- id: Wwh84o4yBVSMkV9RSGAFj
+  event_window:
+  - 29
+  - 54
+  direction: left
+- id: Zkz6L94DJ4PO0L9hoCxwq
+  event_window:
+  - 24
+  - 44
+  direction: left
+- id: aLPlaVhO74HkPeYco8TlR
+  event_window:
+  - 28
+  - 55
+  direction: right
+- id: aLTdMI1hZum1D6cJIzUfS
+  event_window:
+  - 14
+  - 25
+  direction: right
+- id: aZTExHSPj9NqdPcXwy598
+  event_window:
+  - 106
+  - 200
+  direction: right
+- id: bQYRBVPNvTWy9NqHICvqr
+  event_window:
+  - 35
+  - 68
+  direction: right
+- id: bvxX8wKbuEo8sDDkWkZFd
+  event_window:
+  - 55
+  - 100
+  direction: left
+- id: cgQeSlyVAyjoFR8OvWzzo
+  event_window:
+  - 56
+  - 108
+  direction: left
+- id: fazdo0JsyH9qVCW90EJmW
+  event_window:
+  - 15
+  - 27
+  direction: right
+- id: fnJP9mjoJnMMkcRqqaFHI
+  event_window:
+  - 14
+  - 25
+  direction: left
+- id: hOLDEjtMRQKRQPmniToUm
+  event_window:
+  - 70
+  - 132
+  direction: right
+- id: hRQQ4VJSbLGWoEqpxIHGl
+  event_window:
+  - 29
+  - 54
+  direction: right
+- id: hoNjZiVcTGSZ6A0svdTZl
+  event_window:
+  - 27
+  - 50
+  direction: right
+- id: i4udfbCdFI6GqcLDzEa1j
+  event_window:
+  - 19
+  - 36
+  direction: right
+- id: i9oE30XXB0NVB0GhJkTXl
+  event_window:
+  - 70
+  - 132
+  direction: left
+- id: iGIbstkGDfSNP1Qg81Xvm
+  event_window:
+  - 19
+  - 36
+  direction: left
+- id: iUG3CW0Zy7FBBedgzC7xL
+  event_window:
+  - 28
+  - 55
+  direction: left
+- id: iW8fiqIsZs7b6jEVPcTtq
+  event_window:
+  - 34
+  - 63
+  direction: left
+- id: jcHsXVdrv1UYimY2V0FIl
+  event_window:
+  - 54
+  - 101
+  direction: right
+- id: jijz3rqgPxNubCtzFBDm7
+  event_window:
+  - 19
+  - 36
+  direction: left
+- id: kuZPLJfcI6A9bE5cKRxVG
+  event_window:
+  - 35
+  - 67
+  direction: right
+- id: lzldY8c9CAs1Mb1xm4FWB
+  event_window:
+  - 56
+  - 107
+  direction: right
+- id: m2GDtR0Gt3o8qmzDmYvu7
+  event_window:
+  - 70
+  - 134
+  direction: left
+- id: mmvsZhv06ynRV1u9hNXfP
+  event_window:
+  - 18
+  - 34
+  direction: left
+- id: ms4N0G3yh3HGdb5cSQKUD
+  event_window:
+  - 14
+  - 25
+  direction: right
+- id: nooCbUlzm1fXXC0yzsL7O
+  event_window:
+  - 36
+  - 66
+  direction: right
+- id: pBAOz7pLoxkZBZCvc4x5F
+  event_window:
+  - 24
+  - 44
+  direction: right
+- id: q6uleHxxLqgwOAQieFdnG
+  event_window:
+  - 23
+  - 43
+  direction: left
+- id: qRhljoxNRfyDQwD2FE5WF
+  event_window:
+  - 58
+  - 107
+  direction: left
+- id: qe6fASosd4oIr3DNlB48O
+  event_window:
+  - 29
+  - 54
+  direction: right
+- id: rP5OoZfdld3N4fLk7kwMx
+  event_window:
+  - 14
+  - 27
+  direction: right
+- id: rnJNd5QWKIVkmLLqyeJAX
+  event_window:
+  - 20
+  - 35
+  direction: left
+- id: rslTvjADdsnaVK7YVL911
+  event_window:
+  - 17
+  - 32
+  direction: left
+- id: sZwjKjfRnoL0F6NrEHdT2
+  event_window:
+  - 18
+  - 33
+  direction: right
+- id: tgOIzpooxMCSM0CptW9rX
+  event_window:
+  - 24
+  - 44
+  direction: right
+- id: u3MovsjgBBsfLaq4AFBT1
+  event_window:
+  - 24
+  - 44
+  direction: left
+- id: uvMOAqozjLlgoAyl8jLK7
+  event_window:
+  - 29
+  - 53
+  direction: left
+- id: vS40IK3HXanjCzzveKnZE
+  event_window:
+  - 58
+  - 108
+  direction: right
+- id: xQycYeCA8bTJgldFqvyak
+  event_window:
+  - 68
+  - 124
+  direction: right
+- id: yIYIvinobbNJYXVnsw5TI
+  event_window:
+  - 14
+  - 27
+  direction: right
+- id: yoYaVbNBpPwHm0A5pK7WC
+  event_window:
+  - 20
+  - 35
+  direction: right
+- id: zWd5ld44OLCgjqESgRHM6
+  event_window:
+  - 35
+  - 66
+  direction: left
+- id: zX5kHUULGq8Bdx9AXqBcv
+  event_window:
+  - 56
+  - 110
+  direction: left
