@@ -1,9 +1,0 @@
-# A vehicle performs a cut-in maneuver, cutting in from the right to the left
-direction: "left"
-saliency_threshold: 0.4 # For running with attention
-angle_threshold: 114 # For running with OF
-grids:
-  - top_left: [1, 0.4]
-    bottom_right: [0.4, 0.5]
-    rows: 1
-    cols: 6

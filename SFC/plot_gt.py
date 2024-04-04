@@ -85,8 +85,7 @@ def main(data_path: str, ground_truth: dict, config: dict):
             tqdm_obj.write(f"Skipping {video_id}: Morton codes CSV does not exist")
             continue
 
-        event_direction = config["direction"]
-        video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
+        video_ground_truth = helper.get_ground_truth(ground_truth, video_id)
 
         if not video_ground_truth:
             tqdm_obj.write(f"Skipping {video_id}: Ground truth does not exist")

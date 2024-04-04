@@ -9,7 +9,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Calculate F1 scores based on ground truth and prediction data.")
     parser.add_argument("event_window_path", type=str, help="Path to event_window.csv")
     parser.add_argument("ground_truth_path", type=str, help="Path to the ground truth YML file")
-    parser.add_argument("event_config_path", type=str, help="Path to the event config YML file")
     return parser.parse_args()
 
 
@@ -20,13 +19,12 @@ def is_overlapping(true_window, pred_window):
     return overlap > 0
 
 
-def main(event_window_path: str, ground_truth: dict, config: dict):
+def main(event_window_path: str, ground_truth: dict):
     TP, FP, FN, TN = 0, 0, 0, 0
 
     assert os.path.exists(event_window_path), "Event window file does not exist"
 
     df_event_window = pd.read_csv(event_window_path, sep=";")
-    event_direction = config["direction"]
 
     for index, row in df_event_window.iterrows():
         video_id = row["video_id"]
@@ -34,7 +32,7 @@ def main(event_window_path: str, ground_truth: dict, config: dict):
         end_frame = row["end_frame"]
         event_detected = row["event_detected"]
 
-        video_ground_truth = helper.get_ground_truth(ground_truth, video_id, event_direction)
+        video_ground_truth = helper.get_ground_truth(ground_truth, video_id)
 
         if event_detected:
             if video_ground_truth:
@@ -61,6 +59,5 @@ def main(event_window_path: str, ground_truth: dict, config: dict):
 if __name__ == "__main__":
     args = parse_arguments()
     ground_truth = helper.load_yml(args.ground_truth_path)
-    config = helper.load_yml(args.event_config_path)
 
-    main(args.event_window_path, ground_truth, config)
+    main(args.event_window_path, ground_truth)

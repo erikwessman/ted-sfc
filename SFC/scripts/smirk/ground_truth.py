@@ -89,11 +89,11 @@ def get_df_ground_truth(df):
     video_id = None
     event_start = 0
     event_end = 0
-    direction = None
+    scenario_type = None
 
     for _, row in df.iterrows():
         video_id = row["run_id"]
-        direction = "right" if row["scenario_type"] == "left" else "left"
+        scenario_type = row["scenario_type"]
         frame_index = row["frame_index"]
 
         x_min = row["x_min"]
@@ -117,7 +117,7 @@ def get_df_ground_truth(df):
     return {
         "id": video_id,
         "event_window": [event_start, event_end],
-        "direction": direction
+        "type": scenario_type
     }
 
 
