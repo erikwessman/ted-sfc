@@ -52,6 +52,21 @@ def get_ground_truth(ground_truth: dict, video_id: str):
             return video
     return None
 
+def invert_cell_value_map(cell_value_map):
+    """
+    Inverts a dictionary from the format { cell_index: [(frame_number, cell_value)] }
+    to { frame_number: [cell1value, cell2value, ...] }, filling missing values with None.
+    """
+    frame_cell_values = {}
+    for cell_index, frames in cell_value_map.items():
+        for frame_number, cell_value in frames:
+            if frame_number not in frame_cell_values:
+                frame_cell_values[frame_number] = []
+            # Ensuring the list is long enough to accommodate the cell_index
+            while len(frame_cell_values[frame_number]) < cell_index + 1:
+                frame_cell_values[frame_number].append(None)
+            frame_cell_values[frame_number][cell_index] = cell_value
+    return frame_cell_values
 
 def save_cell_value_csv(cell_value_map, output_path, grids_config):
     csv_path = os.path.join(output_path, "cell_values.csv")

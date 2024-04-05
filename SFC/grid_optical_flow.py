@@ -2,11 +2,11 @@ import os
 import cv2
 import argparse
 import numpy as np
+from typing import Dict, Tuple
 from tqdm import tqdm
 
 import helper
 
-NR_FRAMES_MOVING_AVG = 4
 SCALE = 10
 THICKNESS = 3
 COLORS = [
@@ -27,9 +27,11 @@ COLORS = [
     (128, 0, 128),  # Purple
 ]
 
+# TODO: move to event config file
 EVENT_ANGLES = [0, 180]
-EVENT_ANGLE_RANGE = 30
-FLOW_THRESHOLD = 3
+EVENT_ANGLE_RANGE = 10
+FLOW_THRESHOLD = 5
+NR_HISTORICAL_FRAMES = 5
 
 
 def parse_arguments():
@@ -58,10 +60,13 @@ def calculate_cell_values(
     frame,
     frame_gray,
     frame_gray_prev,
+    frame_number,
     cell_positions,
     event_angles,
     event_angle_range,
     flow_threshold,
+    nr_historical_frames,
+    cell_values,
     cell_history,
 ):
     h, w = frame_gray.shape[:3]
@@ -69,8 +74,6 @@ def calculate_cell_values(
     flow = cv2.calcOpticalFlowFarneback(
         frame_gray_prev, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
     )
-
-    frame_cell_values = []
 
     for cell_index, (top_left, bottom_right) in enumerate(cell_positions):
         # Define the cell boundaries
@@ -95,6 +98,7 @@ def calculate_cell_values(
             angle_degrees += 360  # Normalize angle
 
         cell_value = 0
+
         for angle in event_angles:
             distance_to_event_angle = abs(angle_degrees - angle)
 
@@ -120,7 +124,21 @@ def calculate_cell_values(
             else:
                 cell_value = 0
 
-        frame_cell_values.append(cell_value if is_event_cell else 0)
+        cell_history[cell_index].append((frame_number, cell_value))
+        cell_values[cell_index].append((frame_number, cell_value))
+
+        # check the history, to see if the last 5 frames should be saved or not
+        last_frames = cell_history[cell_index][-nr_historical_frames:]
+        if len(last_frames) >= nr_historical_frames:
+            event_cell_count = sum(1 for frame in last_frames if frame[1] != 0)
+            # if the last 5 frames have less than 3 events, we reset the cell values
+            if 0 < event_cell_count < 3:
+                updated_frames = [(frame_number, 0) for frame_number, _ in last_frames]
+                cell_values[cell_index][-nr_historical_frames:] = updated_frames
+            # if the last 5 frames have 3 or more events, we bring back any cell values we may have reset
+            elif event_cell_count >= 3:
+                cell_values[cell_index][-nr_historical_frames:] = last_frames
+
 
         # Draw the mean vector at the center of the cell
         center_x = (cell_start_x + cell_end_x) // 2
@@ -131,9 +149,6 @@ def calculate_cell_values(
         cv2.arrowedLine(
             frame, (center_x, center_y), (end_x, end_y), arrow_color, THICKNESS
         )
-
-    return frame_cell_values
-
 
 def angle_to_vector(angle_degrees, scale=1):
     """
@@ -173,10 +188,12 @@ def process_video(
 
     cell_positions = helper.calculate_grid_cell_positions(frame, event_config)
 
-    # Maps a frame number to a list containing the cell values for that frame which match the event criteria
-    cell_values = {}
-    # Keeps track of each cell's history of unfiltered event values
-    cell_history = {}
+    # Maps a frame number to a list containing the cell values for that frame
+    # that match the event criteria and are filtered for noise
+    # Shape: { cell_index: [(frame_number, cell_value)] }
+    cell_values = { cell_index: [] for cell_index in range(len(cell_positions)) }
+    # Keeps track of each cell's history of event values
+    cell_history = { cell_index: [] for cell_index in range(len(cell_positions)) }
 
     frame_number = 0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -186,16 +203,20 @@ def process_video(
 
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            cell_values[frame_number] = calculate_cell_values(
+            calculate_cell_values(
                 frame,
                 frame_gray,
                 frame_gray_prev,
+                frame_number,
                 cell_positions,
                 EVENT_ANGLES,
                 EVENT_ANGLE_RANGE,
                 FLOW_THRESHOLD,
+                NR_HISTORICAL_FRAMES,
+                cell_values,
                 cell_history,
             )
+
             frame_gray_prev = frame_gray
 
             helper.draw_grid(frame, cell_positions)
@@ -235,13 +256,15 @@ def main(data_path, output_path, data_config, event_config, display_results):
 
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
 
-        output_cell_value_map = process_video(
+        cell_value_map = process_video(
             video_path,
             target_path,
             video_id,
             data_config,
             event_config,
         )
+
+        output_cell_value_map = helper.invert_cell_value_map(cell_value_map)
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, event_config)
         helper.save_cell_value_subplots(
