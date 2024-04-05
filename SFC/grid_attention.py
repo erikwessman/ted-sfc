@@ -21,12 +21,8 @@ def parse_arguments():
         help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
     )
     parser.add_argument(
-        "data_config_path",
-        help="Path to dataset config yml file",
-    )
-    parser.add_argument(
-        "event_config_path",
-        help="Path to event config yml file",
+        "config_path",
+        help="Path to the config yml file",
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
@@ -116,8 +112,7 @@ def process_video_and_generate_attention_map(
     original_video_path,
     target_path,
     video_id,
-    data_config,
-    event_config,
+    config,
 ) -> dict:
     ensure_matching_video_resolution(original_video_path, heatmap_video_path)
 
@@ -143,11 +138,11 @@ def process_video_and_generate_attention_map(
     out = cv2.VideoWriter(
         os.path.join(target_path, f"{video_id}_attention_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
-        data_config["fps"],
+        config["fps"],
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
-    cell_positions = helper.calculate_grid_cell_positions(frame_heatmap, event_config)
+    cell_positions = helper.calculate_grid_cell_positions(frame_heatmap, config)
     mean_attention_map = {}
 
     frame_number = 0
@@ -156,7 +151,7 @@ def process_video_and_generate_attention_map(
             frame_number += 1
 
             mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, event_config["saliency_threshold"]
+                frame_heatmap, cell_positions, config["saliency_threshold"]
             )
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
@@ -164,7 +159,7 @@ def process_video_and_generate_attention_map(
 
             helper.annotate_frame(
                 combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {event_config['saliency_threshold']}",
+                f"frame: {frame_number}. saliency_threshold: {config['saliency_threshold']}",
                 (10, 30),
             )
 
@@ -190,7 +185,7 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(data_path, output_path, data_config, event_config, display_results):
+def main(data_path, output_path, config, display_results):
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -212,27 +207,24 @@ def main(data_path, output_path, data_config, event_config, display_results):
             original_video_path,
             target_path,
             video_id,
-            data_config,
-            event_config,
+            config,
         )
 
-        helper.save_cell_value_csv(mean_attention_map, target_path, event_config)
+        helper.save_cell_value_csv(mean_attention_map, target_path, config)
         helper.save_cell_value_subplots(mean_attention_map, target_path, display_results, "Mean attention")
         helper.save_combined_plot(mean_attention_map, target_path, display_results, "Mean attention")
 
-    helper.save_config(output_path, data_config, event_config)
+    helper.save_config(output_path, config)
 
     print("grid_attention.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = helper.load_yml(args.data_config_path)
-    event_config = helper.load_yml(args.event_config_path)
+    config = helper.load_yml(args.config_path)
     main(
         args.data_path,
         args.output_path,
-        data_config,
-        event_config,
+        config,
         args.display_results,
     )

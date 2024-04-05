@@ -42,12 +42,8 @@ def parse_arguments():
         help="Path to the folder where the output will be saved, e.g. ./output/{dataset_name}",
     )
     parser.add_argument(
-        "data_config_path",
-        help="Path to dataset config yml file",
-    )
-    parser.add_argument(
-        "event_config_path",
-        help="Path to event config yml file",
+        "config_path",
+        help="Path to the config yml file",
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
@@ -147,8 +143,7 @@ def process_video(
     video_path,
     target_path,
     video_id,
-    data_config,
-    event_config,
+    config,
 ) -> dict:
     cap = cv2.VideoCapture(video_path)
 
@@ -161,7 +156,7 @@ def process_video(
     out = cv2.VideoWriter(
         os.path.join(target_path, f"{video_id}_optical_flow_grid.avi"),
         cv2.VideoWriter_fourcc(*"XVID"),
-        data_config["fps"],
+        config["fps"],
         (frame.shape[1], frame.shape[0]),
     )
 
@@ -169,7 +164,7 @@ def process_video(
 
     frame_number = 0
 
-    cell_positions = helper.calculate_grid_cell_positions(frame, event_config)
+    cell_positions = helper.calculate_grid_cell_positions(frame, config)
 
     # Maps a frame number to a list containing the cell values for that frame which match the event criteria
     cell_values = {}
@@ -221,7 +216,7 @@ def process_video(
     return cell_values
 
 
-def main(data_path, output_path, data_config, event_config, display_results):
+def main(data_path, output_path, config, display_results):
     os.makedirs(output_path, exist_ok=True)
 
     for video_dir, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -234,11 +229,10 @@ def main(data_path, output_path, data_config, event_config, display_results):
             video_path,
             target_path,
             video_id,
-            data_config,
-            event_config,
+            config,
         )
 
-        helper.save_cell_value_csv(output_cell_value_map, target_path, event_config)
+        helper.save_cell_value_csv(output_cell_value_map, target_path, config)
         helper.save_cell_value_subplots(
             output_cell_value_map, target_path, display_results, "Cell value"
         )
@@ -246,17 +240,15 @@ def main(data_path, output_path, data_config, event_config, display_results):
             output_cell_value_map, target_path, display_results, "Cell value"
         )
 
-    helper.save_config(output_path, data_config, event_config)
+    helper.save_config(output_path, config)
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    data_config = helper.load_yml(args.data_config_path)
-    event_config = helper.load_yml(args.event_config_path)
+    config = helper.load_yml(args.config_path)
     main(
         args.data_path,
         args.output_path,
-        data_config,
-        event_config,
+        config,
         args.display_results,
     )

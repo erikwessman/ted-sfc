@@ -53,7 +53,7 @@ def get_ground_truth(ground_truth: dict, video_id: str):
     return None
 
 
-def save_cell_value_csv(cell_value_map, output_path, grids_config):
+def save_cell_value_csv(cell_value_map, output_path, config):
     csv_path = os.path.join(output_path, "cell_values.csv")
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
@@ -61,7 +61,7 @@ def save_cell_value_csv(cell_value_map, output_path, grids_config):
         # Calculate the total number of cells based on the individual grids
         cell_headers = []
         cell_counter = 0
-        for grid in grids_config['grids']:
+        for grid in config['grids']:
             cells_in_grid = grid["rows"] * grid["cols"]
             cell_headers.extend([f"cell{cell_counter + i + 1}" for i in range(cells_in_grid)])
             cell_counter += cells_in_grid
@@ -73,13 +73,10 @@ def save_cell_value_csv(cell_value_map, output_path, grids_config):
             writer.writerow(row)
 
 
-def save_config(output_path, data_config, event_config):
+def save_config(output_path, config):
     config_path = os.path.join(output_path, "config.txt")
     with open(config_path, "w") as f:
-        for key, value in data_config.items():
-            line = f"{key}: {value}\n"
-            f.write(line)
-        for key, value in event_config.items():
+        for key, value in config.items():
             line = f"{key}: {value}\n"
             f.write(line)
 
@@ -214,11 +211,11 @@ def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=
         )
 
 
-def calculate_grid_cell_positions(image, grid_config):
+def calculate_grid_cell_positions(image, config):
     h, w, _ = image.shape
     all_cell_positions = []
 
-    for grid_config in grid_config["grids"]:
+    for grid_config in config["grids"]:
         # Convert proportional positions to pixel positions for each grid
         start_x = int(w * grid_config["top_left"][0])
         start_y = int(h * grid_config["top_left"][1])
