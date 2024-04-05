@@ -13,6 +13,10 @@ grids:
 required_cell_subsets:
   - !!set { 1, 2, 3 }
   - !!set { 4, 5, 6 }
+detection_calibration_videos:
+  - "1KIGitKyAbsQCXw66UGFU"
+  - "00Jyiy3E2DstQTcaaRHsI"
+  - "IFGmZTtK9U3ntir243GGt"
 
 attention:
   margin: 0

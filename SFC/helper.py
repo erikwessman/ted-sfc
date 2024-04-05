@@ -3,8 +3,10 @@ import yaml
 import csv
 import math
 import cv2
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from tqdm import tqdm
 
 def traverse_videos(data_path: str):
@@ -153,6 +155,39 @@ def save_combined_plot(cell_value_map, output_path, display_results, y_label):
     else:
         plt.close()
 
+def save_detection_plots(data_path, calibration_videos, cell_ranges):
+    plt.figure(figsize=(10, 6))
+
+    # video_colors = plt.cm.jet(np.linspace(0, 1, len(calibration_videos)))
+    cell_colors = plt.cm.nipy_spectral(np.linspace(0, 1, len(cell_ranges)))
+
+    for _, video_id in enumerate(calibration_videos):
+        target_path = os.path.join(data_path, video_id)
+        csv_path = os.path.join(target_path, "morton_codes.csv")
+
+        if not os.path.isfile(csv_path):
+            print(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
+            continue
+
+        morton_codes = pd.read_csv(csv_path, sep=";")
+
+        plt.scatter(morton_codes['frame_id'], morton_codes['morton'], color="red")
+
+    for cell, (min_val, max_val) in cell_ranges.items():
+        plt.axhspan(min_val, max_val, color=cell_colors[cell - 1], alpha=0.3)
+
+    patches = [mpatches.Patch(color=cell_colors[cell - 1], label=f"Cell {cell}", alpha=0.3) for cell in cell_ranges]
+
+    plt.figtext(0.5, 0.01, "Stripes indicate Morton code ranges corresponding to each cell", ha="center", fontsize=10)
+    video_text = "Calibration videos: " + ", ".join(calibration_videos)
+    plt.figtext(0.5, 0.96, video_text, ha="center", fontsize=8)
+
+    plt.title("Morton Codes by Frame Number")
+    plt.xlabel("Frame Number")
+    plt.ylabel("Morton Code")
+    plt.legend(handles=patches, loc=2)
+    plt.savefig(os.path.join(data_path, "detection_calibration_plot.png"))
+    plt.close()
 
 def get_total_cells(event_config) -> int:
     total_cells = 0

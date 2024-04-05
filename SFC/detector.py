@@ -4,6 +4,9 @@ This script attempts to find the event window in a video from a set of morton co
 import os
 import argparse
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from typing import Union, Tuple
 
 import helper
@@ -22,6 +25,7 @@ def parse_arguments():
 
     group.add_argument("--attention", help="Detect for attention", action="store_true")
     group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
+
     return parser.parse_args()
 
 
@@ -70,6 +74,7 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
     else:
         return None
 
+ 
 
 def detect_event(morton_codes, cell_ranges, required_cell_subsets, margin) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
     """
@@ -87,7 +92,7 @@ def detect_event(morton_codes, cell_ranges, required_cell_subsets, margin) -> Un
         return None, None
 
 
-def main(data_path, cell_ranges, required_cell_subsets, margin):
+def main(data_path, cell_ranges, required_cell_subsets, margin, calibration_videos):
     df_event_window = pd.DataFrame(
         columns=["video_id",  "event_detected", "start_frame", "end_frame"])
 
@@ -113,6 +118,8 @@ def main(data_path, cell_ranges, required_cell_subsets, margin):
 
     df_event_window.to_csv(os.path.join(
         data_path, "event_window.csv"), sep=";", index=False)
+    
+    helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
 
     print("detector.py completed.")
 
@@ -122,8 +129,10 @@ if __name__ == "__main__":
     config = helper.load_yml(args.config_path)
     detection_config = config["attention"] if args.attention else config["optical_flow"]
 
-    cell_ranges = detection_config["cell_ranges"]
     required_cell_subsets = config["required_cell_subsets"]
+    calibration_videos = config["detection_calibration_videos"]
+
+    cell_ranges = detection_config["cell_ranges"]
     margin = detection_config["margin"]
 
-    main(args.data_path, cell_ranges, required_cell_subsets, margin)
+    main(args.data_path, cell_ranges, required_cell_subsets, margin, calibration_videos)
