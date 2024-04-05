@@ -17,6 +17,15 @@ CELL_MORTON = {
     6: (1.31072e-05, 1.31104e-05),
 }
 
+CELL_MORTON_OF = {
+    1: (2.62208e-05, 2.62208e-05),
+    2: (5.24416e-05, 5.24416e-05),
+    3: (0.0001048832, 0.0001572996),
+    4: (0.000209716, 0.000629148),
+    5: (0.0004195328, 0.0004195328),
+    6: (0.0008390656, 0.0012585984),
+}
+
 MARGIN = 0
 ENTER_CELLS = {1, 2, 3}
 EXIT_CELLS = {4, 5, 6}
@@ -50,7 +59,7 @@ def get_sequence(morton_codes):
 
     for index, row in morton_codes.iterrows():
         curr_frame_id = row["frame_id"]
-        curr_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON)
+        curr_cell_key = get_matching_cell_key(row["morton"], CELL_MORTON_OF)
 
         if not curr_cell_key:
             continue

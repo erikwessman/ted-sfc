@@ -52,8 +52,12 @@ def main(event_window_path: str, ground_truth: dict):
     print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
 
     f1_score = 2 * TP / (2 * TP + FP + FN)
+    sensitivity = TP / (TP + FN)
+    specificity = TN / (TN + FP)
 
     print(f"F1: {f1_score}")
+    print(f"Sensitivity: {sensitivity}")
+    print(f"Specificity: {specificity}")
 
 
 if __name__ == "__main__":
