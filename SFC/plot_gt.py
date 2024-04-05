@@ -16,10 +16,6 @@ def parse_arguments():
         "ground_truth_path",
         help="Path to the ground truth YML file.",
     )
-    parser.add_argument(
-        "event_config_path",
-        help="Path to the event config YML file.",
-    )
     return parser.parse_args()
 
 
@@ -77,7 +73,7 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
     plt.close()
 
 
-def main(data_path: str, ground_truth: dict, config: dict):
+def main(data_path: str, ground_truth: dict):
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         morton_codes_path = os.path.join(video_path, "morton_codes.csv")
 
@@ -92,7 +88,7 @@ def main(data_path: str, ground_truth: dict, config: dict):
             continue
 
         morton_codes_df = pd.read_csv(morton_codes_path, sep=";")
-        create_and_save_CSP_with_ground_truth_and_dots(morton_codes_df, video_ground_truth, data_path)
+        create_and_save_CSP_with_ground_truth_and_dots(morton_codes_df, video_ground_truth, video_path)
 
     print("plot_gt.py completed")
 
@@ -100,6 +96,5 @@ def main(data_path: str, ground_truth: dict, config: dict):
 if __name__ == "__main__":
     args = parse_arguments()
     ground_truth = helper.load_yml(args.ground_truth_path)
-    config = helper.load_yml(args.event_config_path)
 
-    main(args.data_path, ground_truth, config)
+    main(args.data_path, ground_truth)
