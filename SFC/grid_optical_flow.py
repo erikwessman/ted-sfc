@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 import helper
 
-NR_FRAMES_MOVING_AVG = 4
 SCALE = 10
 THICKNESS = 3
 COLORS = [
@@ -62,7 +61,6 @@ def calculate_cell_values(
     event_angles,
     event_angle_range,
     flow_threshold,
-    cell_history,
 ):
     h, w = frame_gray.shape[:3]
 
@@ -120,7 +118,7 @@ def calculate_cell_values(
             else:
                 cell_value = 0
 
-        frame_cell_values.append(cell_value if is_event_cell else 0)
+        frame_cell_values.append(cell_value)
 
         # Draw the mean vector at the center of the cell
         center_x = (cell_start_x + cell_end_x) // 2
@@ -175,8 +173,6 @@ def process_video(
 
     # Maps a frame number to a list containing the cell values for that frame which match the event criteria
     cell_values = {}
-    # Keeps track of each cell's history of unfiltered event values
-    cell_history = {}
 
     frame_number = 0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -194,7 +190,6 @@ def process_video(
                 EVENT_ANGLES,
                 EVENT_ANGLE_RANGE,
                 FLOW_THRESHOLD,
-                cell_history,
             )
             frame_gray_prev = frame_gray
 
