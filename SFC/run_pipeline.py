@@ -3,6 +3,7 @@ import sys
 import subprocess
 import argparse
 import datetime
+import cv2
 
 
 def parse_arguments():
@@ -19,6 +20,41 @@ def parse_arguments():
     group.add_argument("--optical-flow", help="Use optical flow.", action=argparse.BooleanOptionalAction)
 
     return parser.parse_args()
+
+
+def get_dataset_info(data_path):
+    """
+    Returns the number of videos and the total number of frames in the dataset
+    """
+    nr_videos = 0
+    nr_frames = 0
+
+    video_dirs = [
+        name
+        for name in os.listdir(data_path)
+        if os.path.isdir(os.path.join(data_path, name))
+    ]
+
+    for video_id in video_dirs:
+        video_dir = os.path.join(data_path, video_id)
+        video_path = os.path.join(video_dir, f"{video_id}.avi")
+
+        nr_videos += 1
+        nr_frames += get_total_frames(video_path)
+
+    return nr_videos, nr_frames
+
+
+def get_total_frames(video_path):
+    cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        raise ValueError("Error: Could not open video.")
+
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+
+    return total_frames
 
 
 def find_env_path(env_name):
@@ -64,16 +100,25 @@ def check_path_exists(path, path_type):
         sys.exit(1)
 
 
-def log_runtime(output_path, start_time, end_time, duration):
+def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
     """
     Logs the pipeline's runtime information to a text file.
     """
+    duration = end_time - start_time
+    sec_total = duration.total_seconds()
+    sec_per_video = sec_total / nr_videos
+    sec_per_frame = sec_total / nr_frames
+
     log_file_path = os.path.join(output_path, "pipeline_runtime_log.txt")
     with open(log_file_path, "a") as log_file:
         log_file.write(f"Pipeline Run: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Start Time: {start_time}\n")
         log_file.write(f"End Time: {end_time}\n")
         log_file.write(f"Total Runtime: {duration}\n")
+        log_file.write(f"Total nr. videos: {nr_videos}\n")
+        log_file.write(f"Total nr. frames: {nr_frames}\n")
+        log_file.write(f"Seconds per video: {sec_per_video}\n")
+        log_file.write(f"Seconds per frame: {sec_per_frame}\n")
         log_file.write("--------------------------------------------------\n")
 
 
@@ -90,6 +135,9 @@ def main(data_path, output_path, dataset_config_path, event_config_path, heatmap
     else:
         print("Output path does not exist. Creating it.")
         os.makedirs(output_path, exist_ok=True)
+
+    # Get the information for benchmarking
+    nr_videos, nr_frames = get_dataset_info(data_path)
 
     start_time = datetime.datetime.now()
     print(f"Pipeline started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -133,20 +181,15 @@ def main(data_path, output_path, dataset_config_path, event_config_path, heatmap
         env_name="TED-SFC"
     )
 
-    print("========================================")
-    print(f"Pipeline completed. Output saved to '{output_path}'.")
-    print("========================================")
-
     end_time = datetime.datetime.now()
     print(f"Pipeline ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    duration = end_time - start_time
-    hours, remainder = divmod(duration.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    print(f"Total runtime: {hours}h {minutes}m {seconds}s")
-
     # Log the runtime information
-    log_runtime(args.output_path, start_time, end_time, f"{hours}h {minutes}m {seconds}s")
+    save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames)
+
+    print("========================================")
+    print(f"Pipeline completed. Output saved to '{output_path}'.")
+    print("========================================")
 
 
 if __name__ == "__main__":
