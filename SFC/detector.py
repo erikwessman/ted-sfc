@@ -4,9 +4,6 @@ This script attempts to find the event window in a video from a set of morton co
 import os
 import argparse
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from typing import Union, Tuple
 
 import helper
