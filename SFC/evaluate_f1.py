@@ -19,25 +19,46 @@ def is_overlapping(true_window, pred_window):
     return overlap > 0
 
 
-def main(event_window_path: str, ground_truth: dict):
-    TP, FP, FN, TN = 0, 0, 0, 0
+def calculate_iou(prediction_interval, ground_truth_interval):
+    prediction_start, prediction_end = prediction_interval
+    ground_truth_start, ground_truth_end = ground_truth_interval
 
+    intersection_start = max(prediction_start, ground_truth_start)
+    intersection_end = min(prediction_end, ground_truth_end)
+    intersection = max(0, intersection_end - intersection_start)
+
+    total_start = min(prediction_start, ground_truth_start)
+    total_end = max(prediction_end, ground_truth_end)
+    union = (total_end - total_start) - intersection + (intersection_end - intersection_start)
+
+    iou = intersection / union if union != 0 else 0
+    return iou
+
+
+def main(event_window_path: str, ground_truth: dict):
     assert os.path.exists(event_window_path), "Event window file does not exist"
 
     df_event_window = pd.read_csv(event_window_path, sep=";")
 
+    TP, FP, FN, TN = 0, 0, 0, 0
+
+    iou_map = {}
+
     for index, row in df_event_window.iterrows():
         video_id = row["video_id"]
-        start_frame = row["start_frame"]
-        end_frame = row["end_frame"]
         event_detected = row["event_detected"]
+        prediction_interval = (row["start_frame"], row["end_frame"])
 
         video_ground_truth = helper.get_ground_truth(ground_truth, video_id)
 
         if event_detected:
             if video_ground_truth:
-                true_start, true_end = video_ground_truth["event_window"]
-                if is_overlapping((true_start, true_end), (start_frame, end_frame)):
+                ground_truth_interval = video_ground_truth["event_window"]
+                iou_score = calculate_iou(ground_truth_interval, prediction_interval)
+
+                iou_map[video_id] = iou_score
+
+                if iou_score:
                     TP += 1
                 else:
                     FP += 1
@@ -54,10 +75,12 @@ def main(event_window_path: str, ground_truth: dict):
     f1_score = 2 * TP / (2 * TP + FP + FN)
     sensitivity = TP / (TP + FN)
     specificity = TN / (TN + FP)
+    mean_iou = sum(iou_map.values()) / len(iou_map)
 
     print(f"F1: {f1_score}")
     print(f"Sensitivity: {sensitivity}")
     print(f"Specificity: {specificity}")
+    print(f"Mean IoU: {mean_iou}")
 
 
 if __name__ == "__main__":
