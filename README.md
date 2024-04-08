@@ -65,11 +65,15 @@ Download saliency model [here]() and place in `DRIVE/models/saliency/mlnet_25.pt
 ## Run the processing pipeline
 
 ```bash
-./run_pipeline.sh path/to/dataset path/to/output path/to/dataset_config.yml path/to/event_config.yml [--no-heatmap]
+python SFC/run_pipeline.py path/to/dataset path/to/output path/to/dataset_config.yml path/to/event_config.yml [--heatmap]
 ```
 
 The results will be placed in the output directory.
 
+## Run detector
+
+TODO
+
 ## Evaluate
 
-Run the script `python SFC/evaluate.py`
+Run the script `python SFC/evaluate_f1.py`

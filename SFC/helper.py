@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from tqdm import tqdm
 
+
 def traverse_videos(data_path: str):
     """
     Given a data path, traverses the directory and yields the video path, video ID and the tqdm object.
@@ -65,7 +66,8 @@ def save_cell_value_csv(cell_value_map, output_path, config):
         cell_counter = 0
         for grid in config['grids']:
             cells_in_grid = grid["rows"] * grid["cols"]
-            cell_headers.extend([f"cell{cell_counter + i + 1}" for i in range(cells_in_grid)])
+            cell_headers.extend(
+                [f"cell{cell_counter + i + 1}" for i in range(cells_in_grid)])
             cell_counter += cells_in_grid
 
         writer.writerow(["frame_id"] + cell_headers)
@@ -81,6 +83,7 @@ def save_config(output_path, config):
         for key, value in config.items():
             line = f"{key}: {value}\n"
             f.write(line)
+
 
 def save_cell_value_subplots(cell_value_map, output_path, display_results, y_label):
     total_cells = len(list(cell_value_map.values())[0])
@@ -196,6 +199,7 @@ def get_total_cells(event_config) -> int:
         total_cells += cells
     return total_cells
 
+
 def draw_grid(frame, cell_positions, line_color=(255, 255, 255), line_thickness=1):
     for cell_index, (top_left, bottom_right) in enumerate(cell_positions):
         start_x, start_y = top_left
@@ -277,6 +281,7 @@ def calculate_grid_cell_positions(image, config):
         all_cell_positions.extend(cell_positions)
 
     return all_cell_positions
+
 
 def annotate_frame(
     frame, text, position, font_scale=1, font_color=(255, 255, 255), thickness=2
