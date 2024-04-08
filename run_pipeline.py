@@ -11,8 +11,7 @@ def parse_arguments():
 
     parser.add_argument("data_path", help="Path to the data directory.")
     parser.add_argument("output_path", help="Path where output will be saved.")
-    parser.add_argument("dataset_config_path", help="Path to the dataset configuration file.")
-    parser.add_argument("event_config_path", help="Path to the event configuration file.")
+    parser.add_argument("config_path", help="Path to the configuration YML file.")
     parser.add_argument("--heatmap", help="Skip heatmap generation.", action=argparse.BooleanOptionalAction)
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -122,10 +121,9 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
         log_file.write("--------------------------------------------------\n")
 
 
-def main(data_path, output_path, dataset_config_path, event_config_path, heatmap, attention, optical_flow):
+def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
     check_path_exists(data_path, "Data")
-    check_path_exists(dataset_config_path, "Dataset config")
-    check_path_exists(event_config_path, "Event config")
+    check_path_exists(config_path, "Config")
 
     if os.path.isdir(output_path):
         response = input("Output path already exists. Do you want to overwrite it? (y/[n]): ").strip().lower()
@@ -148,7 +146,7 @@ def main(data_path, output_path, dataset_config_path, event_config_path, heatmap
         print("----------------------------------------")
         run_script_in_conda_env(
             script_path="DRIVE/main_saliency.py",
-            args=[data_path, output_path, dataset_config_path],
+            args=[data_path, output_path, config_path],
             env_name="pyRL"
         )
 
@@ -158,7 +156,7 @@ def main(data_path, output_path, dataset_config_path, event_config_path, heatmap
         print("----------------------------------------")
         run_script_in_conda_env(
             script_path="SFC/grid_attention.py",
-            args=[data_path, output_path, dataset_config_path, event_config_path],
+            args=[data_path, output_path, config_path],
             env_name="TED-SFC"
         )
 
@@ -168,7 +166,7 @@ def main(data_path, output_path, dataset_config_path, event_config_path, heatmap
         print("----------------------------------------")
         run_script_in_conda_env(
             script_path="SFC/grid_optical_flow.py",
-            args=[data_path, output_path, dataset_config_path, event_config_path],
+            args=[data_path, output_path, config_path],
             env_name="TED-SFC"
         )
 
@@ -198,4 +196,4 @@ if __name__ == "__main__":
     if args.optical_flow:
         args.heatmap = False
 
-    main(args.data_path, args.output_path, args.dataset_config_path, args.event_config_path, args.heatmap, args.attention, args.optical_flow)
+    main(args.data_path, args.output_path, args.config_path, args.heatmap, args.attention, args.optical_flow)
