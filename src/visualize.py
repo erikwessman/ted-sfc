@@ -41,19 +41,46 @@ def visualize_cell_values(video_path, cell_values, output_path):
     # Calculate the height of the subplot, with a margin of 100 pixels
     subplot_height = int(plot_rows * frame_height / plot_cols) + 100
 
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height + subplot_height))
+    out = cv2.VideoWriter(
+        output_path,
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        fps,
+        (frame_width, frame_height + subplot_height),
+    )
 
     frame_number = 0
-    with tqdm(total=number_of_frames, desc="Frame progress", leave=False) as pbar_frames:
+    with tqdm(
+        total=number_of_frames, desc="Frame progress", leave=False
+    ) as pbar_frames:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            fig, axs = plt.subplots(nrows=plot_rows, ncols=plot_cols, figsize=(frame_width / dpi, subplot_height / dpi),
-                                    gridspec_kw={'width_ratios': [1] * plot_cols, 'left': 0.08, 'right': 0.95, 'top': 0.8, 'bottom': 0.22}, dpi=dpi, sharex=True, sharey=True)
-            fig.text(0.5, 0.05, 'Frame Number', ha='center', va='center')
-            fig.text(0.02, 0.5, 'Mean Cell Value', ha='center', va='center', rotation='vertical')
+            fig, axs = plt.subplots(
+                nrows=plot_rows,
+                ncols=plot_cols,
+                figsize=(frame_width / dpi, subplot_height / dpi),
+                gridspec_kw={
+                    "width_ratios": [1] * plot_cols,
+                    "left": 0.08,
+                    "right": 0.95,
+                    "top": 0.8,
+                    "bottom": 0.22,
+                },
+                dpi=dpi,
+                sharex=True,
+                sharey=True,
+            )
+            fig.text(0.5, 0.05, "Frame Number", ha="center", va="center")
+            fig.text(
+                0.02,
+                0.5,
+                "Mean Cell Value",
+                ha="center",
+                va="center",
+                rotation="vertical",
+            )
             canvas = FigureCanvas(fig)
 
             for cell_index in range(total_cells):
@@ -88,7 +115,9 @@ def main(data_path: str, args):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "cell_values.csv")):
-            tqdm_obj.write(f"Skipped. File 'cell_values.csv' not found in {target_path}.")
+            tqdm_obj.write(
+                f"Skipped. File 'cell_values.csv' not found in {target_path}."
+            )
             continue
 
         cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
@@ -111,7 +140,4 @@ def main(data_path: str, args):
 if __name__ == "__main__":
     args = parse_arguments()
 
-    main(
-        args.data_path,
-        args
-    )
+    main(args.data_path, args)
