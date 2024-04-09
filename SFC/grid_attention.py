@@ -182,7 +182,7 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(data_path, output_path, config, display_results):
+def main(data_path, output_path, grid_config, display_results):
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -204,24 +204,25 @@ def main(data_path, output_path, config, display_results):
             original_video_path,
             target_path,
             video_id,
-            config,
+            grid_config,
         )
 
-        helper.save_cell_value_csv(mean_attention_map, target_path, config)
+        helper.save_cell_value_csv(mean_attention_map, target_path, grid_config)
         helper.save_cell_value_subplots(mean_attention_map, target_path, display_results, "Mean attention")
         helper.save_combined_plot(mean_attention_map, target_path, display_results, "Mean attention")
 
-    helper.save_config(output_path, config)
-
+    helper.save_config(grid_config, output_path, "grid_config.yml")
     print("grid_attention.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
     config = helper.load_yml(args.config_path)
+    grid_config = config["grid_config"]
+
     main(
         args.data_path,
         args.output_path,
-        config,
+        grid_config,
         args.display_results,
     )

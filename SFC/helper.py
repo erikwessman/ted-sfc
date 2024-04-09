@@ -77,12 +77,13 @@ def save_cell_value_csv(cell_value_map, output_path, config):
             writer.writerow(row)
 
 
-def save_config(output_path, config):
-    config_path = os.path.join(output_path, "config.txt")
-    with open(config_path, "w") as f:
-        for key, value in config.items():
-            line = f"{key}: {value}\n"
-            f.write(line)
+def save_config(config, output_path, name):
+    """
+    Save a dict as YML to the specified path
+    """
+    path = os.path.join(output_path, name)
+    with open(path, 'w') as file:
+        yaml.dump(config, file, default_flow_style=False)
 
 
 def save_cell_value_subplots(cell_value_map, output_path, display_results, y_label):

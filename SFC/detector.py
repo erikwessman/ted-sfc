@@ -4,12 +4,10 @@ This script attempts to find the event window in a video from a set of morton co
 import os
 import argparse
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from typing import Union, Tuple
 
 import helper
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -74,7 +72,6 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
     else:
         return None
 
- 
 
 def detect_event(morton_codes, cell_ranges, required_cell_subsets, margin) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
     """
@@ -92,9 +89,17 @@ def detect_event(morton_codes, cell_ranges, required_cell_subsets, margin) -> Un
         return None, None
 
 
-def main(data_path, cell_ranges, required_cell_subsets, margin, calibration_videos):
-    df_event_window = pd.DataFrame(
-        columns=["video_id",  "event_detected", "start_frame", "end_frame"])
+def main(data_path, detector_config):
+    # Config variables for detector
+    required_cell_subsets = detector_config["required_cell_subsets"]
+    calibration_videos = detector_config["detection_calibration_videos"]
+
+    # Config variables specific to the type, either attention or OF
+    type_config = detector_config["attention"] if args.attention else detector_config["optical_flow"]
+    cell_ranges = type_config["cell_ranges"]
+    margin = type_config["margin"]
+
+    df_event_window = pd.DataFrame(columns=["video_id",  "event_detected", "start_frame", "end_frame"])
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
@@ -116,10 +121,10 @@ def main(data_path, cell_ranges, required_cell_subsets, margin, calibration_vide
                                                    'start_frame': start_frame, 'end_frame': end_frame,
                                                    'scenario_type': scenario_type}, ignore_index=True)
 
-    df_event_window.to_csv(os.path.join(
-        data_path, "event_window.csv"), sep=";", index=False)
-    
+    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
+
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
+    helper.save_config(detector_config, data_path, "detector_config.yml")
 
     print("detector.py completed.")
 
@@ -127,12 +132,6 @@ def main(data_path, cell_ranges, required_cell_subsets, margin, calibration_vide
 if __name__ == "__main__":
     args = parse_arguments()
     config = helper.load_yml(args.config_path)
-    detection_config = config["attention"] if args.attention else config["optical_flow"]
+    detector_config = config["detector_config"]
 
-    required_cell_subsets = config["required_cell_subsets"]
-    calibration_videos = config["detection_calibration_videos"]
-
-    cell_ranges = detection_config["cell_ranges"]
-    margin = detection_config["margin"]
-
-    main(args.data_path, cell_ranges, required_cell_subsets, margin, calibration_videos)
+    main(args.data_path, detector_config)

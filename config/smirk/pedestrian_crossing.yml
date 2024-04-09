@@ -1,38 +1,39 @@
-# A pedestrian crosses the road
-fps: 10
-saliency_threshold: 0.2 # Saliency
-grids:
-  - top_left: [0.2, 0.45]
-    bottom_right: [0.45, 0.7]
-    rows: 1
-    cols: 3
-  - top_left: [0.55, 0.45]
-    bottom_right: [0.8, 0.7]
-    rows: 1
-    cols: 3
-required_cell_subsets:
-  - !!set { 1, 2, 3 }
-  - !!set { 4, 5, 6 }
-detection_calibration_videos:
-  - "1KIGitKyAbsQCXw66UGFU"
-  - "00Jyiy3E2DstQTcaaRHsI"
-  - "IFGmZTtK9U3ntir243GGt"
+grid_config:
+  fps: 10
+  saliency_threshold: 0.2
+  grids:
+    - top_left: [0.2, 0.45]
+      bottom_right: [0.45, 0.7]
+      rows: 1
+      cols: 3
+    - top_left: [0.55, 0.45]
+      bottom_right: [0.8, 0.7]
+      rows: 1
+      cols: 3
 
-attention:
-  margin: 0
-  cell_ranges:
-    1: [4.096e-07, 4.096e-07]
-    2: [8.192e-07, 8.192e-07]
-    3: [1.6384e-06, 1.6388e-06]
-    4: [5.2e-08, 3.2768e-06]
-    5: [6.5536e-06, 6.5536e-06]
-    6: [1.31072e-05, 1.31104e-05]
-optical_flow:
-  margin: 0
-  cell_ranges:
-    1: [2.62208e-05, 2.62208e-05]
-    2: [5.24416e-05, 5.24416e-05]
-    3: [0.0001048832, 0.0001572996]
-    4: [0.000209716, 0.000629148]
-    5: [0.0004195328, 0.0004195328]
-    6: [0.0008390656, 0.0012585984]
+detector_config:
+  required_cell_subsets:
+    - !!set { 1, 2, 3 }
+    - !!set { 4, 5, 6 }
+  detection_calibration_videos:
+    - "1KIGitKyAbsQCXw66UGFU"
+    - "00Jyiy3E2DstQTcaaRHsI"
+    - "IFGmZTtK9U3ntir243GGt"
+  attention:
+    margin: 0
+    cell_ranges:
+      1: [4.096e-07, 4.096e-07]
+      2: [8.192e-07, 8.192e-07]
+      3: [1.6384e-06, 1.6388e-06]
+      4: [5.2e-08, 3.2768e-06]
+      5: [6.5536e-06, 6.5536e-06]
+      6: [1.31072e-05, 1.31104e-05]
+  optical_flow:
+    margin: 0
+    cell_ranges:
+      1: [2.62208e-05, 2.62208e-05]
+      2: [5.24416e-05, 5.24416e-05]
+      3: [0.0001048832, 0.0001572996]
+      4: [0.000209716, 0.000629148]
+      5: [0.0004195328, 0.0004195328]
+      6: [0.0008390656, 0.0012585984]

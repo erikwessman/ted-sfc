@@ -38,7 +38,7 @@ def calculate_iou(prediction_interval, ground_truth_interval):
 def main(event_window_path: str, ground_truth: dict):
     assert os.path.exists(event_window_path), "Event window file does not exist"
 
-    df_event_window = pd.read_csv(event_window_path, sep=";")
+    df_event_window = pd.read_csv(event_window_path, dtype={'video_id': str},  sep=";")
 
     TP, FP, FN, TN = 0, 0, 0, 0
 
@@ -46,9 +46,9 @@ def main(event_window_path: str, ground_truth: dict):
 
     for index, row in df_event_window.iterrows():
         video_id = row["video_id"]
+
         event_detected = row["event_detected"]
         prediction_interval = (row["start_frame"], row["end_frame"])
-
         video_ground_truth = helper.get_ground_truth(ground_truth, video_id)
 
         if event_detected:

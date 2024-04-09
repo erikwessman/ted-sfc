@@ -216,7 +216,7 @@ def process_video(
     return cell_values
 
 
-def main(data_path, output_path, config, display_results):
+def main(data_path, output_path, grid_config, display_results):
     os.makedirs(output_path, exist_ok=True)
 
     for video_dir, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -229,10 +229,10 @@ def main(data_path, output_path, config, display_results):
             video_path,
             target_path,
             video_id,
-            config,
+            grid_config,
         )
 
-        helper.save_cell_value_csv(output_cell_value_map, target_path, config)
+        helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
         helper.save_cell_value_subplots(
             output_cell_value_map, target_path, display_results, "Cell value"
         )
@@ -240,15 +240,18 @@ def main(data_path, output_path, config, display_results):
             output_cell_value_map, target_path, display_results, "Cell value"
         )
 
-    helper.save_config(output_path, config)
+    helper.save_config(grid_config, output_path, "grid_config.yml")
+    print("grid_optical_flow.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
     config = helper.load_yml(args.config_path)
+    grid_config = config["grid_config"]
+
     main(
         args.data_path,
         args.output_path,
-        config,
+        grid_config,
         args.display_results,
     )
