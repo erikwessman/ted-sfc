@@ -20,12 +20,8 @@ def parse_arguments():
         help="Path to the config yml file",
     )
     group = parser.add_mutually_exclusive_group(required=True)
-
     group.add_argument("--attention", help="Detect for attention", action="store_true")
-    group.add_argument(
-        "--optical-flow", help="Detect for optical flow", action="store_true"
-    )
-
+    group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
     return parser.parse_args()
 
 
@@ -99,40 +95,32 @@ def detect_event(
         return None, None
 
 
-def main(data_path, detector_config):
+def main(data_path: str, config_path: str, use_attention: bool):
+    # Load config
+    config = helper.load_yml(config_path)
+    detector_config = config["detector_config"]
+
     # Config variables for detector
     required_cell_subsets = detector_config["required_cell_subsets"]
     calibration_videos = detector_config["detection_calibration_videos"]
 
     # Config variables specific to the type, either attention or OF
-    type_config = (
-        detector_config["attention"]
-        if args.attention
-        else detector_config["optical_flow"]
-    )
+    type_config = (detector_config["attention"] if use_attention else detector_config["optical_flow"])
     cell_ranges = type_config["cell_ranges"]
     margin = type_config["margin"]
 
-    df_event_window = pd.DataFrame(
-        columns=["video_id", "event_detected", "start_frame", "end_frame"]
-    )
+    df_event_window = pd.DataFrame(columns=["video_id", "event_detected", "start_frame", "end_frame"])
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(
-                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
-            )
+            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
             continue
 
-        morton_codes = pd.read_csv(
-            os.path.join(target_path, "morton_codes.csv"), sep=";"
-        )
+        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
 
-        event_window, scenario_type = detect_event(
-            morton_codes, cell_ranges, required_cell_subsets, margin
-        )
+        event_window, scenario_type = detect_event(morton_codes, cell_ranges, required_cell_subsets, margin)
 
         event_detected = event_window is not None
         start_frame, end_frame = event_window if event_window is not None else (-1, -1)
@@ -149,19 +137,12 @@ def main(data_path, detector_config):
             ignore_index=True,
         )
 
-    df_event_window.to_csv(
-        os.path.join(data_path, "event_window.csv"), sep=";", index=False
-    )
+    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
     helper.save_config(detector_config, data_path, "detector_config.yml")
 
-    print("detector.py completed.")
-
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config = helper.load_yml(args.config_path)
-    detector_config = config["detector_config"]
-
-    main(args.data_path, detector_config)
+    main(args.data_path, args.config_path, args.attention)

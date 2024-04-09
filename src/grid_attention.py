@@ -114,6 +114,7 @@ def process_video_and_generate_attention_map(
     target_path,
     video_id,
     config,
+    display_results
 ) -> dict:
     ensure_matching_video_resolution(original_video_path, heatmap_video_path)
 
@@ -168,7 +169,7 @@ def process_video_and_generate_attention_map(
 
             out.write(combined_frame)
 
-            if args.display_results:
+            if display_results:
                 cv2.imshow("Saliency grid", combined_frame)
 
             ret_heatmap, frame_heatmap = cap_heatmap.read()
@@ -188,7 +189,11 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(data_path, output_path, grid_config, display_results):
+def main(data_path: str, output_path: str, config_path: str, display_results: bool = False):
+    # Load config
+    config = helper.load_yml(config_path)
+    grid_config = config["grid_config"]
+
     assert os.path.exists(output_path), f"Output path {output_path} does not exist."
 
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -201,12 +206,8 @@ def main(data_path, output_path, grid_config, display_results):
         original_video_path = os.path.join(video_path, f"{video_id}.avi")
         heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-        if not os.path.exists(heatmap_video_path) or not os.path.exists(
-            original_video_path
-        ):
-            tqdm_obj.write(
-                f"Skipping {video_id}: Heatmap or original videos do not exist"
-            )
+        if not os.path.exists(heatmap_video_path) or not os.path.exists(original_video_path):
+            tqdm_obj.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
             continue
 
         mean_attention_map = process_video_and_generate_attention_map(
@@ -215,28 +216,21 @@ def main(data_path, output_path, grid_config, display_results):
             target_path,
             video_id,
             grid_config,
+            display_results
         )
 
         helper.save_cell_value_csv(mean_attention_map, target_path, grid_config)
-        helper.save_cell_value_subplots(
-            mean_attention_map, target_path, display_results, "Mean attention"
-        )
-        helper.save_combined_plot(
-            mean_attention_map, target_path, display_results, "Mean attention"
-        )
+        helper.save_cell_value_subplots(mean_attention_map, target_path, display_results, "Mean attention")
+        helper.save_combined_plot(mean_attention_map, target_path, display_results, "Mean attention")
 
     helper.save_config(grid_config, output_path, "grid_config.yml")
-    print("grid_attention.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config = helper.load_yml(args.config_path)
-    grid_config = config["grid_config"]
-
     main(
         args.data_path,
         args.output_path,
-        grid_config,
+        args.config_path,
         args.display_results,
     )

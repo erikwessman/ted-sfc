@@ -185,6 +185,7 @@ def process_video(
     target_path,
     video_id,
     config,
+    display_results
 ) -> dict:
     cap = cv2.VideoCapture(video_path)
 
@@ -251,7 +252,7 @@ def process_video(
 
             out.write(frame)
 
-            if args.display_results:
+            if display_results:
                 cv2.imshow("Grid", frame)
 
             ret, frame = cap.read()
@@ -269,7 +270,11 @@ def process_video(
     return cell_values
 
 
-def main(data_path, output_path, grid_config, display_results):
+def main(data_path: str, output_path: str, config_path: str, display_results: bool = False):
+    # Load config
+    config = helper.load_yml(config_path)
+    grid_config = config["grid_config"]
+
     os.makedirs(output_path, exist_ok=True)
 
     for video_dir, video_id, tqdm_obj in helper.traverse_videos(data_path):
@@ -283,28 +288,21 @@ def main(data_path, output_path, grid_config, display_results):
             target_path,
             video_id,
             grid_config,
+            display_results
         )
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
-        helper.save_cell_value_subplots(
-            output_cell_value_map, target_path, display_results, "Cell value"
-        )
-        helper.save_combined_plot(
-            output_cell_value_map, target_path, display_results, "Cell value"
-        )
+        helper.save_cell_value_subplots(output_cell_value_map, target_path, display_results, "Cell value")
+        helper.save_combined_plot(output_cell_value_map, target_path, display_results, "Cell value")
 
     helper.save_config(grid_config, output_path, "grid_config.yml")
-    print("grid_optical_flow.py completed.")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config = helper.load_yml(args.config_path)
-    grid_config = config["grid_config"]
-
     main(
         args.data_path,
         args.output_path,
-        grid_config,
+        args.config_path,
         args.display_results,
     )

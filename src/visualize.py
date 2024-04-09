@@ -110,7 +110,7 @@ def visualize_cell_values(video_path, cell_values, output_path):
         out.release()
 
 
-def main(data_path: str, args):
+def main(data_path: str):
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
@@ -134,10 +134,7 @@ def main(data_path: str, args):
             output_path = os.path.join(target_path, f"{video_id}_plot_viz.avi")
             visualize_cell_values(grid_video_path[0], cell_values, output_path)
 
-    print("visualize.py completed.")
-
 
 if __name__ == "__main__":
     args = parse_arguments()
-
-    main(args.data_path, args)
+    main(args.data_path)

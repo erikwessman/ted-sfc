@@ -107,11 +107,6 @@ def process_data(data_path, output_path, mode, max_videos):
         pbar.set_description("Processing folders")
 
 
-def main():
-    args = parse_arguments()
-
-    process_data(args.data_path, args.output_path, args.mode, args.max_videos)
-
-
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+    process_data(args.data_path, args.output_path, args.mode, args.max_videos)

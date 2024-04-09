@@ -43,7 +43,10 @@ def calculate_iou(prediction_interval, ground_truth_interval):
     return iou
 
 
-def main(event_window_path: str, ground_truth: dict):
+def main(event_window_path: str, ground_truth_path: str):
+    # Load ground truth
+    ground_truth = helper.load_yml(ground_truth_path)
+
     assert os.path.exists(event_window_path), "Event window file does not exist"
 
     df_event_window = pd.read_csv(event_window_path, dtype={"video_id": str}, sep=";")
@@ -93,6 +96,4 @@ def main(event_window_path: str, ground_truth: dict):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    ground_truth = helper.load_yml(args.ground_truth_path)
-
-    main(args.event_window_path, ground_truth)
+    main(args.event_window_path, args.ground_truth_path)
