@@ -73,7 +73,10 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
     plt.close()
 
 
-def main(data_path: str, ground_truth: dict):
+def main(data_path: str, ground_truth_path: str):
+    # Load ground truth
+    ground_truth = helper.load_yml(ground_truth_path)
+
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         morton_codes_path = os.path.join(video_path, "morton_codes.csv")
 
@@ -92,11 +95,7 @@ def main(data_path: str, ground_truth: dict):
             morton_codes_df, video_ground_truth, video_path
         )
 
-    print("plot_gt.py completed")
-
 
 if __name__ == "__main__":
     args = parse_arguments()
-    ground_truth = helper.load_yml(args.ground_truth_path)
-
-    main(args.data_path, ground_truth)
+    main(args.data_path, args.ground_truth_path)

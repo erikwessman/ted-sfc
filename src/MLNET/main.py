@@ -2,17 +2,18 @@
 https://github.com/Cogito2012/DRIVE/blob/master/main_saliency.py
 """
 import os
+import argparse
 import torch
 import yaml
-import argparse
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-from torchvision.io import write_video
 import numpy as np
 from tqdm import tqdm
-from mlnet import MLNet
-from ted_loader import TEDLoader
-from data_transform import ProcessImages, padding_inv
+from torch.utils.data import DataLoader
+from torchvision.io import write_video
+import torchvision.transforms as transforms
+
+from MLNET.mlnet import MLNet
+from MLNET.ted_loader import TEDLoader
+from MLNET.data_transform import ProcessImages, padding_inv
 
 
 MODEL_PATH = "models/saliency/mlnet_25.pth"
@@ -33,16 +34,25 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main(data_path, output_path, config, device):
+def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
+    # Load config
+    config = load_config(config_path)
+    grid_config = config["grid_config"]
+
+    # Set up CUDA
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
     os.makedirs(output_path, exist_ok=True)
 
+    # Set up data loader
     transform_image = transforms.Compose([ProcessImages(INPUT_SHAPE)])
     params_norm = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
     test_data = TEDLoader(data_path, transforms=transform_image, params_norm=params_norm)
     testdata_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
+    # Load model
     model = MLNet(INPUT_SHAPE).to(device)  # ~700MiB
-
     ckpt = torch.load(MODEL_PATH, map_location=device)
     model.load_state_dict(ckpt["model"])
     model.to(device)
@@ -84,17 +94,11 @@ def main(data_path, output_path, config, device):
                 pred_video.append(pred_saliency)
 
             pred_video = np.array(pred_video, dtype=np.uint8)  # (T, H, W, C)
-            write_video(result_videofile, torch.from_numpy(pred_video), config["fps"])
+            write_video(result_videofile, torch.from_numpy(pred_video), grid_config["fps"])
 
             pbar.set_description("Processing folders")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config = load_config(args.config_path)
-    grid_config = config["grid_config"]
-
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-    main(args.data_path, args.output_path, grid_config, device)
+    main(args.data_path, args.output_path, args.config_path, args.gpu_id)

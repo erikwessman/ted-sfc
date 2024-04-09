@@ -1,9 +1,14 @@
 import os
 import sys
-import subprocess
 import argparse
 import datetime
 import cv2
+
+from MLNET.main import main as run_mlnet
+from grid_attention import main as run_grid_attention
+from grid_optical_flow import main as run_grid_optical_flow
+from morton import main as run_morton
+import helper
 
 
 def parse_arguments():
@@ -28,14 +33,7 @@ def get_dataset_info(data_path):
     nr_videos = 0
     nr_frames = 0
 
-    video_dirs = [
-        name
-        for name in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, name))
-    ]
-
-    for video_id in video_dirs:
-        video_dir = os.path.join(data_path, video_id)
+    for video_dir, video_id, _ in helper.traverse_videos(data_path):
         video_path = os.path.join(video_dir, f"{video_id}.avi")
 
         nr_videos += 1
@@ -54,40 +52,6 @@ def get_total_frames(video_path):
     cap.release()
 
     return total_frames
-
-
-def find_env_path(env_name):
-    """
-    Finds the path to the specified Conda environment.
-    """
-    try:
-        envs = subprocess.check_output(["conda", "env", "list"], universal_newlines=True)
-        for line in envs.splitlines():
-            line_parts = line.split()
-            if env_name == line_parts[0]:
-                return line_parts[-1]
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to list Conda environments. Error: {e}")
-        sys.exit(1)
-    return None
-
-
-def run_script_in_conda_env(script_path, args, env_name):
-    """
-    Runs a Python script in the specified Conda environment using its path.
-    """
-    env_path = find_env_path(env_name)
-    if not env_path:
-        print(f"Conda environment '{env_name}' not found.")
-        sys.exit(1)
-
-    command = ['conda', 'run', '-p', env_path, 'python', script_path] + args
-    try:
-        # TODO print the output in real time
-        subprocess.run(command, check=True, stdout=None, stderr=None)
-    except subprocess.CalledProcessError:
-        print(f"Failed to run {script_path} in the {env_name} environment.")
-        sys.exit(1)
 
 
 def check_path_exists(path, path_type):
@@ -142,42 +106,26 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
 
     if heatmap and attention:
         print("----------------------------------------")
-        print("Starting main_mlnet.py...")
+        print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        run_script_in_conda_env(
-            script_path="src/MLNET/main_mlnet.py",
-            args=[data_path, output_path, config_path],
-            env_name="pyRL"
-        )
+        run_mlnet(data_path, output_path, config_path)
 
     if attention:
         print("----------------------------------------")
-        print("Starting grid_attention.py...")
+        print("Applying attention grid...")
         print("----------------------------------------")
-        run_script_in_conda_env(
-            script_path="src/grid_attention.py",
-            args=[data_path, output_path, config_path],
-            env_name="TED-SFC"
-        )
+        run_grid_attention(data_path, output_path, config_path)
 
     if optical_flow:
         print("----------------------------------------")
-        print("Starting grid_optical_flow.py...")
+        print("Applying optical flow grid...")
         print("----------------------------------------")
-        run_script_in_conda_env(
-            script_path="src/grid_optical_flow.py",
-            args=[data_path, output_path, config_path],
-            env_name="TED-SFC"
-        )
+        run_grid_optical_flow(data_path, output_path, config_path)
 
     print("----------------------------------------")
-    print("Starting morton.py...")
+    print("Generating Morton codes...")
     print("----------------------------------------")
-    run_script_in_conda_env(
-        script_path="src/morton.py",
-        args=[output_path],
-        env_name="TED-SFC"
-    )
+    run_morton(output_path)
 
     end_time = datetime.datetime.now()
     print(f"Pipeline ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")

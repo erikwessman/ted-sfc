@@ -141,7 +141,7 @@ def create_and_save_combined_plot_with_morton_codes(
         plt.close()
 
 
-def main(data_path, display_plots):
+def main(data_path: str, display_plots: bool = False):
     for video_path, video_id, tqdm_obj in helper.traverse_videos(data_path):
         cell_value_path = os.path.join(video_path, "cell_values.csv")
 
@@ -166,10 +166,7 @@ def main(data_path, display_plots):
             "Cell values with Morton codes",
         )
 
-    print("morton.py completed.")
-
 
 if __name__ == "__main__":
     args = parse_arguments()
-
     main(args.data_path, args.display_plots)
