@@ -21,8 +21,7 @@ ROAD_X_MAX = 220
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Process SMIRK dataset into videos.")
+    parser = argparse.ArgumentParser(description="Process SMIRK dataset into videos.")
     parser.add_argument(
         "labels_path",
         type=str,
@@ -72,13 +71,15 @@ def get_bbox_center(x_min, x_max, y_min, y_max):
 
 
 def save_yml(path: str, data):
-    with open(path, 'w', encoding="utf-8") as yaml_file:
-        dump = yaml.safe_dump(data,
-                              default_flow_style=False,
-                              allow_unicode=False,
-                              encoding=None,
-                              sort_keys=False,
-                              line_break=10)
+    with open(path, "w", encoding="utf-8") as yaml_file:
+        dump = yaml.safe_dump(
+            data,
+            default_flow_style=False,
+            allow_unicode=False,
+            encoding=None,
+            sort_keys=False,
+            line_break=10,
+        )
         yaml_file.write(dump)
 
 
@@ -117,7 +118,7 @@ def get_df_ground_truth(df):
     return {
         "id": video_id,
         "event_window": [event_start, event_end],
-        "type": scenario_type
+        "type": scenario_type,
     }
 
 
@@ -131,15 +132,15 @@ def main(labels_path: str, output_path: str):
     annotations = []
 
     for group_id, df_group in group:
-        if not (df_group['scenario_type'].isin(['left', 'right'])).any():
+        if not (df_group["scenario_type"].isin(["left", "right"])).any():
             # Skip scenarios that don't contain pedestrians crossing the road
             continue
 
-        if (df_group['current_distance'] > 26).any():
+        if (df_group["current_distance"] > 26).any():
             # Skip scenarios in which the pedestrian is further than 26m away
             continue
 
-        if (df_group['class_text'] == 'background').all():
+        if (df_group["class_text"] == "background").all():
             # Skip scenario if all values in 'class_text' are 'background'
             continue
 

@@ -14,8 +14,7 @@ SCALE = (752, 480)
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Process SMIRK dataset into videos.")
+    parser = argparse.ArgumentParser(description="Process SMIRK dataset into videos.")
     parser.add_argument(
         "data_path",
         type=str,
@@ -76,14 +75,18 @@ def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
         sequence_dir = os.path.join(data_path, video_id)
         video_output_path = os.path.join(video_output_dir, f"{video_id}.avi")
 
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
         out = cv2.VideoWriter(video_output_path, fourcc, FPS, SCALE)
 
         if not os.path.isdir(sequence_dir):
             tqdm.write(f"Skipping file {sequence_dir} as it's not a directory.")
             continue
 
-        image_files = [f for f in sorted(os.listdir(sequence_dir)) if f.endswith('.png') and not f.endswith('.labels.png')]
+        image_files = [
+            f
+            for f in sorted(os.listdir(sequence_dir))
+            if f.endswith(".png") and not f.endswith(".labels.png")
+        ]
 
         for image_file in image_files:
             image_path = os.path.join(sequence_dir, image_file)

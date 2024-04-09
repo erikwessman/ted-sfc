@@ -22,12 +22,16 @@ def parse_arguments():
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument("--attention", help="Detect for attention", action="store_true")
-    group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
+    group.add_argument(
+        "--optical-flow", help="Detect for optical flow", action="store_true"
+    )
 
     return parser.parse_args()
 
 
-def get_matching_cell_key(morton_code: float, cell_morton: dict, margin: int) -> Union[int, None]:
+def get_matching_cell_key(
+    morton_code: float, cell_morton: dict, margin: int
+) -> Union[int, None]:
     for cell, (min_value, max_value) in cell_morton.items():
         if min_value - margin <= morton_code <= max_value + margin:
             return cell
@@ -73,13 +77,19 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
         return None
 
 
-def detect_event(morton_codes, cell_ranges, required_cell_subsets, margin) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
+def detect_event(
+    morton_codes, cell_ranges, required_cell_subsets, margin
+) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
     """
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
     In case there is no event, returns: None, None
     """
-    sequence_left = get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin)
-    sequence_right = get_sequence(morton_codes[::-1], cell_ranges, required_cell_subsets, margin)
+    sequence_left = get_sequence(
+        morton_codes, cell_ranges, required_cell_subsets, margin
+    )
+    sequence_right = get_sequence(
+        morton_codes[::-1], cell_ranges, required_cell_subsets, margin
+    )
 
     if sequence_left:
         return (sequence_left[0][1], sequence_left[-1][1]), "left"
@@ -95,33 +105,53 @@ def main(data_path, detector_config):
     calibration_videos = detector_config["detection_calibration_videos"]
 
     # Config variables specific to the type, either attention or OF
-    type_config = detector_config["attention"] if args.attention else detector_config["optical_flow"]
+    type_config = (
+        detector_config["attention"]
+        if args.attention
+        else detector_config["optical_flow"]
+    )
     cell_ranges = type_config["cell_ranges"]
     margin = type_config["margin"]
 
-    df_event_window = pd.DataFrame(columns=["video_id",  "event_detected", "start_frame", "end_frame"])
+    df_event_window = pd.DataFrame(
+        columns=["video_id", "event_detected", "start_frame", "end_frame"]
+    )
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
             tqdm_obj.write(
-                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
+                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
+            )
             continue
 
-        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
+        morton_codes = pd.read_csv(
+            os.path.join(target_path, "morton_codes.csv"), sep=";"
+        )
 
-        event_window, scenario_type = detect_event(morton_codes, cell_ranges, required_cell_subsets, margin)
+        event_window, scenario_type = detect_event(
+            morton_codes, cell_ranges, required_cell_subsets, margin
+        )
 
         event_detected = event_window is not None
         start_frame, end_frame = event_window if event_window is not None else (-1, -1)
         scenario_type = scenario_type if scenario_type is not None else ""
 
-        df_event_window = df_event_window._append({'video_id': video_id, 'event_detected': event_detected,
-                                                   'start_frame': start_frame, 'end_frame': end_frame,
-                                                   'scenario_type': scenario_type}, ignore_index=True)
+        df_event_window = df_event_window._append(
+            {
+                "video_id": video_id,
+                "event_detected": event_detected,
+                "start_frame": start_frame,
+                "end_frame": end_frame,
+                "scenario_type": scenario_type,
+            },
+            ignore_index=True,
+        )
 
-    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
+    df_event_window.to_csv(
+        os.path.join(data_path, "event_window.csv"), sep=";", index=False
+    )
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
     helper.save_config(detector_config, data_path, "detector_config.yml")

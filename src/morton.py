@@ -40,7 +40,9 @@ def compute_morton_codes_for_cells(df):
         morton_code = calculateMortonFromList_with_zCurve(
             (row[col] for col in cell_columns)
         )
-        morton_frame_pairs.append({"frame_id": int(row["frame_id"]), "morton": morton_code})
+        morton_frame_pairs.append(
+            {"frame_id": int(row["frame_id"]), "morton": morton_code}
+        )
 
     return pd.DataFrame(morton_frame_pairs, columns=["frame_id", "morton"])
 
@@ -67,15 +69,17 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
     ax1.set_xlabel("Morton")
     ax1.set_ylabel("Frequency")
     ax1.set_ylim((0, 1))
-    ax1.eventplot([df["morton"].values], orientation="horizontal", colors="b", lineoffsets=0.5)
+    ax1.eventplot(
+        [df["morton"].values], orientation="horizontal", colors="b", lineoffsets=0.5
+    )
 
     # Plot one dot for each Morton code at each frame
     x = df["morton"]
     y = df["frame_id"]
 
     ax2 = ax1.twinx()
-    ax2.scatter(x, y, s=5, color='black')
-    ax2.set_ylabel('Frame Number')
+    ax2.scatter(x, y, s=5, color="black")
+    ax2.set_ylabel("Frame Number")
     ax2.set_ylim([y.min(), y.max()])
 
     plt.savefig(os.path.join(output_path, "morton_codes_with_dots.png"))
@@ -85,7 +89,10 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
     else:
         plt.close()
 
-def create_and_save_combined_plot_with_morton_codes(cell_value_df, morton_code_df, output_path, display_results, y_label):
+
+def create_and_save_combined_plot_with_morton_codes(
+    cell_value_df, morton_code_df, output_path, display_results, y_label
+):
     fig, ax = plt.subplots(figsize=(10, 7))
     total_cells = len(cell_value_df.columns)
 
@@ -94,9 +101,12 @@ def create_and_save_combined_plot_with_morton_codes(cell_value_df, morton_code_d
     min_morton_value = morton_code_df["morton"].min()
     max_morton_value = morton_code_df["morton"].max()
 
-    morton_code_df["morton_normalized"] = min_cell_value + ((morton_code_df["morton"] - min_morton_value) * (max_cell_value - min_cell_value)) / (max_morton_value - min_morton_value)
+    morton_code_df["morton_normalized"] = min_cell_value + (
+        (morton_code_df["morton"] - min_morton_value)
+        * (max_cell_value - min_cell_value)
+    ) / (max_morton_value - min_morton_value)
 
-    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     for cell_index in range(total_cells):
         cell_column = f"cell{cell_index+1}"
@@ -105,11 +115,17 @@ def create_and_save_combined_plot_with_morton_codes(cell_value_df, morton_code_d
                 cell_value_df.index,  # Assuming DataFrame index represents the frame
                 cell_value_df[cell_column],
                 label=f"Cell {cell_index + 1}",
-                color=color_cycle[cell_index % len(color_cycle)]
+                color=color_cycle[cell_index % len(color_cycle)],
             )
 
     # Add Morton code values as dots on the plot
-    ax.scatter(morton_code_df["frame_id"], morton_code_df["morton_normalized"], color='red', marker='o', label='Normalized Morton Codes')
+    ax.scatter(
+        morton_code_df["frame_id"],
+        morton_code_df["morton_normalized"],
+        color="red",
+        marker="o",
+        label="Normalized Morton Codes",
+    )
 
     ax.set_xlabel("Frame")
     ax.set_ylabel(y_label)
@@ -142,7 +158,13 @@ def main(data_path, display_plots):
 
         create_and_save_CSP(morton_codes, video_path, display_plots)
         create_and_save_CSP_with_dots(morton_codes, video_path, display_plots)
-        create_and_save_combined_plot_with_morton_codes(cell_values, morton_codes, video_path, display_plots, "Cell values with Morton codes")
+        create_and_save_combined_plot_with_morton_codes(
+            cell_values,
+            morton_codes,
+            video_path,
+            display_plots,
+            "Cell values with Morton codes",
+        )
 
     print("morton.py completed.")
 

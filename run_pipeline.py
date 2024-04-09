@@ -142,10 +142,10 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
 
     if heatmap and attention:
         print("----------------------------------------")
-        print("Starting main_saliency.py...")
+        print("Starting main_mlnet.py...")
         print("----------------------------------------")
         run_script_in_conda_env(
-            script_path="DRIVE/main_saliency.py",
+            script_path="src/MLNET/main_mlnet.py",
             args=[data_path, output_path, config_path],
             env_name="pyRL"
         )
@@ -155,9 +155,9 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         print("Starting grid_attention.py...")
         print("----------------------------------------")
         run_script_in_conda_env(
-            script_path="SFC/grid_attention.py",
+            script_path="src/grid_attention.py",
             args=[data_path, output_path, config_path],
-            env_name="TED-SFC"
+            env_name="TED-src"
         )
 
     if optical_flow:
@@ -165,18 +165,18 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         print("Starting grid_optical_flow.py...")
         print("----------------------------------------")
         run_script_in_conda_env(
-            script_path="SFC/grid_optical_flow.py",
+            script_path="src/grid_optical_flow.py",
             args=[data_path, output_path, config_path],
-            env_name="TED-SFC"
+            env_name="TED-src"
         )
 
     print("----------------------------------------")
     print("Starting morton.py...")
     print("----------------------------------------")
     run_script_in_conda_env(
-        script_path="SFC/morton.py",
+        script_path="src/morton.py",
         args=[output_path],
-        env_name="TED-SFC"
+        env_name="TED-src"
     )
 
     end_time = datetime.datetime.now()

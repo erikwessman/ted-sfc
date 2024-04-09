@@ -88,7 +88,9 @@ def main(data_path: str, ground_truth: dict):
             continue
 
         morton_codes_df = pd.read_csv(morton_codes_path, sep=";")
-        create_and_save_CSP_with_ground_truth_and_dots(morton_codes_df, video_ground_truth, video_path)
+        create_and_save_CSP_with_ground_truth_and_dots(
+            morton_codes_df, video_ground_truth, video_path
+        )
 
     print("plot_gt.py completed")
 
