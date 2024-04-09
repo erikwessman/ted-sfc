@@ -27,8 +27,11 @@ COLORS = [
 ]
 
 EVENT_ANGLES = [0, 180]
-EVENT_ANGLE_RANGE = 30
-FLOW_THRESHOLD = 3
+DEFAULT_ANGLE = 90
+ANGLE_RANGE_THRESHOLD = 30
+FLOW_THRESHOLD = 5
+ANGLE_DIFF_THRESHOLD = 50
+NR_FRAMES_MOVING_AVG = 10
 
 
 def parse_arguments():
@@ -49,13 +52,31 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def check_event_criteria(
+    angle_distance,
+    angle_diff,
+    angle_range_threshold,
+    angle_diff_threshold,
+):
+    angle_range_criterion = angle_distance < angle_range_threshold / 2
+    angle_diff_criterion = angle_diff >= angle_diff_threshold
+
+    return angle_range_criterion and angle_diff_criterion
+
+
+def angle_difference(angle1, angle2):
+    return abs((angle2 - angle1 + 180) % 360 - 180)
+
+
 def calculate_cell_values(
     frame,
     frame_gray,
     frame_gray_prev,
     cell_positions,
+    moving_avg_cell_angles,
     event_angles,
-    event_angle_range,
+    angle_range_threshold,
+    angle_diff_threshold,
     flow_threshold,
 ):
     h, w = frame_gray.shape[:3]
@@ -81,34 +102,54 @@ def calculate_cell_values(
         cell_flow = flow[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         cell_mean_flow = np.mean(cell_flow, axis=(0, 1))
 
-        # Compute the direction (angle) of the mean flow vector
-        angle_radians = np.arctan2(cell_mean_flow[1], cell_mean_flow[0])
-        angle_degrees = np.degrees(angle_radians)
+        if np.linalg.norm(cell_mean_flow) <= flow_threshold:
+            current_angle = DEFAULT_ANGLE
+        else:
+            # Compute the direction (angle) of the mean flow vector
+            angle_radians = np.arctan2(cell_mean_flow[1], cell_mean_flow[0])
+            current_angle = np.degrees(angle_radians)
 
-        if angle_degrees < 0:
-            angle_degrees += 360  # Normalize angle
+        moving_avg_cell_angles[cell_index].append(current_angle)
+
+        # Calculate moving average of the last n angles, excluding the current one
+        moving_avg = None
+        if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
+            moving_avg = np.mean(
+                moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1 : -1]
+            )
+
+            if moving_avg < 0:
+                moving_avg += 360  # Normalize angle
+
+        if moving_avg is None:
+            frame_cell_values.append(0)
+            continue
+
+        # Calculate the difference between the current angle and the moving average
+        angle_diff = angle_difference(current_angle, moving_avg)
 
         cell_value = 0
-        for angle in event_angles:
-            distance_to_event_angle = abs(angle_degrees - angle)
+        for event_angle in event_angles:
+            distance_to_event_angle = angle_difference(event_angle, current_angle)
 
-            is_event_cell = (
-                distance_to_event_angle < event_angle_range
-                and np.linalg.norm(cell_mean_flow) > flow_threshold
+            is_event_cell = check_event_criteria(
+                distance_to_event_angle,
+                angle_diff,
+                angle_range_threshold,
+                angle_diff_threshold,
             )
 
             if is_event_cell:
                 cell_value = 1 - (distance_to_event_angle / 360)
 
-                if is_event_cell:
-                    # Draw a bounding box around the cell
-                    cv2.rectangle(
-                        frame,
-                        (cell_start_x, cell_start_y),
-                        (cell_end_x, cell_end_y),
-                        (0, 255, 0),
-                        2,
-                    )
+                # Draw a bounding box around the cell
+                cv2.rectangle(
+                    frame,
+                    (cell_start_x, cell_start_y),
+                    (cell_end_x, cell_end_y),
+                    (0, 255, 0),
+                    2,
+                )
 
                 break
             else:
@@ -170,6 +211,11 @@ def process_video(
     # Maps a frame number to a list containing the cell values for that frame which match the event criteria
     cell_values = {}
 
+    # Keep track of cell angles to calculate average cell angles
+    moving_avg_cell_angles = {
+        cell_index: [] for cell_index in range(len(cell_positions))
+    }
+
     frame_number = 0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     with tqdm(total=total_frames, desc="Frame progress", leave=False) as pbar_frames:
@@ -183,8 +229,10 @@ def process_video(
                 frame_gray,
                 frame_gray_prev,
                 cell_positions,
+                moving_avg_cell_angles,
                 EVENT_ANGLES,
-                EVENT_ANGLE_RANGE,
+                ANGLE_RANGE_THRESHOLD,
+                ANGLE_DIFF_THRESHOLD,
                 FLOW_THRESHOLD,
             )
             frame_gray_prev = frame_gray
@@ -193,8 +241,13 @@ def process_video(
 
             helper.annotate_frame(
                 frame,
-                f"frame: {frame_number}, event angles: {EVENT_ANGLES}, angle range: {EVENT_ANGLE_RANGE}, flow threshold: {FLOW_THRESHOLD}",
+                f"frame: {frame_number}, event_angles: {EVENT_ANGLES}, angle_range: {ANGLE_RANGE_THRESHOLD}, ",
                 (10, 30),
+            )
+            helper.annotate_frame(
+                frame,
+                f"angle_diff_threshold: {ANGLE_DIFF_THRESHOLD}, flow_threshold: {FLOW_THRESHOLD}",
+                (10, 60),
             )
 
             out.write(frame)
