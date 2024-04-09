@@ -157,7 +157,7 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         run_script_in_conda_env(
             script_path="src/grid_attention.py",
             args=[data_path, output_path, config_path],
-            env_name="TED-src"
+            env_name="TED-SFC"
         )
 
     if optical_flow:
@@ -167,7 +167,7 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         run_script_in_conda_env(
             script_path="src/grid_optical_flow.py",
             args=[data_path, output_path, config_path],
-            env_name="TED-src"
+            env_name="TED-SFC"
         )
 
     print("----------------------------------------")
@@ -176,7 +176,7 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
     run_script_in_conda_env(
         script_path="src/morton.py",
         args=[output_path],
-        env_name="TED-src"
+        env_name="TED-SFC"
     )
 
     end_time = datetime.datetime.now()

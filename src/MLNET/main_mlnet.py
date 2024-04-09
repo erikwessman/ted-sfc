@@ -4,15 +4,15 @@ https://github.com/Cogito2012/DRIVE/blob/master/main_saliency.py
 import os
 import torch
 import yaml
-from src.MLNET.mlnet import MLNet
-from src.TEDLoader import TEDLoader
 import argparse
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from torchvision.io import write_video
-from src.data_transform import ProcessImages, padding_inv
 import numpy as np
 from tqdm import tqdm
+from mlnet import MLNet
+from ted_loader import TEDLoader
+from data_transform import ProcessImages, padding_inv
 
 
 MODEL_PATH = "models/saliency/mlnet_25.pth"
@@ -38,9 +38,7 @@ def main(data_path, output_path, config, device):
 
     transform_image = transforms.Compose([ProcessImages(INPUT_SHAPE)])
     params_norm = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
-    test_data = TEDLoader(
-        data_path, transforms=transform_image, params_norm=params_norm
-    )
+    test_data = TEDLoader(data_path, transforms=transform_image, params_norm=params_norm)
     testdata_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
     model = MLNet(INPUT_SHAPE).to(device)  # ~700MiB
