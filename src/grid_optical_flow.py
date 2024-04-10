@@ -29,8 +29,8 @@ COLORS = [
 EVENT_ANGLES = [0, 180]
 DEFAULT_ANGLE = 90
 ANGLE_RANGE_THRESHOLD = 30
-FLOW_THRESHOLD = 5
-ANGLE_DIFF_THRESHOLD = 50
+FLOW_THRESHOLD = 3
+ANGLE_DIFF_THRESHOLD = 75
 NR_FRAMES_MOVING_AVG = 10
 
 
@@ -55,11 +55,14 @@ def parse_arguments():
 def check_event_criteria(
     angle_distance,
     angle_diff,
+    mean_flow,
     angle_range_threshold,
     angle_diff_threshold,
+    flow_threshold,
 ):
     angle_range_criterion = angle_distance < angle_range_threshold / 2
     angle_diff_criterion = angle_diff >= angle_diff_threshold
+    flow_criterion = np.linalg.norm(mean_flow) >= flow_threshold
 
     return angle_range_criterion and angle_diff_criterion
 
@@ -67,6 +70,12 @@ def check_event_criteria(
 def angle_difference(angle1, angle2):
     return abs((angle2 - angle1 + 180) % 360 - 180)
 
+def circular_angle_distance(angle1, angle2):
+    """
+    Calculate the shortest distance between two angles on a circle.
+    Both angles should be in the range [0, 360).
+    """
+    return min((angle1 - angle2) % 360, (angle2 - angle1) % 360)
 
 def calculate_cell_values(
     frame,
@@ -100,43 +109,44 @@ def calculate_cell_values(
 
         # Compute mean flow vector for the cell
         cell_flow = flow[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
-        cell_mean_flow = np.mean(cell_flow, axis=(0, 1))
+        cell_flow_vector = np.mean(cell_flow, axis=(0, 1))
 
-        if np.linalg.norm(cell_mean_flow) <= flow_threshold:
-            current_angle = DEFAULT_ANGLE
-        else:
-            # Compute the direction (angle) of the mean flow vector
-            angle_radians = np.arctan2(cell_mean_flow[1], cell_mean_flow[0])
-            current_angle = np.degrees(angle_radians)
+        if np.linalg.norm(cell_flow_vector) <= 1:
+            cell_flow_vector = np.array([0, 1])
 
-        moving_avg_cell_angles[cell_index].append(current_angle)
+        # Compute the direction (angle) of the mean flow vector
+        angle_radians = np.arctan2(cell_flow_vector[1], cell_flow_vector[0])
+        current_angle = np.degrees(angle_radians)
 
-        # Calculate moving average of the last n angles, excluding the current one
+        moving_avg_cell_angles[cell_index].append(cell_flow_vector)
+
+        mean_vector = None
         moving_avg = None
-        if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
-            moving_avg = np.mean(
-                moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1 : -1]
-            )
 
-            if moving_avg < 0:
-                moving_avg += 360  # Normalize angle
+        if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
+            recent_vectors = np.array(moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1:-1])
+            mean_vector = np.mean(recent_vectors, axis=0)
+
+            moving_avg = np.degrees(np.arctan2(mean_vector[1], mean_vector[0]))
 
         if moving_avg is None:
             frame_cell_values.append(0)
             continue
 
         # Calculate the difference between the current angle and the moving average
-        angle_diff = angle_difference(current_angle, moving_avg)
+        angle_diff = circular_angle_distance(current_angle, moving_avg)
 
         cell_value = 0
         for event_angle in event_angles:
-            distance_to_event_angle = angle_difference(event_angle, current_angle)
+            distance_to_event_angle = circular_angle_distance(event_angle, current_angle)
 
             is_event_cell = check_event_criteria(
                 distance_to_event_angle,
                 angle_diff,
+                cell_flow_vector,
                 angle_range_threshold,
                 angle_diff_threshold,
+                flow_threshold
             )
 
             if is_event_cell:
@@ -157,11 +167,47 @@ def calculate_cell_values(
 
         frame_cell_values.append(cell_value)
 
+        text_scale = 0.5
+        text_thickness = 1
+
+        # Annotate angle difference
+        cv2.putText(
+            frame,
+            f"{moving_avg:.2f}",
+            (cell_start_x, cell_end_y + 20), # Adjust text position as needed
+            cv2.FONT_HERSHEY_SIMPLEX,
+            text_scale,
+            (255, 255, 255),
+            text_thickness
+        )
+
+        # Annotate angle degrees
+        cv2.putText(
+            frame,
+            f"{current_angle:.2f}°",
+            (cell_start_x, cell_end_y + 40), # Adjust text position as needed
+            cv2.FONT_HERSHEY_SIMPLEX,
+            text_scale,
+            (255, 255, 255),
+            text_thickness
+        )
+
+        # Annotate angle degrees
+        cv2.putText(
+            frame,
+            f"{angle_diff:.2f}°",
+            (cell_start_x, cell_end_y + 60), # Adjust text position as needed
+            cv2.FONT_HERSHEY_SIMPLEX,
+            text_scale,
+            (255, 255, 255),
+            text_thickness
+        )
+
         # Draw the mean vector at the center of the cell
         center_x = (cell_start_x + cell_end_x) // 2
         center_y = (cell_start_y + cell_end_y) // 2
-        end_x = center_x + int(cell_mean_flow[0]) * SCALE
-        end_y = center_y + int(cell_mean_flow[1]) * SCALE
+        end_x = center_x + int(cell_flow_vector[0]) * SCALE
+        end_y = center_y + int(cell_flow_vector[1]) * SCALE
         arrow_color = COLORS[cell_index % len(COLORS)]
         cv2.arrowedLine(
             frame, (center_x, center_y), (end_x, end_y), arrow_color, THICKNESS

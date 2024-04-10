@@ -17,7 +17,7 @@ def parse_arguments():
     parser.add_argument("data_path", help="Path to the data directory.")
     parser.add_argument("output_path", help="Path where output will be saved.")
     parser.add_argument("config_path", help="Path to the configuration YML file.")
-    parser.add_argument("--heatmap", help="Skip heatmap generation.", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--heatmap", help="Generate heatmaps.", action=argparse.BooleanOptionalAction)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Use attention mechanism.", action=argparse.BooleanOptionalAction)
