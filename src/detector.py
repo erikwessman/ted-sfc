@@ -8,6 +8,7 @@ from typing import Union, Tuple
 
 import helper
 
+ALLOWED_GAP_IN_SECONDS = 2
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -55,9 +56,13 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
             sequence.append((curr_cell_key, curr_frame_id))
             continue
 
-        prev_cell_key, _ = sequence[-1]
+        prev_match_cell_key, prev_match_frame_id = sequence[-1]
 
-        if prev_cell_key <= curr_cell_key:
+        if prev_match_frame_id - curr_frame_id > ALLOWED_GAP_IN_SECONDS * 10:
+            sequence = [(curr_cell_key, curr_frame_id)]
+            continue
+
+        if prev_match_cell_key <= curr_cell_key:
             sequence.append((curr_cell_key, curr_frame_id))
         elif not valid_sequence(sequence):
             sequence = [(curr_cell_key, curr_frame_id)]
