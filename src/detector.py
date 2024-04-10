@@ -8,7 +8,8 @@ from typing import Union, Tuple
 
 import helper
 
-ALLOWED_GAP_IN_SECONDS = 2
+ALLOWED_GAP_IN_SECONDS = 4
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -45,37 +46,22 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
     """
     sequence = []
 
+    graph = None
+
     for _, row in morton_codes.iterrows():
         curr_frame_id = row["frame_id"]
         curr_cell_key = get_matching_cell_key(row["morton"], cell_ranges, margin)
 
-        if not curr_cell_key:
-            continue
+        # if graph is empty, add the current cell and frame as the root
 
-        if not sequence:
-            sequence.append((curr_cell_key, curr_frame_id))
-            continue
+        # else, add the current cell and frame to all graph leaves
 
-        prev_match_cell_key, prev_match_frame_id = sequence[-1]
+    # use depth first search to find reasonable sequences
 
-        if prev_match_frame_id - curr_frame_id > ALLOWED_GAP_IN_SECONDS * 10:
-            sequence = [(curr_cell_key, curr_frame_id)]
-            continue
+    # use heuristics to remove bad sequences
+    # for example, if the event is too long or too short
 
-        if prev_match_cell_key <= curr_cell_key:
-            sequence.append((curr_cell_key, curr_frame_id))
-        elif not valid_sequence(sequence):
-            sequence = [(curr_cell_key, curr_frame_id)]
-
-    contains_required_cell_subset = True
-    for required_cell_subset in required_cell_subsets:
-        if not any(tup[0] in required_cell_subset for tup in sequence):
-            contains_required_cell_subset = False
-
-    if valid_sequence(sequence) and contains_required_cell_subset:
-        return sequence
-    else:
-        return None
+    # return the best sequence
 
 
 def detect_event(
