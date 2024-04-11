@@ -27,12 +27,6 @@ COLORS = [
     (128, 0, 128),  # Purple
 ]
 
-EVENT_ANGLES = [90, -90]
-ANGLE_RANGE_THRESHOLD = 20
-FLOW_THRESHOLD = 3
-ANGLE_DIFF_THRESHOLD = 75
-NR_FRAMES_MOVING_AVG = 10
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
@@ -83,6 +77,7 @@ def calculate_cell_values(
     angle_range_threshold,
     angle_diff_threshold,
     flow_threshold,
+    nr_frames_moving_avg,
 ):
     h, w = frame_gray.shape[:3]
 
@@ -118,8 +113,8 @@ def calculate_cell_values(
         else:
             moving_avg_cell_angles[cell_index].append(cell_flow_vector)
 
-        if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
-            previous_7 = np.array(moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1: -3])
+        if len(moving_avg_cell_angles[cell_index]) >= nr_frames_moving_avg:
+            previous_7 = np.array(moving_avg_cell_angles[cell_index][-nr_frames_moving_avg - 1: -3])
             previous_7_vector = np.mean(previous_7, axis=0)
             previous_7_angle = np.degrees(np.arctan2(previous_7_vector[0], previous_7_vector[1]))
 
@@ -258,7 +253,6 @@ def process_video(
     display_results
 ) -> dict:
     cap = cv2.VideoCapture(video_path)
-
     ret, frame = cap.read()
 
     if not ret:
@@ -271,6 +265,8 @@ def process_video(
         config["fps"],
         (frame.shape[1], frame.shape[0]),
     )
+
+    optical_flow_config = config["optical_flow"]
 
     frame_gray_prev = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -300,10 +296,7 @@ def process_video(
                 frame_gray_prev,
                 cell_positions,
                 moving_avg_cell_angles,
-                EVENT_ANGLES,
-                ANGLE_RANGE_THRESHOLD,
-                ANGLE_DIFF_THRESHOLD,
-                FLOW_THRESHOLD,
+                **optical_flow_config,
             )
             frame_gray_prev = frame_gray
 
@@ -311,12 +304,12 @@ def process_video(
 
             helper.annotate_frame(
                 frame,
-                f"frame: {frame_number}, event_angles: {EVENT_ANGLES}, angle_range: {ANGLE_RANGE_THRESHOLD}, ",
+                f"frame: {frame_number}, event_angles: {optical_flow_config['event_angles']}, angle_range: {optical_flow_config['angle_range_threshold']}",
                 (10, 30),
             )
             helper.annotate_frame(
                 frame,
-                f"angle_diff_threshold: {ANGLE_DIFF_THRESHOLD}, flow_threshold: {FLOW_THRESHOLD}",
+                f"angle_diff_threshold: {optical_flow_config['angle_diff_threshold']}, flow_threshold: {optical_flow_config['flow_threshold']}",
                 (10, 60),
             )
 
