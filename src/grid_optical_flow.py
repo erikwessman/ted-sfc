@@ -1,3 +1,4 @@
+
 import os
 import cv2
 import argparse
@@ -26,11 +27,11 @@ COLORS = [
     (128, 0, 128),  # Purple
 ]
 
-EVENT_ANGLES = [0, 180]
+EVENT_ANGLES = [90, -90]
 ANGLE_RANGE_THRESHOLD = 20
 FLOW_THRESHOLD = 3
 ANGLE_DIFF_THRESHOLD = 75
-NR_FRAMES_MOVING_AVG = 5
+NR_FRAMES_MOVING_AVG = 10
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -63,7 +64,6 @@ def check_event_criteria(
     flow_criterion = np.linalg.norm(mean_flow) >= flow_threshold
 
     return angle_range_criterion and angle_diff_criterion and flow_criterion
-
 
 def vector_angle_difference(vector1, vector2):
     cos_theta = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
@@ -107,7 +107,6 @@ def calculate_cell_values(
         cell_flow = flow[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         cell_flow_vector = np.mean(cell_flow, axis=(0, 1))
 
-
         # Compute the direction (angle) of the mean flow vector
         angle_radians = np.arctan2(cell_flow_vector[1], cell_flow_vector[0])
         current_angle = np.degrees(angle_radians)
@@ -120,21 +119,24 @@ def calculate_cell_values(
             moving_avg_cell_angles[cell_index].append(cell_flow_vector)
 
         if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
-            recent_vectors = np.array(moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1:-1])
-            moving_avg_vector = np.mean(recent_vectors, axis=0)
-            moving_avg_radians = np.arctan2(moving_avg_vector[0], moving_avg_vector[1])
-            moving_avg_degrees = np.degrees(moving_avg_radians)
+            previous_7 = np.array(moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1: -3])
+            previous_7_vector = np.mean(previous_7, axis=0)
+            previous_7_angle = np.degrees(np.arctan2(previous_7_vector[0], previous_7_vector[1]))
+
+            current_3 = np.array(moving_avg_cell_angles[cell_index][-3:])
+            current_3_vector = np.mean(current_3, axis=0)
+            current_3_angle = np.degrees(np.arctan2(current_3_vector[0], current_3_vector[1]))
         else:
             frame_cell_values.append(0)
             continue
 
         # Calculate the difference between the current angle and the moving average
-        vector_angle_diff = vector_angle_difference(cell_flow_vector, moving_avg_vector)
-        vector_magnitude_diff = np.linalg.norm(cell_flow_vector - moving_avg_vector)
+        vector_angle_diff = vector_angle_difference(current_3_vector, previous_7_vector)
+        vector_magnitude_diff = np.linalg.norm(current_3_vector - previous_7_vector)
 
         cell_value = 0
         for event_angle in event_angles:
-            distance_to_event_angle = circular_angle_distance(event_angle, current_angle)
+            distance_to_event_angle = circular_angle_distance(event_angle, current_3_angle)
 
             is_event_cell = check_event_criteria(
                 distance_to_event_angle,
@@ -169,7 +171,7 @@ def calculate_cell_values(
         if cell_index == 0:
             cv2.putText(
                 frame,
-                "Moving avg angle",
+                "Previous 7 angle",
                 (cell_start_x - 200, cell_end_y + 20), # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
@@ -178,7 +180,7 @@ def calculate_cell_values(
             )
             cv2.putText(
                 frame,
-                "Current angle",
+                "Current 3 angle",
                 (cell_start_x - 200, cell_end_y + 40), # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
@@ -187,7 +189,7 @@ def calculate_cell_values(
             )
             cv2.putText(
                 frame,
-                "Vector angle difference",
+                "Angle difference",
                 (cell_start_x - 200, cell_end_y + 60), # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
@@ -198,7 +200,7 @@ def calculate_cell_values(
         # Annotate angle difference
         cv2.putText(
             frame,
-            f"{moving_avg_degrees:.2f}",
+            f"{previous_7_angle:.2f}",
             (cell_start_x, cell_end_y + 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
@@ -208,7 +210,7 @@ def calculate_cell_values(
 
         cv2.putText(
             frame,
-            f"{current_angle:.2f}",
+            f"{current_3_angle:.2f}",
             (cell_start_x, cell_end_y + 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
