@@ -27,12 +27,10 @@ COLORS = [
 ]
 
 EVENT_ANGLES = [0, 180]
-DEFAULT_ANGLE = 90
-ANGLE_RANGE_THRESHOLD = 30
+ANGLE_RANGE_THRESHOLD = 20
 FLOW_THRESHOLD = 3
 ANGLE_DIFF_THRESHOLD = 75
-NR_FRAMES_MOVING_AVG = 10
-
+NR_FRAMES_MOVING_AVG = 5
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -64,17 +62,15 @@ def check_event_criteria(
     angle_diff_criterion = angle_diff >= angle_diff_threshold
     flow_criterion = np.linalg.norm(mean_flow) >= flow_threshold
 
-    return angle_range_criterion and angle_diff_criterion
+    return angle_range_criterion and angle_diff_criterion and flow_criterion
 
 
-def angle_difference(angle1, angle2):
-    return abs((angle2 - angle1 + 180) % 360 - 180)
+def vector_angle_difference(vector1, vector2):
+    cos_theta = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+    theta = np.arccos(cos_theta)
+    return np.degrees(theta)
 
 def circular_angle_distance(angle1, angle2):
-    """
-    Calculate the shortest distance between two angles on a circle.
-    Both angles should be in the range [0, 360).
-    """
     return min((angle1 - angle2) % 360, (angle2 - angle1) % 360)
 
 def calculate_cell_values(
@@ -111,30 +107,30 @@ def calculate_cell_values(
         cell_flow = flow[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         cell_flow_vector = np.mean(cell_flow, axis=(0, 1))
 
-        if np.linalg.norm(cell_flow_vector) <= 1:
-            cell_flow_vector = np.array([0, 1])
 
         # Compute the direction (angle) of the mean flow vector
         angle_radians = np.arctan2(cell_flow_vector[1], cell_flow_vector[0])
         current_angle = np.degrees(angle_radians)
 
-        moving_avg_cell_angles[cell_index].append(cell_flow_vector)
-
-        mean_vector = None
-        moving_avg = None
+        # HACKY SOLUTION
+        # If the optical flow is small, we add a large vector straight down to indicate standing still
+        if np.linalg.norm(cell_flow_vector) <= 1:
+            moving_avg_cell_angles[cell_index].append(np.array([0, 100]))
+        else:
+            moving_avg_cell_angles[cell_index].append(cell_flow_vector)
 
         if len(moving_avg_cell_angles[cell_index]) >= NR_FRAMES_MOVING_AVG:
             recent_vectors = np.array(moving_avg_cell_angles[cell_index][-NR_FRAMES_MOVING_AVG - 1:-1])
-            mean_vector = np.mean(recent_vectors, axis=0)
-
-            moving_avg = np.degrees(np.arctan2(mean_vector[1], mean_vector[0]))
-
-        if moving_avg is None:
+            moving_avg_vector = np.mean(recent_vectors, axis=0)
+            moving_avg_radians = np.arctan2(moving_avg_vector[0], moving_avg_vector[1])
+            moving_avg_degrees = np.degrees(moving_avg_radians)
+        else:
             frame_cell_values.append(0)
             continue
 
         # Calculate the difference between the current angle and the moving average
-        angle_diff = circular_angle_distance(current_angle, moving_avg)
+        vector_angle_diff = vector_angle_difference(cell_flow_vector, moving_avg_vector)
+        vector_magnitude_diff = np.linalg.norm(cell_flow_vector - moving_avg_vector)
 
         cell_value = 0
         for event_angle in event_angles:
@@ -142,7 +138,7 @@ def calculate_cell_values(
 
             is_event_cell = check_event_criteria(
                 distance_to_event_angle,
-                angle_diff,
+                vector_angle_diff,
                 cell_flow_vector,
                 angle_range_threshold,
                 angle_diff_threshold,
@@ -170,40 +166,66 @@ def calculate_cell_values(
         text_scale = 0.5
         text_thickness = 1
 
+        if cell_index == 0:
+            cv2.putText(
+                frame,
+                "Moving avg angle",
+                (cell_start_x - 200, cell_end_y + 20), # Adjust text position as needed
+                cv2.FONT_HERSHEY_SIMPLEX,
+                text_scale,
+                (255, 255, 255),
+                text_thickness
+            )
+            cv2.putText(
+                frame,
+                "Current angle",
+                (cell_start_x - 200, cell_end_y + 40), # Adjust text position as needed
+                cv2.FONT_HERSHEY_SIMPLEX,
+                text_scale,
+                (255, 255, 255),
+                text_thickness
+            )
+            cv2.putText(
+                frame,
+                "Vector angle difference",
+                (cell_start_x - 200, cell_end_y + 60), # Adjust text position as needed
+                cv2.FONT_HERSHEY_SIMPLEX,
+                text_scale,
+                (255, 255, 255),
+                text_thickness
+            )
+
         # Annotate angle difference
         cv2.putText(
             frame,
-            f"{moving_avg:.2f}",
-            (cell_start_x, cell_end_y + 20), # Adjust text position as needed
+            f"{moving_avg_degrees:.2f}",
+            (cell_start_x, cell_end_y + 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
             text_thickness
         )
 
-        # Annotate angle degrees
         cv2.putText(
             frame,
-            f"{current_angle:.2f}°",
-            (cell_start_x, cell_end_y + 40), # Adjust text position as needed
+            f"{current_angle:.2f}",
+            (cell_start_x, cell_end_y + 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
             text_thickness
         )
 
-        # Annotate angle degrees
         cv2.putText(
             frame,
-            f"{angle_diff:.2f}°",
-            (cell_start_x, cell_end_y + 60), # Adjust text position as needed
+            f"{vector_angle_diff:.2f}",
+            (cell_start_x, cell_end_y + 60),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
             text_thickness
         )
 
-        # Draw the mean vector at the center of the cell
         center_x = (cell_start_x + cell_end_x) // 2
         center_y = (cell_start_y + cell_end_y) // 2
         end_x = center_x + int(cell_flow_vector[0]) * SCALE
