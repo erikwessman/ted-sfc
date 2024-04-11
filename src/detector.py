@@ -8,60 +8,117 @@ from typing import Union, Tuple
 
 import helper
 
-ALLOWED_GAP_IN_SECONDS = 4
+
+MAX_GAP_S = 20
+MAX_LENGTH_S = 100
+MIN_LENGTH_S = 20
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "data_path",
-        help="Path to the directory containing the output for each video",
-    )
-    parser.add_argument(
-        "config_path",
-        help="Path to the config yml file",
-    )
+    parser.add_argument("data_path", help="Path to the directory containing the output for each video",)
+    parser.add_argument("config_path", help="Path to the config yml file",)
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Detect for attention", action="store_true")
     group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
+
     return parser.parse_args()
 
 
-def get_matching_cell_key(
-    morton_code: float, cell_morton: dict, margin: int
-) -> Union[int, None]:
+def get_matching_cell_key(morton_code: float, cell_morton: dict, margin: int) -> Union[int, None]:
     for cell, (min_value, max_value) in cell_morton.items():
         if min_value - margin <= morton_code <= max_value + margin:
             return cell
     return None
 
 
-def valid_sequence(sequence):
-    return len(sequence) > 2
+def sequence_meets_requirements(sequence, required_cell_subsets) -> bool:
+    """
+    Checks if a sequence of tuples, e.g. [(1, 10), (2, 20)] meets the
+    requirements to be an event.
+    The first element of the tuples represents the cell ID, and the second
+    is the frame ID.
+    """
+    if len(sequence) < 2:
+        return False
+
+    start = sequence[0][1]
+    end = sequence[-1][1]
+
+    if end - start > MAX_LENGTH_S or end - start < MIN_LENGTH_S:
+        return False
+
+    contains_required_cell_subset = True
+    for required_cell_subset in required_cell_subsets:
+        if not any(tup[0] in required_cell_subset for tup in sequence):
+            contains_required_cell_subset = False
+
+    return contains_required_cell_subset
+
+
+def get_sequence_with_most_cells(sequences):
+    max_unique_count = -1
+    list_with_max_unique = []
+
+    for sequence in sequences:
+        unique_first_elements = len(set(x[0] for x in sequence))
+
+        if unique_first_elements > max_unique_count:
+            max_unique_count = unique_first_elements
+            list_with_max_unique = sequence
+
+    return list_with_max_unique
+
+
+def find_valid_sequences(tuples_list):
+    valid_sequences = []
+    current_sequence = [tuples_list[0]]
+
+    for i in range(1, len(tuples_list)):
+        prev_tuple = tuples_list[i - 1]
+        current_tuple = tuples_list[i]
+
+        # TODO stuff with frames and seconds
+        if current_tuple[0] >= prev_tuple[0] and abs(current_tuple[1] - prev_tuple[1]) <= MAX_GAP_S:
+            current_sequence.append(current_tuple)
+        else:
+            if len(current_sequence) > 1:
+                valid_sequences.append(current_sequence)
+            current_sequence = [current_tuple]
+
+    if len(current_sequence) > 1:
+        valid_sequences.append(current_sequence)
+
+    return valid_sequences
 
 
 def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
-    """
-    Gets a "reasonable" sequence from a list of Morton codes and a direction
-    """
-    sequence = []
-
-    graph = None
+    """ """
+    path = []
 
     for _, row in morton_codes.iterrows():
         curr_frame_id = row["frame_id"]
         curr_cell_key = get_matching_cell_key(row["morton"], cell_ranges, margin)
 
-        # if graph is empty, add the current cell and frame as the root
+        if not curr_cell_key:
+            continue
 
-        # else, add the current cell and frame to all graph leaves
+        path.append((curr_cell_key, curr_frame_id))
 
-    # use depth first search to find reasonable sequences
+    if not path:
+        return None
 
-    # use heuristics to remove bad sequences
-    # for example, if the event is too long or too short
+    valid_sequences = []
 
-    # return the best sequence
+    for sequence in find_valid_sequences(path):
+        if sequence_meets_requirements(sequence, required_cell_subsets):
+            valid_sequences.append(sequence)
+
+    if valid_sequences:
+        return get_sequence_with_most_cells(valid_sequences)
+    else:
+        return None
 
 
 def detect_event(
