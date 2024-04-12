@@ -41,8 +41,9 @@ def sequence_meets_requirements(sequence, required_cell_subsets) -> bool:
 
     start = sequence[0][1]
     end = sequence[-1][1]
+    event_length = end - start
 
-    if end - start > MAX_LENGTH_S or end - start < MIN_LENGTH_S:
+    if not (MIN_LENGTH_S <= event_length <= MAX_LENGTH_S):
         return False
 
     contains_required_cell_subset = True
@@ -99,7 +100,7 @@ def get_sequence(cell_values, required_cell_subsets):
     for _, row in cell_values.iterrows():
         curr_frame_id = row["frame_id"]
         non_zero_cell_value_indices = [
-            int(cell.split("cell")[1]) for cell in row.index[1:] if row[cell] != 0
+            int(cell.split("cell")[1]) for cell in row.index[1:] if row[cell] == 1
         ]
 
         if not non_zero_cell_value_indices:
