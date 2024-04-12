@@ -1,4 +1,3 @@
-
 import os
 import cv2
 import argparse
@@ -26,6 +25,7 @@ COLORS = [
     (0, 128, 0),  # Dark Green
     (128, 0, 128),  # Purple
 ]
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
@@ -59,13 +59,18 @@ def check_event_criteria(
 
     return angle_range_criterion and angle_diff_criterion and flow_criterion
 
+
 def vector_angle_difference(vector1, vector2):
-    cos_theta = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+    cos_theta = np.dot(vector1, vector2) / (
+        np.linalg.norm(vector1) * np.linalg.norm(vector2)
+    )
     theta = np.arccos(cos_theta)
     return np.degrees(theta)
 
+
 def circular_angle_distance(angle1, angle2):
     return min((angle1 - angle2) % 360, (angle2 - angle1) % 360)
+
 
 def calculate_cell_values(
     frame,
@@ -102,10 +107,6 @@ def calculate_cell_values(
         cell_flow = flow[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         cell_flow_vector = np.mean(cell_flow, axis=(0, 1))
 
-        # Compute the direction (angle) of the mean flow vector
-        angle_radians = np.arctan2(cell_flow_vector[1], cell_flow_vector[0])
-        current_angle = np.degrees(angle_radians)
-
         # HACKY SOLUTION
         # If the optical flow is small, we add a large vector straight down to indicate standing still
         if np.linalg.norm(cell_flow_vector) <= 1:
@@ -114,24 +115,32 @@ def calculate_cell_values(
             moving_avg_cell_angles[cell_index].append(cell_flow_vector)
 
         if len(moving_avg_cell_angles[cell_index]) >= nr_frames_moving_avg:
-            previous_7 = np.array(moving_avg_cell_angles[cell_index][-nr_frames_moving_avg - 1: -3])
-            previous_7_vector = np.mean(previous_7, axis=0)
-            previous_7_angle = np.degrees(np.arctan2(previous_7_vector[0], previous_7_vector[1]))
+            moving_avg = np.array(
+                moving_avg_cell_angles[cell_index][-nr_frames_moving_avg - 1 : -3]
+            )
+            moving_avg_vector = np.mean(moving_avg, axis=0)
+            moving_avg_angle = np.degrees(
+                np.arctan2(moving_avg_vector[0], moving_avg_vector[1])
+            )
 
             current_3 = np.array(moving_avg_cell_angles[cell_index][-3:])
             current_3_vector = np.mean(current_3, axis=0)
-            current_3_angle = np.degrees(np.arctan2(current_3_vector[0], current_3_vector[1]))
+            current_3_angle = np.degrees(
+                np.arctan2(current_3_vector[0], current_3_vector[1])
+            )
         else:
             frame_cell_values.append(0)
             continue
 
         # Calculate the difference between the current angle and the moving average
-        vector_angle_diff = vector_angle_difference(current_3_vector, previous_7_vector)
-        vector_magnitude_diff = np.linalg.norm(current_3_vector - previous_7_vector)
+        vector_angle_diff = vector_angle_difference(current_3_vector, moving_avg_vector)
+        # vector_magnitude_diff = np.linalg.norm(current_3_vector - moving_avg_vector)
 
         cell_value = 0
         for event_angle in event_angles:
-            distance_to_event_angle = circular_angle_distance(event_angle, current_3_angle)
+            distance_to_event_angle = circular_angle_distance(
+                event_angle, current_3_angle
+            )
 
             is_event_cell = check_event_criteria(
                 distance_to_event_angle,
@@ -139,7 +148,7 @@ def calculate_cell_values(
                 cell_flow_vector,
                 angle_range_threshold,
                 angle_diff_threshold,
-                flow_threshold
+                flow_threshold,
             )
 
             if is_event_cell:
@@ -166,41 +175,41 @@ def calculate_cell_values(
         if cell_index == 0:
             cv2.putText(
                 frame,
-                "Previous 7 angle",
-                (cell_start_x - 200, cell_end_y + 20), # Adjust text position as needed
+                "Moving avg angle",
+                (cell_start_x - 200, cell_end_y + 20),  # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
                 (255, 255, 255),
-                text_thickness
+                text_thickness,
             )
             cv2.putText(
                 frame,
                 "Current 3 angle",
-                (cell_start_x - 200, cell_end_y + 40), # Adjust text position as needed
+                (cell_start_x - 200, cell_end_y + 40),  # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
                 (255, 255, 255),
-                text_thickness
+                text_thickness,
             )
             cv2.putText(
                 frame,
                 "Angle difference",
-                (cell_start_x - 200, cell_end_y + 60), # Adjust text position as needed
+                (cell_start_x - 200, cell_end_y + 60),  # Adjust text position as needed
                 cv2.FONT_HERSHEY_SIMPLEX,
                 text_scale,
                 (255, 255, 255),
-                text_thickness
+                text_thickness,
             )
 
         # Annotate angle difference
         cv2.putText(
             frame,
-            f"{previous_7_angle:.2f}",
+            f"{moving_avg_angle:.2f}",
             (cell_start_x, cell_end_y + 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
-            text_thickness
+            text_thickness,
         )
 
         cv2.putText(
@@ -210,7 +219,7 @@ def calculate_cell_values(
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
-            text_thickness
+            text_thickness,
         )
 
         cv2.putText(
@@ -220,7 +229,7 @@ def calculate_cell_values(
             cv2.FONT_HERSHEY_SIMPLEX,
             text_scale,
             (255, 255, 255),
-            text_thickness
+            text_thickness,
         )
 
         center_x = (cell_start_x + cell_end_x) // 2
@@ -245,13 +254,7 @@ def angle_to_vector(angle_degrees, scale=1):
     return (x, y)
 
 
-def process_video(
-    video_path,
-    target_path,
-    video_id,
-    config,
-    display_results
-) -> dict:
+def process_video(video_path, target_path, video_id, config, display_results) -> dict:
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
 
@@ -333,7 +336,9 @@ def process_video(
     return cell_values
 
 
-def main(data_path: str, output_path: str, config_path: str, display_results: bool = False):
+def main(
+    data_path: str, output_path: str, config_path: str, display_results: bool = False
+):
     # Load config
     config = helper.load_yml(config_path)
     grid_config = config["grid_config"]
@@ -347,16 +352,16 @@ def main(data_path: str, output_path: str, config_path: str, display_results: bo
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
 
         output_cell_value_map = process_video(
-            video_path,
-            target_path,
-            video_id,
-            grid_config,
-            display_results
+            video_path, target_path, video_id, grid_config, display_results
         )
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
-        helper.save_cell_value_subplots(output_cell_value_map, target_path, display_results, "Cell value")
-        helper.save_combined_plot(output_cell_value_map, target_path, display_results, "Cell value")
+        helper.save_cell_value_subplots(
+            output_cell_value_map, target_path, display_results, "Cell value"
+        )
+        helper.save_combined_plot(
+            output_cell_value_map, target_path, display_results, "Cell value"
+        )
 
     helper.save_config(grid_config, output_path, "grid_config.yml")
 
