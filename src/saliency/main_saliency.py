@@ -11,12 +11,15 @@ from torch.utils.data import DataLoader
 from torchvision.io import write_video
 import torchvision.transforms as transforms
 
-from MLNet.mlnet import MLNet
-from MLNet.ted_loader import TEDLoader
-from MLNet.data_transform import ProcessImages, padding_inv
+from saliency.mlnet import MLNet
+from saliency.tasednet import TASED_v2
+from saliency.ted_loader import TEDLoader
+from saliency.data_transform import ProcessImages, padding_inv
 
 
-MODEL_PATH = "models/saliency/mlnet_25.pth"
+MODEL = "TASEDNet"
+MLNET_MODEL_PATH = "models/saliency/mlnet_25.pth"
+TASEDNET_MODEL_PATH = "models/saliency/tasednet_iter_1000.pt"
 INPUT_SHAPE = [480, 640]
 
 
@@ -52,9 +55,28 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
     testdata_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
     # Load model
-    model = MLNet(INPUT_SHAPE).to(device)  # ~700MiB
-    ckpt = torch.load(MODEL_PATH, map_location=device)
-    model.load_state_dict(ckpt["model"])
+    if MODEL == "MLNet":
+        ckpt = torch.load(MLNET_MODEL_PATH, map_location=device)
+        model = MLNet(INPUT_SHAPE).to(device)
+        model.load_state_dict(ckpt["model"])
+    elif MODEL == "TASEDNet":
+        ckpt = torch.load(MLNET_MODEL_PATH, map_location=device)
+        model = TASED_v2(INPUT_SHAPE).to(device)
+        model_dict = model.state_dict()
+
+        for name, param in ckpt.items():
+            if 'module' in name:
+                name = '.'.join(name.split('.')[1:])
+            if name in model_dict:
+                if param.size() == model_dict[name].size():
+                    model_dict[name].copy_(param)
+                else:
+                    print(' size? ' + name, param.size(), model_dict[name].size())
+            else:
+                print(' name? ' + name)
+
+        model.load_state_dict(model_dict)
+
     model.to(device)
     model.eval()
 

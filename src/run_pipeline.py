@@ -4,7 +4,7 @@ import argparse
 import datetime
 import cv2
 
-from MLNet.main import main as run_mlnet
+from saliency.main_saliency import main as run_saliency
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from morton import main as run_morton
@@ -108,7 +108,7 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        run_mlnet(data_path, output_path, config_path)
+        run_saliency(data_path, output_path, config_path)
 
     if attention:
         print("----------------------------------------")
