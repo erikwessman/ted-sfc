@@ -1,5 +1,5 @@
 grid_config:
-  fps: 14
+  fps: 10
   attention:
     saliency_threshold: 0.35
   optical_flow:
