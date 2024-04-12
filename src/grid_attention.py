@@ -114,7 +114,7 @@ def process_video_and_generate_attention_map(
     target_path,
     video_id,
     config,
-    display_results
+    display_results,
 ) -> dict:
     ensure_matching_video_resolution(original_video_path, heatmap_video_path)
 
@@ -155,7 +155,7 @@ def process_video_and_generate_attention_map(
             frame_number += 1
 
             mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, config["saliency_threshold"]
+                frame_heatmap, cell_positions, config["attention"]["saliency_threshold"]
             )
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
@@ -163,7 +163,7 @@ def process_video_and_generate_attention_map(
 
             helper.annotate_frame(
                 combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {config['saliency_threshold']}",
+                f"frame: {frame_number}. saliency_threshold: {config['attention']['saliency_threshold']}",
                 (10, 30),
             )
 
@@ -189,7 +189,9 @@ def process_video_and_generate_attention_map(
     return mean_attention_map
 
 
-def main(data_path: str, output_path: str, config_path: str, display_results: bool = False):
+def main(
+    data_path: str, output_path: str, config_path: str, display_results: bool = False
+):
     # Load config
     config = helper.load_yml(config_path)
     grid_config = config["grid_config"]
@@ -206,8 +208,12 @@ def main(data_path: str, output_path: str, config_path: str, display_results: bo
         original_video_path = os.path.join(video_path, f"{video_id}.avi")
         heatmap_video_path = os.path.join(target_path, f"{video_id}_heatmap.avi")
 
-        if not os.path.exists(heatmap_video_path) or not os.path.exists(original_video_path):
-            tqdm_obj.write(f"Skipping {video_id}: Heatmap or original videos do not exist")
+        if not os.path.exists(heatmap_video_path) or not os.path.exists(
+            original_video_path
+        ):
+            tqdm_obj.write(
+                f"Skipping {video_id}: Heatmap or original videos do not exist"
+            )
             continue
 
         mean_attention_map = process_video_and_generate_attention_map(
@@ -216,12 +222,16 @@ def main(data_path: str, output_path: str, config_path: str, display_results: bo
             target_path,
             video_id,
             grid_config,
-            display_results
+            display_results,
         )
 
         helper.save_cell_value_csv(mean_attention_map, target_path, grid_config)
-        helper.save_cell_value_subplots(mean_attention_map, target_path, display_results, "Mean attention")
-        helper.save_combined_plot(mean_attention_map, target_path, display_results, "Mean attention")
+        helper.save_cell_value_subplots(
+            mean_attention_map, target_path, display_results, "Mean attention"
+        )
+        helper.save_combined_plot(
+            mean_attention_map, target_path, display_results, "Mean attention"
+        )
 
     helper.save_config(grid_config, output_path, "grid_config.yml")
 
