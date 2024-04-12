@@ -111,6 +111,9 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
 
     valid_sequences = []
 
+    for p in path:
+        print(f"{p[1]}: {p[0]}")
+
     for sequence in find_valid_sequences(path):
         if sequence_meets_requirements(sequence, required_cell_subsets):
             valid_sequences.append(sequence)

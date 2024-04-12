@@ -11,9 +11,9 @@ from torch.utils.data import DataLoader
 from torchvision.io import write_video
 import torchvision.transforms as transforms
 
-from MLNET.mlnet import MLNet
-from MLNET.ted_loader import TEDLoader
-from MLNET.data_transform import ProcessImages, padding_inv
+from MLNet.mlnet import MLNet
+from MLNet.ted_loader import TEDLoader
+from MLNet.data_transform import ProcessImages, padding_inv
 
 
 MODEL_PATH = "models/saliency/mlnet_25.pth"

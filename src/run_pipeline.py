@@ -4,7 +4,7 @@ import argparse
 import datetime
 import cv2
 
-from MLNET.main import main as run_mlnet
+from MLNet.main import main as run_mlnet
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from morton import main as run_morton
