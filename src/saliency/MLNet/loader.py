@@ -7,7 +7,7 @@ import cv2
 from torch.utils.data import Dataset
 
 
-class TEDLoader(Dataset):
+class MLNetLoader(Dataset):
     def __init__(self, root_path, transforms=None, params_norm=None):
         self.root_path = root_path
         self.transforms = transforms

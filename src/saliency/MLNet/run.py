@@ -11,9 +11,9 @@ from torch.utils.data import DataLoader
 from torchvision.io import write_video
 import torchvision.transforms as transforms
 
-from MLNET.mlnet import MLNet
-from MLNET.ted_loader import TEDLoader
-from MLNET.data_transform import ProcessImages, padding_inv
+from saliency.MLNet.model import MLNet
+from saliency.MLNet.loader import MLNetLoader
+from saliency.MLNet.data_transform import ProcessImages, padding_inv
 
 
 MODEL_PATH = "models/saliency/mlnet_25.pth"
@@ -48,7 +48,7 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
     # Set up data loader
     transform_image = transforms.Compose([ProcessImages(INPUT_SHAPE)])
     params_norm = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
-    test_data = TEDLoader(data_path, transforms=transform_image, params_norm=params_norm)
+    test_data = MLNetLoader(data_path, transforms=transform_image, params_norm=params_norm)
     testdata_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
     # Load model
@@ -69,12 +69,12 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
 
             pbar.set_description(f"Processing folder {video_id}")
 
-            result_dir = os.path.join(output_path, video_id)
-            os.makedirs(result_dir, exist_ok=True)
+            output_video_dir = os.path.join(output_path, video_id)
+            os.makedirs(output_video_dir, exist_ok=True)
 
-            result_videofile = os.path.join(result_dir, f"{video_id}_heatmap.avi")
+            output_file = os.path.join(output_video_dir, f"{video_id}_heatmap.avi")
 
-            if os.path.exists(result_videofile):
+            if os.path.exists(output_file):
                 continue
 
             pred_video = []
@@ -94,7 +94,7 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
                 pred_video.append(pred_saliency)
 
             pred_video = np.array(pred_video, dtype=np.uint8)  # (T, H, W, C)
-            write_video(result_videofile, torch.from_numpy(pred_video), grid_config["fps"])
+            write_video(output_file, torch.from_numpy(pred_video), grid_config["fps"])
 
             pbar.set_description("Processing folders")
 
