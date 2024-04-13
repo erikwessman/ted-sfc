@@ -11,15 +11,12 @@ from torch.utils.data import DataLoader
 from torchvision.io import write_video
 import torchvision.transforms as transforms
 
-from saliency.mlnet import MLNet
-from saliency.tasednet import TASED_v2
-from saliency.ted_loader import TEDLoader
-from saliency.data_transform import ProcessImages, padding_inv
+from saliency.MLNet.model import MLNet
+from saliency.MLNet.loader import MLNetLoader
+from saliency.MLNet.data_transform import ProcessImages, padding_inv
 
 
-MODEL = "TASEDNet"
-MLNET_MODEL_PATH = "models/saliency/mlnet_25.pth"
-TASEDNET_MODEL_PATH = "models/saliency/tasednet_iter_1000.pt"
+MODEL_PATH = "models/saliency/mlnet_25.pth"
 INPUT_SHAPE = [480, 640]
 
 
@@ -51,32 +48,13 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
     # Set up data loader
     transform_image = transforms.Compose([ProcessImages(INPUT_SHAPE)])
     params_norm = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
-    test_data = TEDLoader(data_path, transforms=transform_image, params_norm=params_norm)
+    test_data = MLNetLoader(data_path, transforms=transform_image, params_norm=params_norm)
     testdata_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
     # Load model
-    if MODEL == "MLNet":
-        ckpt = torch.load(MLNET_MODEL_PATH, map_location=device)
-        model = MLNet(INPUT_SHAPE).to(device)
-        model.load_state_dict(ckpt["model"])
-    elif MODEL == "TASEDNet":
-        ckpt = torch.load(MLNET_MODEL_PATH, map_location=device)
-        model = TASED_v2(INPUT_SHAPE).to(device)
-        model_dict = model.state_dict()
-
-        for name, param in ckpt.items():
-            if 'module' in name:
-                name = '.'.join(name.split('.')[1:])
-            if name in model_dict:
-                if param.size() == model_dict[name].size():
-                    model_dict[name].copy_(param)
-                else:
-                    print(' size? ' + name, param.size(), model_dict[name].size())
-            else:
-                print(' name? ' + name)
-
-        model.load_state_dict(model_dict)
-
+    model = MLNet(INPUT_SHAPE).to(device)  # ~700MiB
+    ckpt = torch.load(MODEL_PATH, map_location=device)
+    model.load_state_dict(ckpt["model"])
     model.to(device)
     model.eval()
 
@@ -91,12 +69,12 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
 
             pbar.set_description(f"Processing folder {video_id}")
 
-            result_dir = os.path.join(output_path, video_id)
-            os.makedirs(result_dir, exist_ok=True)
+            output_video_dir = os.path.join(output_path, video_id)
+            os.makedirs(output_video_dir, exist_ok=True)
 
-            result_videofile = os.path.join(result_dir, f"{video_id}_heatmap.avi")
+            output_file = os.path.join(output_video_dir, f"{video_id}_heatmap.avi")
 
-            if os.path.exists(result_videofile):
+            if os.path.exists(output_file):
                 continue
 
             pred_video = []
@@ -116,7 +94,7 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
                 pred_video.append(pred_saliency)
 
             pred_video = np.array(pred_video, dtype=np.uint8)  # (T, H, W, C)
-            write_video(result_videofile, torch.from_numpy(pred_video), grid_config["fps"])
+            write_video(output_file, torch.from_numpy(pred_video), grid_config["fps"])
 
             pbar.set_description("Processing folders")
 

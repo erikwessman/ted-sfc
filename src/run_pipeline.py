@@ -4,7 +4,8 @@ import argparse
 import datetime
 import cv2
 
-from saliency.main_saliency import main as run_saliency
+from saliency.TASEDNet.run import main as run_saliency_tasednet
+from saliency.MLNet.run import main as run_saliency_mlnet
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from morton import main as run_morton
@@ -74,7 +75,7 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
 
     log_file_path = os.path.join(output_path, "pipeline_runtime_log.txt")
     with open(log_file_path, "a") as log_file:
-        log_file.write(f"Pipeline Run: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        log_file.write(f"Pipeline Run: {start_time.strftume('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Start Time: {start_time}\n")
         log_file.write(f"End Time: {end_time}\n")
         log_file.write(f"Total Runtime: {duration}\n")
@@ -108,7 +109,7 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        run_saliency(data_path, output_path, config_path)
+        run_saliency_mlnet(data_path, output_path, config_path)
 
     if attention:
         print("----------------------------------------")
