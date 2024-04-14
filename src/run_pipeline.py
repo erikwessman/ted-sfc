@@ -4,8 +4,6 @@ import argparse
 import datetime
 import cv2
 
-from saliency.TASEDNet.run import main as run_saliency_tasednet
-from saliency.MLNet.run import main as run_saliency_mlnet
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from morton import main as run_morton
@@ -19,6 +17,7 @@ def parse_arguments():
     parser.add_argument("output_path", help="Path where output will be saved.")
     parser.add_argument("config_path", help="Path to the configuration YML file.")
     parser.add_argument("--heatmap", help="Generate heatmaps.", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--saliency-model", choices=["mlnet", "tasednet", "transalnet"], default="mlnet", help="Generate heatmaps.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Use attention mechanism.", action=argparse.BooleanOptionalAction)
@@ -75,7 +74,7 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
 
     log_file_path = os.path.join(output_path, "pipeline_runtime_log.txt")
     with open(log_file_path, "a") as log_file:
-        log_file.write(f"Pipeline Run: {start_time.strftume('%Y-%m-%d %H:%M:%S')}\n")
+        log_file.write(f"Pipeline Run: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Start Time: {start_time}\n")
         log_file.write(f"End Time: {end_time}\n")
         log_file.write(f"Total Runtime: {duration}\n")
@@ -86,7 +85,7 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
         log_file.write("--------------------------------------------------\n")
 
 
-def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
+def main(data_path, output_path, config_path, heatmap, saliency_model, attention, optical_flow):
     check_path_exists(data_path, "Data")
     check_path_exists(config_path, "Config")
 
@@ -109,7 +108,17 @@ def main(data_path, output_path, config_path, heatmap, attention, optical_flow):
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        run_saliency_mlnet(data_path, output_path, config_path)
+        if saliency_model == "mlnet":
+            from saliency.MLNet.run import main as run_saliency_mlnet
+            run_saliency_mlnet(data_path, output_path, config_path)
+        elif saliency_model == "tasednet":
+            from saliency.TASEDNet.run import main as run_saliency_tasednet
+            run_saliency_tasednet(data_path, output_path, config_path)
+        elif saliency_model == "transalnet":
+            from saliency.TranSalNet.run import main as run_saliency_transalnet
+            run_saliency_transalnet(data_path, output_path, config_path)
+        else:
+            raise ValueError("Invalid saliency model")
 
     if attention:
         print("----------------------------------------")
@@ -145,4 +154,4 @@ if __name__ == "__main__":
     if args.optical_flow:
         args.heatmap = False
 
-    main(args.data_path, args.output_path, args.config_path, args.heatmap, args.attention, args.optical_flow)
+    main(args.data_path, args.output_path, args.config_path, args.heatmap, args.saliency_model, args.attention, args.optical_flow)

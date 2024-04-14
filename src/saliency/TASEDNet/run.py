@@ -6,7 +6,6 @@ import numpy as np
 import cv2
 import torch
 import argparse
-import yaml
 from torchvision.io import write_video
 from scipy.ndimage import gaussian_filter
 
@@ -16,11 +15,6 @@ import helper
 
 MODEL_PATH = 'models/saliency/tasednet_iter_1000.pt'
 LEN_TEMPORAL = 32
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def parse_arguments():
@@ -33,7 +27,7 @@ def parse_arguments():
 
 def main(data_path: str, output_path: str, config_path: str):
     # Load config
-    config = load_config(config_path)
+    config = helper.load_yml(config_path)
     grid_config = config["grid_config"]
 
     # Load model
@@ -57,7 +51,7 @@ def main(data_path: str, output_path: str, config_path: str):
 
     for video_dir, video_id, _ in helper.traverse_videos(data_path):
         video_path = os.path.join(video_dir, f"{video_id}.avi")
-        list_frames, original_dims = video_to_frames(video_path)
+        list_frames, original_dims = helper.video_to_frames(video_path)
 
         output_video_dir = os.path.join(output_path, video_id)
         os.makedirs(output_video_dir, exist_ok=True)
@@ -89,29 +83,6 @@ def main(data_path: str, output_path: str, config_path: str):
             write_video(output_file, video_tensor.numpy(), fps=grid_config["fps"])
         else:
             raise ValueError("More frames needed")
-
-
-def video_to_frames(video_path):
-    """ Extract frames from a video file and return them as a list of images along with the original dimensions. """
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise ValueError("Error opening video file")
-
-    frames = []
-    ret, frame = cap.read()
-    if ret:
-        height, width = frame.shape[:2]
-        frames.append(frame)
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            frames.append(frame)
-    else:
-        raise ValueError("No frames captured from the video")
-
-    cap.release()
-    return frames, (height, width)
 
 
 def transform(snippet):
