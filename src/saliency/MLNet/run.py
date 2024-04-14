@@ -4,7 +4,6 @@ https://github.com/Cogito2012/DRIVE/blob/master/main_saliency.py
 import os
 import argparse
 import torch
-import yaml
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
@@ -14,15 +13,11 @@ import torchvision.transforms as transforms
 from saliency.MLNet.model import MLNet
 from saliency.MLNet.loader import MLNetLoader
 from saliency.MLNet.data_transform import ProcessImages, padding_inv
+import helper
 
 
 MODEL_PATH = "models/saliency/mlnet_25.pth"
 INPUT_SHAPE = [480, 640]
-
-
-def load_config(file_path) -> dict:
-    with open(file_path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def parse_arguments():
@@ -36,7 +31,7 @@ def parse_arguments():
 
 def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
     # Load config
-    config = load_config(config_path)
+    config = helper.load_yml(config_path)
     grid_config = config["grid_config"]
 
     # Set up CUDA
