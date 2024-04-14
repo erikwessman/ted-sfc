@@ -4,6 +4,9 @@ import argparse
 import datetime
 import cv2
 
+from saliency.MLNet.run import main as run_saliency_mlnet
+from saliency.TASEDNet.run import main as run_saliency_tasednet
+from saliency.TranSalNet.run import main as run_saliency_transalnet
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from morton import main as run_morton
@@ -109,13 +112,10 @@ def main(data_path, output_path, config_path, heatmap, saliency_model, attention
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
         if saliency_model == "mlnet":
-            from saliency.MLNet.run import main as run_saliency_mlnet
             run_saliency_mlnet(data_path, output_path, config_path)
         elif saliency_model == "tasednet":
-            from saliency.TASEDNet.run import main as run_saliency_tasednet
             run_saliency_tasednet(data_path, output_path, config_path)
         elif saliency_model == "transalnet":
-            from saliency.TranSalNet.run import main as run_saliency_transalnet
             run_saliency_transalnet(data_path, output_path, config_path)
         else:
             raise ValueError("Invalid saliency model")

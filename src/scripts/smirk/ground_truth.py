@@ -71,7 +71,7 @@ def get_bbox_center(x_min, x_max, y_min, y_max):
 
 
 def save_yml(path: str, data):
-    with open(path, "w", encoding="utf-8") as yaml_file:
+    with open(path, "a", encoding="utf-8") as yaml_file:
         dump = yaml.safe_dump(
             data,
             default_flow_style=False,
