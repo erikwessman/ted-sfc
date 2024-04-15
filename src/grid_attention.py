@@ -81,13 +81,14 @@ def calculate_cell_values(frame, cell_positions, saliency_threshold):
         # normalize cell_mean_value to be between 0 and 1
         cell_mean_value = np.mean(cell_region) / 255
 
-        # Set cell active to 1 if the mean value is above the threshold, otherwise 0
-        binary_cell_value = 1 if cell_mean_value >= saliency_threshold else 0
+        cell_mean_value = (
+            cell_mean_value if cell_mean_value >= saliency_threshold else 0
+        )
 
-        heatmap_mean_values.append(binary_cell_value)
+        heatmap_mean_values.append(cell_mean_value)
 
         # Draw a bounding box around the cell if the value is above the SALIENCY_THRESHOLD
-        if binary_cell_value == 1:
+        if cell_mean_value >= saliency_threshold:
             cv2.rectangle(
                 frame,
                 (cell_start_x, cell_start_y),
