@@ -9,31 +9,45 @@ from typing import Union, Tuple
 import helper
 
 
-MAX_GAP_S = 20
-MAX_LENGTH_S = 100
-MIN_LENGTH_S = 20
+MAX_GAP_SEC = 2  # The max allowed gap between any two cells
+MAX_LENGTH_SEC = 10  # The max allowed total event time
+MIN_LENGTH_SEC = 1  # The min allowed total event time
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("data_path", help="Path to the directory containing the output for each video",)
-    parser.add_argument("config_path", help="Path to the config yml file",)
+    parser.add_argument(
+        "data_path",
+        help="Path to the directory containing the output for each video",
+    )
+    parser.add_argument(
+        "config_path",
+        help="Path to the config yml file",
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Detect for attention", action="store_true")
-    group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
+    group.add_argument(
+        "--optical-flow", help="Detect for optical flow", action="store_true"
+    )
 
     return parser.parse_args()
 
 
-def get_matching_cell_key(morton_code: float, cell_morton: dict, margin: int) -> Union[int, None]:
+def frames_to_seconds(nr_frames: int, fps: int):
+    return nr_frames / fps
+
+
+def get_matching_cell_key(
+    morton_code: float, cell_morton: dict, margin: int
+) -> Union[int, None]:
     for cell, (min_value, max_value) in cell_morton.items():
         if min_value - margin <= morton_code <= max_value + margin:
             return cell
     return None
 
 
-def sequence_meets_requirements(sequence, required_cell_subsets) -> bool:
+def sequence_meets_requirements(sequence, required_cell_subsets, fps) -> bool:
     """
     Checks if a sequence of tuples, e.g. [(1, 10), (2, 20)] meets the
     requirements to be an event.
@@ -43,10 +57,10 @@ def sequence_meets_requirements(sequence, required_cell_subsets) -> bool:
     if len(sequence) < 2:
         return False
 
-    start = sequence[0][1]
-    end = sequence[-1][1]
+    total_nr_frames = abs(sequence[-1][1] - sequence[0][1])
+    total_nr_seconds = frames_to_seconds(total_nr_frames, fps)
 
-    if end - start > MAX_LENGTH_S or end - start < MIN_LENGTH_S:
+    if not MIN_LENGTH_SEC <= total_nr_seconds <= MAX_LENGTH_SEC:
         return False
 
     contains_required_cell_subset = True
@@ -71,7 +85,7 @@ def get_sequence_with_most_cells(sequences):
     return list_with_max_unique
 
 
-def find_valid_sequences(tuples_list):
+def find_valid_sequences(tuples_list, fps):
     valid_sequences = []
     current_sequence = [tuples_list[0]]
 
@@ -79,8 +93,10 @@ def find_valid_sequences(tuples_list):
         prev_tuple = tuples_list[i - 1]
         current_tuple = tuples_list[i]
 
-        # TODO stuff with frames and seconds
-        if current_tuple[0] >= prev_tuple[0] and abs(current_tuple[1] - prev_tuple[1]) <= MAX_GAP_S:
+        frames_diff = abs(current_tuple[1] - prev_tuple[1])
+        seconds_diff = frames_to_seconds(frames_diff, fps)
+
+        if (current_tuple[0] >= prev_tuple[0] and seconds_diff <= MAX_GAP_SEC):
             current_sequence.append(current_tuple)
         else:
             if len(current_sequence) > 1:
@@ -93,7 +109,7 @@ def find_valid_sequences(tuples_list):
     return valid_sequences
 
 
-def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
+def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin, fps):
     """ """
     path = []
 
@@ -111,8 +127,8 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
 
     valid_sequences = []
 
-    for sequence in find_valid_sequences(path):
-        if sequence_meets_requirements(sequence, required_cell_subsets):
+    for sequence in find_valid_sequences(path, fps):
+        if sequence_meets_requirements(sequence, required_cell_subsets, fps):
             valid_sequences.append(sequence)
 
     if valid_sequences:
@@ -122,17 +138,17 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin):
 
 
 def detect_event(
-    morton_codes, cell_ranges, required_cell_subsets, margin
+    morton_codes, cell_ranges, required_cell_subsets, margin, fps
 ) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
     """
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
     In case there is no event, returns: None, None
     """
     sequence_left = get_sequence(
-        morton_codes, cell_ranges, required_cell_subsets, margin
+        morton_codes, cell_ranges, required_cell_subsets, margin, fps
     )
     sequence_right = get_sequence(
-        morton_codes[::-1], cell_ranges, required_cell_subsets, margin
+        morton_codes[::-1], cell_ranges, required_cell_subsets, margin, fps
     )
 
     if sequence_left:
@@ -146,6 +162,7 @@ def detect_event(
 def main(data_path: str, config_path: str, use_attention: bool):
     # Load config
     config = helper.load_yml(config_path)
+    grid_config = config["grid_config"]
     detector_config = config["detector_config"]
 
     # Config variables for detector
@@ -153,22 +170,34 @@ def main(data_path: str, config_path: str, use_attention: bool):
     calibration_videos = detector_config["detection_calibration_videos"]
 
     # Config variables specific to the type, either attention or OF
-    type_config = (detector_config["attention"] if use_attention else detector_config["optical_flow"])
+    type_config = (
+        detector_config["attention"]
+        if use_attention
+        else detector_config["optical_flow"]
+    )
     cell_ranges = type_config["cell_ranges"]
     margin = type_config["margin"]
 
-    df_event_window = pd.DataFrame(columns=["video_id", "event_detected", "start_frame", "end_frame"])
+    df_event_window = pd.DataFrame(
+        columns=["video_id", "event_detected", "start_frame", "end_frame"]
+    )
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
+            tqdm_obj.write(
+                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
+            )
             continue
 
-        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
+        morton_codes = pd.read_csv(
+            os.path.join(target_path, "morton_codes.csv"), sep=";"
+        )
 
-        event_window, scenario_type = detect_event(morton_codes, cell_ranges, required_cell_subsets, margin)
+        event_window, scenario_type = detect_event(
+            morton_codes, cell_ranges, required_cell_subsets, margin, grid_config["fps"]
+        )
 
         event_detected = event_window is not None
         start_frame, end_frame = event_window if event_window is not None else (-1, -1)
@@ -185,7 +214,9 @@ def main(data_path: str, config_path: str, use_attention: bool):
             ignore_index=True,
         )
 
-    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
+    df_event_window.to_csv(
+        os.path.join(data_path, "event_window.csv"), sep=";", index=False
+    )
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
     helper.save_config(detector_config, data_path, "detector_config.yml")

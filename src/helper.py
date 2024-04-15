@@ -35,8 +35,6 @@ def traverse_videos(data_path: str):
 
         yield video_dir, video_id, tqdm
 
-        video_dirs.set_description("Processing folders")
-
 
 def load_yml(file_path: str) -> dict:
     """

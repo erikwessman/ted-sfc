@@ -91,8 +91,6 @@ def main(data_path: str, output_path: str, config_path: str, gpu_id: int = 0):
             pred_video = np.array(pred_video, dtype=np.uint8)  # (T, H, W, C)
             write_video(output_file, torch.from_numpy(pred_video), grid_config["fps"])
 
-            pbar.set_description("Processing folders")
-
 
 if __name__ == "__main__":
     args = parse_arguments()
