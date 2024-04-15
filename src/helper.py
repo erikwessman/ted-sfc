@@ -303,3 +303,26 @@ def annotate_frame(
 ):
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(frame, text, position, font, font_scale, font_color, thickness)
+
+
+def video_to_frames(video_path):
+    """ Extract frames from a video file and return them as a list of images along with the original dimensions. """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError("Error opening video file")
+
+    frames = []
+    ret, frame = cap.read()
+    if ret:
+        height, width = frame.shape[:2]
+        frames.append(frame)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(frame)
+    else:
+        raise ValueError("No frames captured from the video")
+
+    cap.release()
+    return frames, (height, width)
