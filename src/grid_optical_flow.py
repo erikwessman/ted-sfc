@@ -152,7 +152,7 @@ def calculate_cell_values(
             )
 
             if is_event_cell:
-                cell_value = 1
+                cell_value = 1 - (distance_to_event_angle / 360)
 
                 # Draw a bounding box around the cell
                 cv2.rectangle(
