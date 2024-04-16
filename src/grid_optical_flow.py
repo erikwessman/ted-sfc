@@ -39,10 +39,10 @@ def parse_arguments():
     )
     parser.add_argument(
         "config_path",
-        help="Path to the config yml file",
+        help="Path to the config yml file.",
     )
     parser.add_argument(
-        "--cpu", help="Use CPU instead of GPU", action=argparse.BooleanOptionalAction
+        "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
