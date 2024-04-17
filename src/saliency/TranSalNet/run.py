@@ -1,6 +1,7 @@
-""" This file is modified from:
+"""This file is modified from:
 https://github.com/LJOVO/TranSalNet/blob/master/testing.ipynb
 """
+
 import os
 import torch
 import numpy as np
@@ -9,6 +10,7 @@ from torchvision import transforms
 from torchvision.io import write_video
 from saliency.TranSalNet.data_process import preprocess_img, postprocess_img
 from saliency.TranSalNet.model import TranSalNet
+from tqdm import tqdm
 
 import helper
 
@@ -21,16 +23,25 @@ def parse_arguments():
     parser.add_argument("data_path", help="")
     parser.add_argument("output_path", help="")
     parser.add_argument("config_path", help="")
-    parser.add_argument("--gpu_id", type=int, default=0, metavar="N", help="")
+    parser.add_argument(
+        "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
+    )
     return parser.parse_args()
 
 
-def main(data_path: str, output_path: str, config_path: str):
+def main(data_path: str, output_path: str, config_path: str, use_cpu: bool = False):
     # Load config
     config = helper.load_yml(config_path)
     grid_config = config["grid_config"]
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if use_cpu:
+        device = torch.device("cpu")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        raise Exception(
+            "No CUDA device found. This code requires a CUDA-enabled GPU and OpenCV with CUDA support."
+        )
 
     model = TranSalNet()
     model.load_state_dict(torch.load(MODEL_PATH))
@@ -51,9 +62,9 @@ def main(data_path: str, output_path: str, config_path: str):
 
         video_sal_maps = []
 
-        for img in list_frames:
+        for img in tqdm(list_frames, desc="Processing frames", leave=False):
             img = preprocess_img(img)  # Pad and resize image to 384x288
-            img = np.array(img)/255.
+            img = np.array(img) / 255.0
             img = np.expand_dims(np.transpose(img, (2, 0, 1)), axis=0)
             img = torch.from_numpy(img)
             img = img.type(torch.cuda.FloatTensor).to(device)
@@ -65,10 +76,15 @@ def main(data_path: str, output_path: str, config_path: str):
             pred_saliency = postprocess_img(pic, original_dims)
             video_sal_maps.append(pred_saliency)
 
-        video_tensor = torch.stack([torch.from_numpy(frame).unsqueeze(-1).repeat(1, 1, 3) for frame in video_sal_maps])
+        video_tensor = torch.stack(
+            [
+                torch.from_numpy(frame).unsqueeze(-1).repeat(1, 1, 3)
+                for frame in video_sal_maps
+            ]
+        )
         write_video(output_file, video_tensor.numpy(), fps=grid_config["fps"])
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    main(args.data_path, args.output_path, args.config_path)
+    main(args.data_path, args.output_path, args.config_path, args.cpu)
