@@ -60,6 +60,13 @@ def ensure_matching_video_resolution(original_video_path: str, target_video_path
         print(f"Target has been resized and saved to {target_video_path}.")
 
 
+def keep_largest(list):
+    if list:
+        max_value = max(list)
+        return [max_value if x == max_value else 0 for x in list]
+    return []
+
+
 def calculate_cell_values(frame, cell_positions, saliency_threshold):
     h, w = frame.shape[:2]
 
@@ -79,17 +86,19 @@ def calculate_cell_values(frame, cell_positions, saliency_threshold):
         # Calculate the mean value of the cell region
         cell_region = frame[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
         # normalize cell_mean_value to be between 0 and 1
-        cell_mean_value = np.mean(cell_region) / 255
+        normalized_cell_mean_value = np.mean(cell_region) / 255
 
         # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
-        cell_mean_value = (
-            cell_mean_value if cell_mean_value >= saliency_threshold else 0
+        normalized_cell_mean_value = (
+            normalized_cell_mean_value
+            if normalized_cell_mean_value >= saliency_threshold
+            else 0
         )
 
-        heatmap_mean_values.append(cell_mean_value)
+        heatmap_mean_values.append(normalized_cell_mean_value)
 
         # Draw a bounding box around the cell if the value is above the SALIENCY_THRESHOLD
-        if cell_mean_value >= saliency_threshold:
+        if normalized_cell_mean_value >= saliency_threshold:
             cv2.rectangle(
                 frame,
                 (cell_start_x, cell_start_y),
@@ -98,7 +107,7 @@ def calculate_cell_values(frame, cell_positions, saliency_threshold):
                 5,
             )
 
-    return heatmap_mean_values
+    return keep_largest(heatmap_mean_values)
 
 
 def overlay_heatmap(frame_heatmap, frame_original):
