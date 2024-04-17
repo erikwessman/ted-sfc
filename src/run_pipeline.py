@@ -144,13 +144,12 @@ def main(
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        # TODO: add support for running with cpu only
         if saliency_model == "mlnet":
-            run_saliency_mlnet(data_path, output_path, config_path)
+            run_saliency_mlnet(data_path, output_path, config_path, use_cpu)
         elif saliency_model == "tasednet":
-            run_saliency_tasednet(data_path, output_path, config_path)
+            run_saliency_tasednet(data_path, output_path, config_path, use_cpu)
         elif saliency_model == "transalnet":
-            run_saliency_transalnet(data_path, output_path, config_path)
+            run_saliency_transalnet(data_path, output_path, config_path, use_cpu)
         else:
             raise ValueError("Invalid saliency model")
 

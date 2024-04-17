@@ -36,7 +36,6 @@ def main(
     data_path: str,
     output_path: str,
     config_path: str,
-    gpu_id: int = 0,
     use_cpu: bool = False,
 ):
     # Load config
@@ -44,7 +43,7 @@ def main(
     grid_config = config["grid_config"]
 
     # Set up CUDA
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(0)
     if use_cpu:
         device = torch.device("cpu")
     elif torch.cuda.is_available():
