@@ -39,7 +39,10 @@ def parse_arguments():
     )
     parser.add_argument(
         "config_path",
-        help="Path to the config yml file",
+        help="Path to the config yml file.",
+    )
+    parser.add_argument(
+        "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--display_results", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
@@ -72,23 +75,49 @@ def circular_angle_distance(angle1, angle2):
     return min((angle1 - angle2) % 360, (angle2 - angle1) % 360)
 
 
+def calculate_cuda_optical_flow(frame_gray_prev, frame_gray):
+    if not cv2.cuda.getCudaEnabledDeviceCount():
+        raise Exception(
+            "No CUDA device found. This code requires a CUDA-enabled GPU and OpenCV with CUDA support."
+        )
+
+    cuda_farneback = cv2.cuda_FarnebackOpticalFlow.create(
+        numLevels=5,
+        pyrScale=0.5,
+        fastPyramids=False,
+        winSize=15,
+        numIters=5,
+        polyN=5,
+        polySigma=1.1,
+        flags=0,
+    )
+
+    # Upload images to GPU memory
+    prev_gpu = cv2.cuda_GpuMat(frame_gray_prev)
+    curr_gpu = cv2.cuda_GpuMat(frame_gray)
+
+    flow_gpu = cuda_farneback.calc(prev_gpu, curr_gpu, None)
+
+    return flow_gpu.download()
+
+
 def calculate_cell_values(
     frame,
     frame_gray,
     frame_gray_prev,
     cell_positions,
     moving_avg_cell_angles,
-    event_angles,
-    angle_range_threshold,
-    angle_diff_threshold,
-    flow_threshold,
-    nr_frames_moving_avg,
+    use_cpu,
+    optical_flow_config,
 ):
     h, w = frame_gray.shape[:3]
 
-    flow = cv2.calcOpticalFlowFarneback(
-        frame_gray_prev, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
-    )
+    if use_cpu:
+        flow = cv2.calcOpticalFlowFarneback(
+            frame_gray_prev, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+        )
+    else:
+        flow = calculate_cuda_optical_flow(frame_gray_prev, frame_gray)
 
     frame_cell_values = []
 
@@ -114,9 +143,14 @@ def calculate_cell_values(
         else:
             moving_avg_cell_angles[cell_index].append(cell_flow_vector)
 
-        if len(moving_avg_cell_angles[cell_index]) >= nr_frames_moving_avg:
+        if (
+            len(moving_avg_cell_angles[cell_index])
+            >= optical_flow_config["nr_frames_moving_avg"]
+        ):
             moving_avg = np.array(
-                moving_avg_cell_angles[cell_index][-nr_frames_moving_avg - 1 : -3]
+                moving_avg_cell_angles[cell_index][
+                    -optical_flow_config["nr_frames_moving_avg"] - 1 : -3
+                ]
             )
             moving_avg_vector = np.mean(moving_avg, axis=0)
             moving_avg_angle = np.degrees(
@@ -137,7 +171,7 @@ def calculate_cell_values(
         # vector_magnitude_diff = np.linalg.norm(current_3_vector - moving_avg_vector)
 
         cell_value = 0
-        for event_angle in event_angles:
+        for event_angle in optical_flow_config["event_angles"]:
             distance_to_event_angle = circular_angle_distance(
                 event_angle, current_3_angle
             )
@@ -146,9 +180,9 @@ def calculate_cell_values(
                 distance_to_event_angle,
                 vector_angle_diff,
                 cell_flow_vector,
-                angle_range_threshold,
-                angle_diff_threshold,
-                flow_threshold,
+                optical_flow_config["angle_range_threshold"],
+                optical_flow_config["angle_diff_threshold"],
+                optical_flow_config["flow_threshold"],
             )
 
             if is_event_cell:
@@ -201,7 +235,6 @@ def calculate_cell_values(
                 text_thickness,
             )
 
-        # Annotate angle difference
         cv2.putText(
             frame,
             f"{moving_avg_angle:.2f}",
@@ -254,7 +287,9 @@ def angle_to_vector(angle_degrees, scale=1):
     return (x, y)
 
 
-def process_video(video_path, target_path, video_id, config, display_results) -> dict:
+def process_video(
+    video_path, target_path, video_id, config, display_results, use_cpu
+) -> dict:
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
 
@@ -299,7 +334,8 @@ def process_video(video_path, target_path, video_id, config, display_results) ->
                 frame_gray_prev,
                 cell_positions,
                 moving_avg_cell_angles,
-                **optical_flow_config,
+                use_cpu,
+                optical_flow_config,
             )
             frame_gray_prev = frame_gray
 
@@ -337,7 +373,11 @@ def process_video(video_path, target_path, video_id, config, display_results) ->
 
 
 def main(
-    data_path: str, output_path: str, config_path: str, display_results: bool = False
+    data_path: str,
+    output_path: str,
+    config_path: str,
+    display_results: bool = False,
+    use_cpu: bool = False,
 ):
     # Load config
     config = helper.load_yml(config_path)
@@ -352,7 +392,7 @@ def main(
         os.makedirs(os.path.join(output_path, video_id), exist_ok=True)
 
         output_cell_value_map = process_video(
-            video_path, target_path, video_id, grid_config, display_results
+            video_path, target_path, video_id, grid_config, display_results, use_cpu
         )
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
@@ -373,4 +413,5 @@ if __name__ == "__main__":
         args.output_path,
         args.config_path,
         args.display_results,
+        args.cpu,
     )

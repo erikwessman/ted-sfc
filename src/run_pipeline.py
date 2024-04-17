@@ -14,17 +14,37 @@ import helper
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Script to run data processing pipeline.")
+    parser = argparse.ArgumentParser(
+        description="Script to run data processing pipeline."
+    )
 
     parser.add_argument("data_path", help="Path to the data directory.")
     parser.add_argument("output_path", help="Path where output will be saved.")
     parser.add_argument("config_path", help="Path to the configuration YML file.")
-    parser.add_argument("--heatmap", help="Generate heatmaps.", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--saliency-model", choices=["mlnet", "tasednet", "transalnet"], default="mlnet", help="Generate heatmaps.")
+    parser.add_argument(
+        "--heatmap", help="Generate heatmaps.", action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument(
+        "--saliency-model",
+        choices=["mlnet", "tasednet", "transalnet"],
+        default="mlnet",
+        help="Generate heatmaps.",
+    )
+    parser.add_argument(
+        "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--attention", help="Use attention mechanism.", action=argparse.BooleanOptionalAction)
-    group.add_argument("--optical-flow", help="Use optical flow.", action=argparse.BooleanOptionalAction)
+    group.add_argument(
+        "--attention",
+        help="Use attention mechanism.",
+        action=argparse.BooleanOptionalAction,
+    )
+    group.add_argument(
+        "--optical-flow",
+        help="Use optical flow.",
+        action=argparse.BooleanOptionalAction,
+    )
 
     return parser.parse_args()
 
@@ -88,13 +108,26 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
         log_file.write("--------------------------------------------------\n")
 
 
-def main(data_path, output_path, config_path, heatmap, saliency_model, attention, optical_flow):
+def main(
+    data_path,
+    output_path,
+    config_path,
+    generate_heatmaps,
+    saliency_model,
+    attention,
+    optical_flow,
+    use_cpu,
+):
     check_path_exists(data_path, "Data")
     check_path_exists(config_path, "Config")
 
     if os.path.isdir(output_path):
-        response = input("Output path already exists. Do you want to overwrite it? (y/[n]): ").strip().lower()
-        if response != 'y':
+        response = (
+            input("Output path already exists. Do you want to overwrite it? (y/[n]): ")
+            .strip()
+            .lower()
+        )
+        if response != "y":
             print("Exiting...")
             sys.exit(1)
     else:
@@ -107,16 +140,16 @@ def main(data_path, output_path, config_path, heatmap, saliency_model, attention
     start_time = datetime.datetime.now()
     print(f"Pipeline started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    if heatmap and attention:
+    if generate_heatmaps and attention:
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
         if saliency_model == "mlnet":
-            run_saliency_mlnet(data_path, output_path, config_path)
+            run_saliency_mlnet(data_path, output_path, config_path, use_cpu)
         elif saliency_model == "tasednet":
-            run_saliency_tasednet(data_path, output_path, config_path)
+            run_saliency_tasednet(data_path, output_path, config_path, use_cpu)
         elif saliency_model == "transalnet":
-            run_saliency_transalnet(data_path, output_path, config_path)
+            run_saliency_transalnet(data_path, output_path, config_path, use_cpu)
         else:
             raise ValueError("Invalid saliency model")
 
@@ -130,7 +163,7 @@ def main(data_path, output_path, config_path, heatmap, saliency_model, attention
         print("----------------------------------------")
         print("Applying optical flow grid...")
         print("----------------------------------------")
-        run_grid_optical_flow(data_path, output_path, config_path)
+        run_grid_optical_flow(data_path, output_path, config_path, use_cpu=use_cpu)
 
     print("----------------------------------------")
     print("Generating Morton codes...")
@@ -154,4 +187,13 @@ if __name__ == "__main__":
     if args.optical_flow:
         args.heatmap = False
 
-    main(args.data_path, args.output_path, args.config_path, args.heatmap, args.saliency_model, args.attention, args.optical_flow)
+    main(
+        args.data_path,
+        args.output_path,
+        args.config_path,
+        args.heatmap,
+        args.saliency_model,
+        args.attention,
+        args.optical_flow,
+        args.cpu,
+    )
