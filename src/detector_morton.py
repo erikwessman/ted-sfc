@@ -16,20 +16,12 @@ MIN_LENGTH_SEC = 1  # The min allowed total event time
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "data_path",
-        help="Path to the directory containing the output for each video",
-    )
-    parser.add_argument(
-        "config_path",
-        help="Path to the config yml file",
-    )
+    parser.add_argument("data_path", help="Path to the directory containing the output for each video",)
+    parser.add_argument("config_path", help="Path to the config yml file",)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Detect for attention", action="store_true")
-    group.add_argument(
-        "--optical-flow", help="Detect for optical flow", action="store_true"
-    )
+    group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
 
     return parser.parse_args()
 
@@ -38,11 +30,9 @@ def frames_to_seconds(nr_frames: int, fps: int):
     return nr_frames / fps
 
 
-def get_matching_cell_key(
-    morton_code: float, cell_morton: dict, margin: int
-) -> Union[int, None]:
+def get_matching_cell_key(morton_code: float, cell_morton: dict) -> Union[int, None]:
     for cell, (min_value, max_value) in cell_morton.items():
-        if min_value - margin <= morton_code <= max_value + margin:
+        if min_value <= morton_code <= max_value:
             return cell
     return None
 
@@ -109,13 +99,17 @@ def find_valid_sequences(tuples_list, fps):
     return valid_sequences
 
 
-def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin, fps):
+def get_sequence(morton_codes,
+                 cell_ranges,
+                 required_cell_subsets,
+                 cell_gap_time_limits,
+                 fps: int):
     """ """
     path = []
 
     for _, row in morton_codes.iterrows():
         curr_frame_id = row["frame_id"]
-        curr_cell_key = get_matching_cell_key(row["morton"], cell_ranges, margin)
+        curr_cell_key = get_matching_cell_key(row["morton"], cell_ranges)
 
         if not curr_cell_key:
             continue
@@ -138,25 +132,37 @@ def get_sequence(morton_codes, cell_ranges, required_cell_subsets, margin, fps):
 
 
 def detect_event(
-    morton_codes, cell_ranges, required_cell_subsets, margin, fps
+    morton_codes,
+    cell_ranges,
+    required_cell_subsets,
+    cell_gap_time_limits,
+    fps
 ) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
     """
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
-    In case there is no event, returns: None, None
+    In case there is no event, returns: None
     """
     sequence_left = get_sequence(
-        morton_codes, cell_ranges, required_cell_subsets, margin, fps
+        morton_codes,
+        cell_ranges,
+        required_cell_subsets,
+        cell_gap_time_limits,
+        fps
     )
     sequence_right = get_sequence(
-        morton_codes[::-1], cell_ranges, required_cell_subsets, margin, fps
+        morton_codes[::-1],
+        cell_ranges,
+        required_cell_subsets,
+        cell_gap_time_limits,
+        fps
     )
 
     if sequence_left:
-        return (sequence_left[0][1], sequence_left[-1][1]), "left"
+        return sequence_left[0][1], sequence_left[-1][1], "left"
     elif sequence_right:
-        return (sequence_right[-1][1], sequence_right[0][1]), "right"
+        return sequence_right[-1][1], sequence_right[0][1], "right"
     else:
-        return None, None
+        return None
 
 
 def main(data_path: str, config_path: str, use_attention: bool):
@@ -165,18 +171,24 @@ def main(data_path: str, config_path: str, use_attention: bool):
     grid_config = config["grid_config"]
     detector_config = config["detector_config"]
 
-    # Config variables for detector
+    # Grid variables
+    fps = grid_config["fps"]
+    cell_gap_time_limits = grid_config["grid"]["cell_gap_time_limits"]
+
+    # Detector variables
     required_cell_subsets = detector_config["required_cell_subsets"]
     calibration_videos = detector_config["detection_calibration_videos"]
 
-    # Config variables specific to the type, either attention or OF
+    # Type variables, either attention or optical flow
     type_config = (
         detector_config["attention"]
         if use_attention
         else detector_config["optical_flow"]
     )
     cell_ranges = type_config["cell_ranges"]
-    margin = type_config["margin"]
+
+    if len(cell_ranges) != len(cell_gap_time_limits) - 1:
+        raise ValueError("Incorrect amount of cell gaps for number of cell ranges")
 
     df_event_window = pd.DataFrame(
         columns=["video_id", "event_detected", "start_frame", "end_frame"]
@@ -186,22 +198,25 @@ def main(data_path: str, config_path: str, use_attention: bool):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(
-                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
-            )
+            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
             continue
 
-        morton_codes = pd.read_csv(
-            os.path.join(target_path, "morton_codes.csv"), sep=";"
+        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
+
+        event = detect_event(
+                morton_codes,
+                cell_ranges,
+                required_cell_subsets,
+                cell_gap_time_limits,
+                fps
         )
 
-        event_window, scenario_type = detect_event(
-            morton_codes, cell_ranges, required_cell_subsets, margin, grid_config["fps"]
-        )
-
-        event_detected = event_window is not None
-        start_frame, end_frame = event_window if event_window is not None else (-1, -1)
-        scenario_type = scenario_type if scenario_type is not None else ""
+        if event:
+            event_detected = True
+            start_frame, end_frame, scenario_type = event
+        else:
+            event_detected = False
+            start_frame, end_frame, scenario_type = -1, -1, ""
 
         df_event_window = df_event_window._append(
             {
@@ -214,9 +229,7 @@ def main(data_path: str, config_path: str, use_attention: bool):
             ignore_index=True,
         )
 
-    df_event_window.to_csv(
-        os.path.join(data_path, "event_window.csv"), sep=";", index=False
-    )
+    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
     helper.save_config(detector_config, data_path, "detector_config.yml")

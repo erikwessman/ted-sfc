@@ -9,6 +9,7 @@ grid_config:
     angle_diff_threshold: 75
     nr_frames_moving_avg: 10
   grids:
+    - cell_gap_time_limits: [[], [], [], [], []]
     - top_left: [0.2, 0.45]
       bottom_right: [0.45, 0.7]
       rows: 1
@@ -27,7 +28,6 @@ detector_config:
     - "00Jyiy3E2DstQTcaaRHsI"
     - "IFGmZTtK9U3ntir243GGt"
   attention:
-    margin: 0
     cell_ranges:
       1: [4.0e-07, 4.2e-07]
       2: [8.0e-07, 8.4e-07]
