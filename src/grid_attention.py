@@ -64,7 +64,7 @@ def keep_largest(list):
     if list:
         max_value = max(list)
         return [max_value if x == max_value else 0 for x in list]
-    return []
+    return list
 
 
 def calculate_cell_values(frame, cell_positions, saliency_threshold):

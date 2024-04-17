@@ -92,8 +92,8 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
     """
     duration = end_time - start_time
     sec_total = duration.total_seconds()
-    sec_per_video = sec_total / nr_videos
-    sec_per_frame = sec_total / nr_frames
+    sec_per_video = round(sec_total / nr_videos, 6)
+    sec_per_frame = round(sec_total / nr_frames, 6)
 
     log_file_path = os.path.join(output_path, "pipeline_runtime_log.txt")
     with open(log_file_path, "a") as log_file:

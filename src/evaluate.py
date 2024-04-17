@@ -55,7 +55,7 @@ def main(event_window_path: str, ground_truth_path: str):
 
     iou_map = {}
 
-    for index, row in df_event_window.iterrows():
+    for _, row in df_event_window.iterrows():
         video_id = row["video_id"]
 
         event_detected = row["event_detected"]
@@ -73,20 +73,23 @@ def main(event_window_path: str, ground_truth_path: str):
                     TP += 1
                 else:
                     FP += 1
+                    print(f"False positive: {video_id}")
             else:
                 FP += 1
+                print(f"False positive: {video_id}")
         else:
             if video_ground_truth:
                 FN += 1
+                print(f"False negative: {video_id}")
             else:
                 TN += 1
 
     print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
 
-    f1_score = 2 * TP / (2 * TP + FP + FN)
-    sensitivity = TP / (TP + FN)
-    specificity = TN / (TN + FP)
-    mean_iou = sum(iou_map.values()) / len(iou_map)
+    f1_score = round(2 * TP / (2 * TP + FP + FN), 4)
+    sensitivity = round(TP / (TP + FN), 4)
+    specificity = round(TN / (TN + FP), 4)
+    mean_iou = round(sum(iou_map.values()) / len(iou_map), 4)
 
     print(f"F1: {f1_score}")
     print(f"Sensitivity: {sensitivity}")

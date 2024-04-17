@@ -43,9 +43,6 @@
 - id: "000521"
   event_window: [175, 200]
   type: left
-- id: "000617"
-  event_window: [1, 52]
-  type: right
 - id: "000653"
   event_window: [25, 70]
   type: right

@@ -1,6 +1,7 @@
 """
 This script attempts to find the event window in a video from a set of morton codes
 """
+
 import os
 import argparse
 import pandas as pd
@@ -9,19 +10,22 @@ from typing import Union, Tuple
 import helper
 
 
-MAX_GAP_SEC = 2  # The max allowed gap between any two cells
-MAX_LENGTH_SEC = 10  # The max allowed total event time
-MIN_LENGTH_SEC = 1  # The min allowed total event time
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("data_path", help="Path to the directory containing the output for each video",)
-    parser.add_argument("config_path", help="Path to the config yml file",)
+    parser.add_argument(
+        "data_path",
+        help="Path to the directory containing the output for each video",
+    )
+    parser.add_argument(
+        "config_path",
+        help="Path to the config yml file",
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--attention", help="Detect for attention", action="store_true")
-    group.add_argument("--optical-flow", help="Detect for optical flow", action="store_true")
+    group.add_argument(
+        "--optical-flow", help="Detect for optical flow", action="store_true"
+    )
 
     return parser.parse_args()
 
@@ -37,7 +41,9 @@ def get_matching_cell_key(morton_code: float, cell_morton: dict) -> Union[int, N
     return None
 
 
-def sequence_meets_requirements(sequence, required_cell_subsets, fps) -> bool:
+def is_valid_sequence(
+    sequence, required_cell_subsets, cell_gap_time_limits, event_length_limit, fps
+) -> bool:
     """
     Checks if a sequence of tuples, e.g. [(1, 10), (2, 20)] meets the
     requirements to be an event.
@@ -50,15 +56,53 @@ def sequence_meets_requirements(sequence, required_cell_subsets, fps) -> bool:
     total_nr_frames = abs(sequence[-1][1] - sequence[0][1])
     total_nr_seconds = frames_to_seconds(total_nr_frames, fps)
 
-    if not MIN_LENGTH_SEC <= total_nr_seconds <= MAX_LENGTH_SEC:
+    # Sequence must be within the event length limit
+    if not event_length_limit[0] <= total_nr_seconds <= event_length_limit[1]:
         return False
 
-    contains_required_cell_subset = True
+    # Sequence must contain at least one match from each required cell subset
+    total_matches = 0
     for required_cell_subset in required_cell_subsets:
-        if not any(tup[0] in required_cell_subset for tup in sequence):
-            contains_required_cell_subset = False
+        count = sum(tup[0] in required_cell_subset for tup in sequence)
+        total_matches += count
+        # print(f"Subset {required_cell_subset} has {count} matching cells.")
+        if count < 1:
+            return False
 
-    return contains_required_cell_subset
+    if total_matches < 3:
+        return False
+
+    # Gaps between cell matches must be within the cell gap limits
+    for i in range(1, len(sequence)):
+        prev_cell_key = sequence[i - 1][0] - 1
+        curr_cell_key = sequence[i][0] - 1
+        cell_key_diff = curr_cell_key - prev_cell_key
+
+        prev_frame = sequence[i - 1][1]
+        curr_frame = sequence[i][1]
+
+        if cell_key_diff > 0:
+            min_gap, max_gap = 0, 0
+            for i in range(prev_cell_key, curr_cell_key):
+                min_gap += cell_gap_time_limits[i][0]
+                max_gap += cell_gap_time_limits[i][1]
+        elif cell_key_diff < 0:
+            min_gap, max_gap = 0, 0
+            for i in range(curr_cell_key, prev_cell_key - 1, -1):
+                min_gap += cell_gap_time_limits[i][0]
+                max_gap += cell_gap_time_limits[i][1]
+        else:
+            continue
+
+        time_gap = frames_to_seconds(abs(curr_frame - prev_frame), fps)
+
+        # Get the time limit for going from from_cell to to_cell
+        if not min_gap <= time_gap <= max_gap:
+            # print(f"prev_frame: {prev_frame}, curr_frame: {curr_frame}")
+            # print(f"curr_cell_key: {curr_cell_key}, prev_cell_key: {prev_cell_key}")
+            return False
+
+    return True
 
 
 def get_sequence_with_most_cells(sequences):
@@ -75,35 +119,35 @@ def get_sequence_with_most_cells(sequences):
     return list_with_max_unique
 
 
-def find_valid_sequences(tuples_list, fps):
-    valid_sequences = []
+def get_ordered_sequences(tuples_list):
+    ordered_sequences = []
     current_sequence = [tuples_list[0]]
 
     for i in range(1, len(tuples_list)):
         prev_tuple = tuples_list[i - 1]
         current_tuple = tuples_list[i]
 
-        frames_diff = abs(current_tuple[1] - prev_tuple[1])
-        seconds_diff = frames_to_seconds(frames_diff, fps)
-
-        if (current_tuple[0] >= prev_tuple[0] and seconds_diff <= MAX_GAP_SEC):
+        if current_tuple[0] >= prev_tuple[0]:
             current_sequence.append(current_tuple)
         else:
             if len(current_sequence) > 1:
-                valid_sequences.append(current_sequence)
+                ordered_sequences.append(current_sequence)
             current_sequence = [current_tuple]
 
     if len(current_sequence) > 1:
-        valid_sequences.append(current_sequence)
+        ordered_sequences.append(current_sequence)
 
-    return valid_sequences
+    return ordered_sequences
 
 
-def get_sequence(morton_codes,
-                 cell_ranges,
-                 required_cell_subsets,
-                 cell_gap_time_limits,
-                 fps: int):
+def get_sequence(
+    morton_codes,
+    cell_ranges,
+    required_cell_subsets,
+    cell_gap_time_limits,
+    event_length_limit,
+    fps: int,
+):
     """ """
     path = []
 
@@ -121,8 +165,15 @@ def get_sequence(morton_codes,
 
     valid_sequences = []
 
-    for sequence in find_valid_sequences(path, fps):
-        if sequence_meets_requirements(sequence, required_cell_subsets, fps):
+    ordered_sequences = get_ordered_sequences(path)
+    for sequence in ordered_sequences:
+        if is_valid_sequence(
+            sequence,
+            required_cell_subsets,
+            cell_gap_time_limits,
+            event_length_limit,
+            fps,
+        ):
             valid_sequences.append(sequence)
 
     if valid_sequences:
@@ -136,8 +187,9 @@ def detect_event(
     cell_ranges,
     required_cell_subsets,
     cell_gap_time_limits,
-    fps
-) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
+    event_length_limit,
+    fps,
+) -> Union[Tuple[int, int, str], None]:
     """
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
     In case there is no event, returns: None
@@ -147,20 +199,22 @@ def detect_event(
         cell_ranges,
         required_cell_subsets,
         cell_gap_time_limits,
-        fps
+        event_length_limit,
+        fps,
     )
-    sequence_right = get_sequence(
-        morton_codes[::-1],
-        cell_ranges,
-        required_cell_subsets,
-        cell_gap_time_limits,
-        fps
-    )
+    # sequence_right = get_sequence(
+    #     morton_codes[::-1],
+    #     cell_ranges,
+    #     required_cell_subsets,
+    #     cell_gap_time_limits,
+    #     event_length_limit,
+    #     fps,
+    # )
 
     if sequence_left:
         return sequence_left[0][1], sequence_left[-1][1], "left"
-    elif sequence_right:
-        return sequence_right[-1][1], sequence_right[0][1], "right"
+    # elif sequence_right:
+    #     return sequence_right[-1][1], sequence_right[0][1], "right"
     else:
         return None
 
@@ -173,7 +227,8 @@ def main(data_path: str, config_path: str, use_attention: bool):
 
     # Grid variables
     fps = grid_config["fps"]
-    cell_gap_time_limits = grid_config["grid"]["cell_gap_time_limits"]
+    cell_gap_time_limits = grid_config["cell_gap_time_limits"]
+    event_length_limit = grid_config["event_length_limit_seconds"]
 
     # Detector variables
     required_cell_subsets = detector_config["required_cell_subsets"]
@@ -187,7 +242,7 @@ def main(data_path: str, config_path: str, use_attention: bool):
     )
     cell_ranges = type_config["cell_ranges"]
 
-    if len(cell_ranges) != len(cell_gap_time_limits) - 1:
+    if not len(cell_ranges) - 1 == len(cell_gap_time_limits):
         raise ValueError("Incorrect amount of cell gaps for number of cell ranges")
 
     df_event_window = pd.DataFrame(
@@ -198,17 +253,22 @@ def main(data_path: str, config_path: str, use_attention: bool):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
+            tqdm_obj.write(
+                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
+            )
             continue
 
-        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
+        morton_codes = pd.read_csv(
+            os.path.join(target_path, "morton_codes.csv"), sep=";"
+        )
 
         event = detect_event(
-                morton_codes,
-                cell_ranges,
-                required_cell_subsets,
-                cell_gap_time_limits,
-                fps
+            morton_codes,
+            cell_ranges,
+            required_cell_subsets,
+            cell_gap_time_limits,
+            event_length_limit,
+            fps,
         )
 
         if event:
@@ -229,7 +289,9 @@ def main(data_path: str, config_path: str, use_attention: bool):
             ignore_index=True,
         )
 
-    df_event_window.to_csv(os.path.join(data_path, "event_window.csv"), sep=";", index=False)
+    df_event_window.to_csv(
+        os.path.join(data_path, "event_window.csv"), sep=";", index=False
+    )
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
     helper.save_config(detector_config, data_path, "detector_config.yml")

@@ -1,5 +1,6 @@
 grid_config:
   fps: 10
+  event_length_limits_seconds: [2, 20]
   attention:
     saliency_threshold: 0.2
   optical_flow:
@@ -36,7 +37,6 @@ detector_config:
       5: [6.45e-06, 6.7e-06]
       6: [1.25e-05, 1.4e-05]
   optical_flow:
-    margin: 0
     cell_ranges:
       1: [2.62208e-05, 2.62208e-05]
       2: [5.24416e-05, 5.24416e-05]
