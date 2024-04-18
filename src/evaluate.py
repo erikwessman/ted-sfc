@@ -6,13 +6,9 @@ import helper
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Calculate F1 scores based on ground truth and prediction data."
-    )
-    parser.add_argument("event_window_path", type=str, help="Path to event_window.csv")
-    parser.add_argument(
-        "ground_truth_path", type=str, help="Path to the ground truth YML file"
-    )
+    parser = argparse.ArgumentParser(description="Calculate F1 scores based on ground truth and prediction data.")
+    parser.add_argument("data_path", type=str, help="Path to directory that contains event_window.csv")
+    parser.add_argument("ground_truth_path", type=str, help="Path to the ground truth YML file")
     return parser.parse_args()
 
 
@@ -43,13 +39,13 @@ def calculate_iou(prediction_interval, ground_truth_interval):
     return iou
 
 
-def main(event_window_path: str, ground_truth_path: str):
+def main(data_path: str, ground_truth_path: str):
+    event_window_path = os.path.join(data_path, "event_window.csv")
+    assert os.path.exists(event_window_path), "Could not find event_window.csv"
+    df_event_window = pd.read_csv(event_window_path, dtype={"video_id": str}, sep=";")
+
     # Load ground truth
     ground_truth = helper.load_yml(ground_truth_path)
-
-    assert os.path.exists(event_window_path), "Event window file does not exist"
-
-    df_event_window = pd.read_csv(event_window_path, dtype={"video_id": str}, sep=";")
 
     TP, FP, FN, TN = 0, 0, 0, 0
 
@@ -110,4 +106,4 @@ def main(event_window_path: str, ground_truth_path: str):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    main(args.event_window_path, args.ground_truth_path)
+    main(args.data_path, args.ground_truth_path)

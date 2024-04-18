@@ -9,6 +9,8 @@ from saliency.TASEDNet.run import main as run_saliency_tasednet
 from saliency.TranSalNet.run import main as run_saliency_transalnet
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
+from detector_morton import main as run_detector_morton
+from evaluate import main as run_evaluate
 from morton import main as run_morton
 import helper
 
@@ -33,6 +35,7 @@ def parse_arguments():
     parser.add_argument(
         "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
     )
+    parser.add_argument("--annotations", help="Path to annotations.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -117,6 +120,7 @@ def main(
     attention,
     optical_flow,
     use_cpu,
+    annotations
 ):
     check_path_exists(data_path, "Data")
     check_path_exists(config_path, "Config")
@@ -176,6 +180,20 @@ def main(
     # Log the runtime information
     save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames)
 
+    print("----------------------------------------")
+    print("Running detector...")
+    print("----------------------------------------")
+    if attention:
+        run_detector_morton(output_path, config_path, True)
+    else:
+        run_detector_morton(output_path, config_path, False)
+
+    if annotations:
+        print("----------------------------------------")
+        print("Running evaluation...")
+        print("----------------------------------------")
+        run_evaluate(output_path, annotations)
+
     print("========================================")
     print(f"Pipeline completed. Output saved to '{output_path}'.")
     print("========================================")
@@ -196,4 +214,5 @@ if __name__ == "__main__":
         args.attention,
         args.optical_flow,
         args.cpu,
+        args.annotations
     )

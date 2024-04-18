@@ -305,9 +305,7 @@ def main(data_path: str, config_path: str, use_attention: bool):
             )
             continue
 
-        morton_codes = pd.read_csv(
-            os.path.join(target_path, "morton_codes.csv"), sep=";"
-        )
+        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
 
         event = detect_event(
             morton_codes,
