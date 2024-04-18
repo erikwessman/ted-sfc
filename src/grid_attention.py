@@ -60,54 +60,47 @@ def ensure_matching_video_resolution(original_video_path: str, target_video_path
         print(f"Target has been resized and saved to {target_video_path}.")
 
 
-def keep_largest(list):
-    if list:
-        max_value = max(list)
-        return [max_value if x == max_value else 0 for x in list]
-    return list
+def keep_largest(values):
+    """Keep the largest value in the array, while making all other values 0"""
+    max_index = values.index(max(values))
+    return [values[i] if i == max_index else 0 for i in range(len(values))]
 
 
 def calculate_cell_values(frame, cell_positions, saliency_threshold):
     h, w = frame.shape[:2]
-
     heatmap_mean_values = []
+    max_value = 0
+    max_index = -1  # Initialize with an invalid index
 
-    for top_left, bottom_right in cell_positions:
-        # Define the cell boundaries
-        cell_start_x = top_left[0]
-        cell_start_y = top_left[1]
-        cell_end_x = bottom_right[0]
-        cell_end_y = bottom_right[1]
-
-        # Ensure the cell is within the image boundaries
-        cell_end_x = min(cell_end_x, w)
-        cell_end_y = min(cell_end_y, h)
-
-        # Calculate the mean value of the cell region
+    # Calculate all mean values and find the maximum
+    for index, (top_left, bottom_right) in enumerate(cell_positions):
+        cell_start_x, cell_start_y = top_left
+        cell_end_x, cell_end_y = min(bottom_right[0], w), min(bottom_right[1], h)
         cell_region = frame[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
-        # normalize cell_mean_value to be between 0 and 1
         normalized_cell_mean_value = np.mean(cell_region) / 255
-
-        # Get the value if its over the SALIENCY_THRESHOLD, otherwise 0
-        normalized_cell_mean_value = (
-            normalized_cell_mean_value
-            if normalized_cell_mean_value >= saliency_threshold
-            else 0
-        )
 
         heatmap_mean_values.append(normalized_cell_mean_value)
 
-        # Draw a bounding box around the cell if the value is above the SALIENCY_THRESHOLD
-        if normalized_cell_mean_value >= saliency_threshold:
-            cv2.rectangle(
-                frame,
-                (cell_start_x, cell_start_y),
-                (cell_end_x, cell_end_y),
-                (0, 255, 0),
-                5,
-            )
+        # Update the maximum value and index if the current value is larger
+        if normalized_cell_mean_value > max_value:
+            max_value = normalized_cell_mean_value
+            max_index = index
 
-    return keep_largest(heatmap_mean_values)
+    # Set all values to 0 except the maximum value
+    result_values = []
+    for index, value in enumerate(heatmap_mean_values):
+        if index == max_index and value >= saliency_threshold:
+            result_values.append(value)
+        else:
+            result_values.append(0)
+
+    # Draw a rectangle around the cell with the maximum value
+    if max_index != -1 and heatmap_mean_values[max_index] >= saliency_threshold:
+        top_left = cell_positions[max_index][0]
+        bottom_right = cell_positions[max_index][1]
+        cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 5)
+
+    return result_values
 
 
 def overlay_heatmap(frame_heatmap, frame_original):
@@ -153,6 +146,8 @@ def process_video_and_generate_attention_map(
         (frame_original.shape[1], frame_original.shape[0]),
     )
 
+    threshold = config["attention"]["saliency_threshold"]
+
     cell_positions = helper.calculate_grid_cell_positions(frame_heatmap, config)
     mean_attention_map = {}
 
@@ -164,7 +159,7 @@ def process_video_and_generate_attention_map(
             frame_number += 1
 
             mean_attention_map[frame_number] = calculate_cell_values(
-                frame_heatmap, cell_positions, config["attention"]["saliency_threshold"]
+                frame_heatmap, cell_positions, threshold
             )
             combined_frame = overlay_heatmap(frame_heatmap, frame_original)
 
@@ -172,7 +167,7 @@ def process_video_and_generate_attention_map(
 
             helper.annotate_frame(
                 combined_frame,
-                f"frame: {frame_number}. saliency_threshold: {config['attention']['saliency_threshold']}",
+                f"frame: {frame_number}. saliency_threshold: {threshold}",
                 (10, 30),
             )
 

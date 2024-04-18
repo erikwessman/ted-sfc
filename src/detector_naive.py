@@ -33,7 +33,9 @@ def frames_to_seconds(nr_frames: int, fps: int):
     return nr_frames / fps
 
 
-def sequence_meets_requirements(sequence, required_cell_subsets, fps) -> bool:
+def is_valid_sequence(
+    sequence, required_cell_subsets, cell_gap_time_limits, event_length_limit, fps
+) -> bool:
     """
     Checks if a sequence of tuples, e.g. [(1, 10), (2, 20)] meets the
     requirements to be an event.
@@ -46,15 +48,68 @@ def sequence_meets_requirements(sequence, required_cell_subsets, fps) -> bool:
     total_nr_frames = abs(sequence[-1][1] - sequence[0][1])
     total_nr_seconds = frames_to_seconds(total_nr_frames, fps)
 
-    if not MIN_LENGTH_SEC <= total_nr_seconds <= MAX_LENGTH_SEC:
+    # Sequence must be within the event length limit
+    if not event_length_limit[0] <= total_nr_seconds <= event_length_limit[1]:
         return False
 
-    contains_required_cell_subset = True
+    # Sequence must contain at least one match from each required cell subset
+    unique_cells = {s[0] for s in sequence}
+    total_matches = 0
     for required_cell_subset in required_cell_subsets:
-        if not any(tup[0] in required_cell_subset for tup in sequence):
-            contains_required_cell_subset = False
+        count = len(required_cell_subset & unique_cells)
+        total_matches += count
+        if count < 1:
+            return False
 
-    return contains_required_cell_subset
+    # Must match with at least 3 unique cells
+    if total_matches < 3:
+        return False
+
+    nr_frames_standing_still = 0
+
+    for i in range(1, len(sequence)):
+        prev_cell_key = sequence[i - 1][0] - 1
+        curr_cell_key = sequence[i][0] - 1
+
+        prev_frame = sequence[i - 1][1]
+        curr_frame = sequence[i][1]
+
+        cell_key_diff = curr_cell_key - prev_cell_key
+        frame_diff = curr_frame - prev_frame
+
+        # Don't allow sequence to make sudden jumps by more than 2 cells
+        if abs(cell_key_diff) > 2:
+            return False
+
+        # Don't allow sequence to stand still for too long
+        if nr_frames_standing_still > 20:
+            pass
+
+        if cell_key_diff > 0:
+            nr_frames_standing_still = 0
+
+            min_gap, max_gap = 0, 0
+            for i in range(prev_cell_key, curr_cell_key):
+                min_gap += cell_gap_time_limits[i][0]
+                max_gap += cell_gap_time_limits[i][1]
+        elif cell_key_diff < 0:
+            nr_frames_standing_still = 0
+
+            min_gap, max_gap = 0, 0
+            for i in range(curr_cell_key, prev_cell_key - 1, -1):
+                min_gap += cell_gap_time_limits[i][0]
+                max_gap += cell_gap_time_limits[i][1]
+        else:
+            nr_frames_standing_still += abs(frame_diff)
+            continue
+
+        time_gap = frames_to_seconds(abs(curr_frame - prev_frame), fps)
+
+        # The total time it took to go from prev_cell to curr_cell should not exceed specified limits
+        if not min_gap <= time_gap <= max_gap:
+            return False
+
+    return True
 
 
 def get_sequence_with_most_cells(sequences):
@@ -71,31 +126,49 @@ def get_sequence_with_most_cells(sequences):
     return list_with_max_unique
 
 
-def find_valid_sequences(tuples_list, fps):
-    valid_sequences = []
-    current_sequence = [tuples_list[0]]
+def get_ordered_sequences(data, tolerance=1):
+    active_sequences = []
+    final_sequences = []
 
-    for i in range(1, len(tuples_list)):
-        prev_tuple = tuples_list[i - 1]
-        current_tuple = tuples_list[i]
+    for current_match in data:
+        new_active_sequences = []
+        fit_any_sequence = False
 
-        frames_diff = abs(current_tuple[1] - prev_tuple[1])
-        seconds_diff = frames_to_seconds(frames_diff, fps)
+        # Check against all active sequences
+        for seq_info in active_sequences:
+            sequence, interruptions = seq_info
 
-        if (current_tuple[0] >= prev_tuple[0] and seconds_diff <= MAX_GAP_SEC):
-            current_sequence.append(current_tuple)
-        else:
-            if len(current_sequence) > 1:
-                valid_sequences.append(current_sequence)
-            current_sequence = [current_tuple]
+            # Check if current tuple can extend the sequence
+            if current_match[0] >= sequence[-1][0]:
+                sequence.append(current_match)
+                new_active_sequences.append((sequence, 0))  # reset non-increasing count
+                fit_any_sequence = True
+            else:
+                # Increment non-increasing count if within tolerance
+                if interruptions < tolerance:
+                    new_active_sequences.append((sequence, interruptions + 1))
+                    new_active_sequences.append(([current_match], 0))
+                else:
+                    # Finalize and remove sequence if tolerance exceeded
+                    if len(sequence) > 1:
+                        final_sequences.append(sequence)
 
-    if len(current_sequence) > 1:
-        valid_sequences.append(current_sequence)
+        # If current doesn't fit any sequence and isn't a continuation, start a new one
+        if not fit_any_sequence:
+            new_active_sequences.append(([current_match], 0))
 
-    return valid_sequences
+        # Update active sequences
+        active_sequences = new_active_sequences
+
+    # Finalize all remaining active sequences
+    for sequence, _ in active_sequences:
+        if len(sequence) > 1:
+            final_sequences.append(sequence)
+
+    return final_sequences
 
 
-def get_sequence(cell_values, required_cell_subsets, fps):
+def get_sequence(cell_values, required_cell_subsets, cell_gap_time_limits, event_length_limit, fps):
     """ """
     path = []
 
@@ -116,8 +189,15 @@ def get_sequence(cell_values, required_cell_subsets, fps):
 
     valid_sequences = []
 
-    for sequence in find_valid_sequences(path, fps):
-        if sequence_meets_requirements(sequence, required_cell_subsets, fps):
+    ordered_sequences = get_ordered_sequences(path)
+    for sequence in ordered_sequences:
+        if is_valid_sequence(
+            sequence,
+            required_cell_subsets,
+            cell_gap_time_limits,
+            event_length_limit,
+            fps,
+        ):
             valid_sequences.append(sequence)
 
     if valid_sequences:
@@ -127,21 +207,37 @@ def get_sequence(cell_values, required_cell_subsets, fps):
 
 
 def detect_event(
-    cell_values, required_cell_subsets, fps
-) -> Union[Tuple[Tuple[int, int], str], Tuple[None, None]]:
+    cell_values,
+    required_cell_subsets,
+    cell_gap_time_limits,
+    event_length_limit,
+    fps,
+) -> Union[Tuple[int, int, str], None]:
     """
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
-    In case there is no event, returns: None, None
+    In case there is no event, returns: None
     """
-    sequence_left = get_sequence(cell_values, required_cell_subsets, fps)
-    sequence_right = get_sequence(cell_values[::-1], required_cell_subsets, fps)
+    sequence_left = get_sequence(
+        cell_values,
+        required_cell_subsets,
+        cell_gap_time_limits,
+        event_length_limit,
+        fps,
+    )
+    sequence_right = get_sequence(
+        cell_values,
+        required_cell_subsets,
+        cell_gap_time_limits,
+        event_length_limit,
+        fps,
+    )
 
     if sequence_left:
-        return (sequence_left[0][1], sequence_left[-1][1]), "left"
+        return sequence_left[0][1], sequence_left[-1][1], "left"
     elif sequence_right:
-        return (sequence_right[-1][1], sequence_right[0][1]), "right"
+        return sequence_right[-1][1], sequence_right[0][1], "right"
     else:
-        return None, None
+        return None
 
 
 def main(data_path: str, config_path: str):
@@ -150,8 +246,13 @@ def main(data_path: str, config_path: str):
     grid_config = config["grid_config"]
     detector_config = config["detector_config"]
 
-    # Config variables for detector
+    # Grid variables
+    fps = grid_config["fps"]
+
+    # Detector variables
     required_cell_subsets = detector_config["required_cell_subsets"]
+    cell_gap_time_limits = detector_config["cell_gap_time_limits"]
+    event_length_limit = detector_config["event_length_limit_seconds"]
 
     df_event_window = pd.DataFrame(
         columns=["video_id", "event_detected", "start_frame", "end_frame"]
@@ -168,11 +269,20 @@ def main(data_path: str, config_path: str):
 
         cell_values = pd.read_csv(os.path.join(target_path, "cell_values.csv"), sep=";")
 
-        event_window, scenario_type = detect_event(cell_values, required_cell_subsets, grid_config["fps"])
+        event = detect_event(
+            cell_values,
+            required_cell_subsets,
+            cell_gap_time_limits,
+            event_length_limit,
+            fps,
+        )
 
-        event_detected = event_window is not None
-        start_frame, end_frame = event_window if event_window is not None else (-1, -1)
-        scenario_type = scenario_type if scenario_type is not None else ""
+        if event:
+            event_detected = True
+            start_frame, end_frame, scenario_type = event
+        else:
+            event_detected = False
+            start_frame, end_frame, scenario_type = -1, -1, ""
 
         df_event_window = df_event_window._append(
             {
@@ -186,7 +296,7 @@ def main(data_path: str, config_path: str):
         )
 
     df_event_window.to_csv(
-        os.path.join(data_path, "event_window.csv"), sep=";", index=False
+        os.path.join(data_path, "naive_event_window.csv"), sep=";", index=False
     )
 
     helper.save_config(detector_config, data_path, "detector_config.yml")

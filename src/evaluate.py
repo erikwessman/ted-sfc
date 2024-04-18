@@ -55,6 +55,8 @@ def main(event_window_path: str, ground_truth_path: str):
 
     iou_map = {}
 
+    t1, t2, t3 = [], [], []
+
     for _, row in df_event_window.iterrows():
         video_id = row["video_id"]
 
@@ -73,16 +75,25 @@ def main(event_window_path: str, ground_truth_path: str):
                     TP += 1
                 else:
                     FP += 1
-                    print(f"False positive: {video_id}")
+                    t1.append(f"FP - {video_id} event window missed: {prediction_interval} should be {video_ground_truth['event_window']}")
             else:
                 FP += 1
-                print(f"False positive: {video_id}")
+                t2.append(f"FP - {video_id} should not have been detected: {prediction_interval}")
         else:
             if video_ground_truth:
                 FN += 1
-                print(f"False negative: {video_id}")
+                t3.append(f"FN - {video_id} did not get detected: {video_ground_truth['event_window']}")
             else:
                 TN += 1
+
+    for t in t1:
+        print(t)
+
+    for t in t2:
+        print(t)
+
+    for t in t3:
+        print(t)
 
     print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
 

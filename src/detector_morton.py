@@ -61,45 +61,60 @@ def is_valid_sequence(
         return False
 
     # Sequence must contain at least one match from each required cell subset
+    unique_cells = {s[0] for s in sequence}
     total_matches = 0
     for required_cell_subset in required_cell_subsets:
-        count = sum(tup[0] in required_cell_subset for tup in sequence)
+        count = len(required_cell_subset & unique_cells)
         total_matches += count
-        # print(f"Subset {required_cell_subset} has {count} matching cells.")
         if count < 1:
             return False
 
+    # Must match with at least 3 unique cells
     if total_matches < 3:
         return False
 
-    # Gaps between cell matches must be within the cell gap limits
+    nr_frames_standing_still = 0
+
     for i in range(1, len(sequence)):
         prev_cell_key = sequence[i - 1][0] - 1
         curr_cell_key = sequence[i][0] - 1
-        cell_key_diff = curr_cell_key - prev_cell_key
 
         prev_frame = sequence[i - 1][1]
         curr_frame = sequence[i][1]
 
+        cell_key_diff = curr_cell_key - prev_cell_key
+        frame_diff = curr_frame - prev_frame
+
+        # Don't allow sequence to make sudden jumps by more than 2 cells
+        if abs(cell_key_diff) > 2:
+            return False
+
+        # Don't allow sequence to stand still for too long
+        if nr_frames_standing_still > 20:
+            pass
+
         if cell_key_diff > 0:
+            nr_frames_standing_still = 0
+
             min_gap, max_gap = 0, 0
             for i in range(prev_cell_key, curr_cell_key):
                 min_gap += cell_gap_time_limits[i][0]
                 max_gap += cell_gap_time_limits[i][1]
         elif cell_key_diff < 0:
+            nr_frames_standing_still = 0
+
             min_gap, max_gap = 0, 0
             for i in range(curr_cell_key, prev_cell_key - 1, -1):
                 min_gap += cell_gap_time_limits[i][0]
                 max_gap += cell_gap_time_limits[i][1]
         else:
+            nr_frames_standing_still += abs(frame_diff)
             continue
 
         time_gap = frames_to_seconds(abs(curr_frame - prev_frame), fps)
 
-        # Get the time limit for going from from_cell to to_cell
+        # The total time it took to go from prev_cell to curr_cell should not exceed specified limits
         if not min_gap <= time_gap <= max_gap:
-            # print(f"prev_frame: {prev_frame}, curr_frame: {curr_frame}")
-            # print(f"curr_cell_key: {curr_cell_key}, prev_cell_key: {prev_cell_key}")
             return False
 
     return True
@@ -119,25 +134,46 @@ def get_sequence_with_most_cells(sequences):
     return list_with_max_unique
 
 
-def get_ordered_sequences(tuples_list):
-    ordered_sequences = []
-    current_sequence = [tuples_list[0]]
+def get_ordered_sequences(data, tolerance=1):
+    active_sequences = []
+    final_sequences = []
 
-    for i in range(1, len(tuples_list)):
-        prev_tuple = tuples_list[i - 1]
-        current_tuple = tuples_list[i]
+    for current_match in data:
+        new_active_sequences = []
+        fit_any_sequence = False
 
-        if current_tuple[0] >= prev_tuple[0]:
-            current_sequence.append(current_tuple)
-        else:
-            if len(current_sequence) > 1:
-                ordered_sequences.append(current_sequence)
-            current_sequence = [current_tuple]
+        # Check against all active sequences
+        for seq_info in active_sequences:
+            sequence, interruptions = seq_info
 
-    if len(current_sequence) > 1:
-        ordered_sequences.append(current_sequence)
+            # Check if current tuple can extend the sequence
+            if current_match[0] >= sequence[-1][0]:
+                sequence.append(current_match)
+                new_active_sequences.append((sequence, 0))  # reset non-increasing count
+                fit_any_sequence = True
+            else:
+                # Increment non-increasing count if within tolerance
+                if interruptions < tolerance:
+                    new_active_sequences.append((sequence, interruptions + 1))
+                    new_active_sequences.append(([current_match], 0))
+                else:
+                    # Finalize and remove sequence if tolerance exceeded
+                    if len(sequence) > 1:
+                        final_sequences.append(sequence)
 
-    return ordered_sequences
+        # If current doesn't fit any sequence and isn't a continuation, start a new one
+        if not fit_any_sequence:
+            new_active_sequences.append(([current_match], 0))
+
+        # Update active sequences
+        active_sequences = new_active_sequences
+
+    # Finalize all remaining active sequences
+    for sequence, _ in active_sequences:
+        if len(sequence) > 1:
+            final_sequences.append(sequence)
+
+    return final_sequences
 
 
 def get_sequence(
@@ -202,19 +238,19 @@ def detect_event(
         event_length_limit,
         fps,
     )
-    # sequence_right = get_sequence(
-    #     morton_codes[::-1],
-    #     cell_ranges,
-    #     required_cell_subsets,
-    #     cell_gap_time_limits,
-    #     event_length_limit,
-    #     fps,
-    # )
+    sequence_right = get_sequence(
+        morton_codes[::-1],
+        cell_ranges,
+        required_cell_subsets,
+        cell_gap_time_limits,
+        event_length_limit,
+        fps,
+    )
 
     if sequence_left:
         return sequence_left[0][1], sequence_left[-1][1], "left"
-    # elif sequence_right:
-    #     return sequence_right[-1][1], sequence_right[0][1], "right"
+    elif sequence_right:
+        return sequence_right[-1][1], sequence_right[0][1], "right"
     else:
         return None
 
@@ -227,12 +263,12 @@ def main(data_path: str, config_path: str, use_attention: bool):
 
     # Grid variables
     fps = grid_config["fps"]
-    cell_gap_time_limits = grid_config["cell_gap_time_limits"]
-    event_length_limit = grid_config["event_length_limit_seconds"]
 
     # Detector variables
     required_cell_subsets = detector_config["required_cell_subsets"]
     calibration_videos = detector_config["detection_calibration_videos"]
+    cell_gap_time_limits = detector_config["cell_gap_time_limits"]
+    event_length_limit = detector_config["event_length_limit_seconds"]
 
     # Type variables, either attention or optical flow
     type_config = (
