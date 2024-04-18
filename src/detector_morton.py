@@ -14,6 +14,7 @@ class Sequence:
     def __init__(self, path, interrupts=0):
         self.path = path
         self.interrupts = interrupts
+        self.active = True
 
 
 def parse_arguments():
@@ -145,7 +146,10 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
 
         active_sequences_copy = active_sequences.copy()
 
-        for i, active_seq in enumerate(active_sequences_copy):
+        for active_seq in active_sequences_copy:
+            if not active_seq.active:
+                continue
+
             prev = active_seq.path[-1]
 
             if node[0] > prev[0]:
@@ -154,12 +158,18 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
                 frame_diff = abs(node[1] - prev[1])
 
                 if frames_to_seconds(frame_diff, 10) > 3:
-                    ordered_sequences.append(active_sequences.pop(i))
+                    active_seq.active = False
+                    ordered_sequences.append(active_seq)
+
+                    seq = Sequence([node])
+                    active_sequences.append(seq)
+                    has_created_new_sequence = True
             else:
                 active_seq.interrupts += 1
 
                 if active_seq.interrupts > tolerance:
-                    ordered_sequences.append(active_sequences.pop(i))
+                    active_seq.active = False
+                    ordered_sequences.append(active_seq)
 
                 if has_created_new_sequence:
                     continue
@@ -169,8 +179,9 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
                 has_created_new_sequence = True
 
     for active_seq in active_sequences:
-        if len(active_seq.path) > 1:
+        if len(active_seq.path) > 1 and active_seq.active:
             ordered_sequences.append(active_seq)
+            active_seq.active = False
 
     return ordered_sequences
 
@@ -202,7 +213,6 @@ def get_sequence(
 
     ordered_sequences = get_ordered_sequences(path)
     for sequence in ordered_sequences:
-        print(sequence.path)
         if is_valid_sequence(
             sequence.path,
             required_cell_subsets,
@@ -211,7 +221,6 @@ def get_sequence(
             fps,
         ):
             valid_sequences.append(sequence.path)
-            print("this is a valid sequence")
 
     if valid_sequences:
         return get_sequence_with_most_cells(valid_sequences)
@@ -287,9 +296,6 @@ def main(data_path: str, config_path: str, use_attention: bool):
     )
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
-
-        if video_id != "000316":
-            continue
 
         target_path = os.path.join(data_path, video_id)
 
