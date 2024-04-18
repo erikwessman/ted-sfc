@@ -5,9 +5,15 @@ This script attempts to find the event window in a video from a set of morton co
 import os
 import argparse
 import pandas as pd
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import helper
+
+
+class Sequence:
+    def __init__(self, path, interrupts=0):
+        self.path = path
+        self.interrupts = interrupts
 
 
 def parse_arguments():
@@ -73,8 +79,6 @@ def is_valid_sequence(
     if total_matches < 3:
         return False
 
-    nr_frames_standing_still = 0
-
     for i in range(1, len(sequence)):
         prev_cell_key = sequence[i - 1][0] - 1
         curr_cell_key = sequence[i][0] - 1
@@ -83,32 +87,23 @@ def is_valid_sequence(
         curr_frame = sequence[i][1]
 
         cell_key_diff = curr_cell_key - prev_cell_key
-        frame_diff = curr_frame - prev_frame
 
         # Don't allow sequence to make sudden jumps by more than 2 cells
         if abs(cell_key_diff) > 2:
             return False
 
-        # Don't allow sequence to stand still for too long
-        if nr_frames_standing_still > 20:
-            pass
-
+        # Calculate min and max allowed gap for the current cell transition
         if cell_key_diff > 0:
-            nr_frames_standing_still = 0
-
             min_gap, max_gap = 0, 0
             for i in range(prev_cell_key, curr_cell_key):
                 min_gap += cell_gap_time_limits[i][0]
                 max_gap += cell_gap_time_limits[i][1]
         elif cell_key_diff < 0:
-            nr_frames_standing_still = 0
-
             min_gap, max_gap = 0, 0
             for i in range(curr_cell_key, prev_cell_key - 1, -1):
                 min_gap += cell_gap_time_limits[i][0]
                 max_gap += cell_gap_time_limits[i][1]
         else:
-            nr_frames_standing_still += abs(frame_diff)
             continue
 
         time_gap = frames_to_seconds(abs(curr_frame - prev_frame), fps)
@@ -134,46 +129,50 @@ def get_sequence_with_most_cells(sequences):
     return list_with_max_unique
 
 
-def get_ordered_sequences(data, tolerance=1):
-    active_sequences = []
-    final_sequences = []
+def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
+    active_sequences: List[Sequence] = []
+    ordered_sequences: List[Sequence] = []
 
-    for current_match in data:
-        new_active_sequences = []
-        fit_any_sequence = False
+    for node in path:
 
-        # Check against all active sequences
-        for seq_info in active_sequences:
-            sequence, interruptions = seq_info
+        has_created_new_sequence = False
 
-            # Check if current tuple can extend the sequence
-            if current_match[0] >= sequence[-1][0]:
-                sequence.append(current_match)
-                new_active_sequences.append((sequence, 0))  # reset non-increasing count
-                fit_any_sequence = True
+        if not active_sequences:
+            seq = Sequence([node])
+            active_sequences.append(seq)
+            has_created_new_sequence = True
+            continue
+
+        active_sequences_copy = active_sequences.copy()
+
+        for i, active_seq in enumerate(active_sequences_copy):
+            prev = active_seq.path[-1]
+
+            if node[0] > prev[0]:
+                active_seq.path.append(node)
+            elif node[0] == prev[0]:
+                frame_diff = abs(node[1] - prev[1])
+
+                if frames_to_seconds(frame_diff, 10) > 3:
+                    ordered_sequences.append(active_sequences.pop(i))
             else:
-                # Increment non-increasing count if within tolerance
-                if interruptions < tolerance:
-                    new_active_sequences.append((sequence, interruptions + 1))
-                    new_active_sequences.append(([current_match], 0))
-                else:
-                    # Finalize and remove sequence if tolerance exceeded
-                    if len(sequence) > 1:
-                        final_sequences.append(sequence)
+                active_seq.interrupts += 1
 
-        # If current doesn't fit any sequence and isn't a continuation, start a new one
-        if not fit_any_sequence:
-            new_active_sequences.append(([current_match], 0))
+                if active_seq.interrupts > tolerance:
+                    ordered_sequences.append(active_sequences.pop(i))
 
-        # Update active sequences
-        active_sequences = new_active_sequences
+                if has_created_new_sequence:
+                    continue
 
-    # Finalize all remaining active sequences
-    for sequence, _ in active_sequences:
-        if len(sequence) > 1:
-            final_sequences.append(sequence)
+                seq = Sequence([node])
+                active_sequences.append(seq)
+                has_created_new_sequence = True
 
-    return final_sequences
+    for active_seq in active_sequences:
+        if len(active_seq.path) > 1:
+            ordered_sequences.append(active_seq)
+
+    return ordered_sequences
 
 
 def get_sequence(
@@ -203,14 +202,16 @@ def get_sequence(
 
     ordered_sequences = get_ordered_sequences(path)
     for sequence in ordered_sequences:
+        print(sequence.path)
         if is_valid_sequence(
-            sequence,
+            sequence.path,
             required_cell_subsets,
             cell_gap_time_limits,
             event_length_limit,
             fps,
         ):
-            valid_sequences.append(sequence)
+            valid_sequences.append(sequence.path)
+            print("this is a valid sequence")
 
     if valid_sequences:
         return get_sequence_with_most_cells(valid_sequences)
@@ -286,6 +287,10 @@ def main(data_path: str, config_path: str, use_attention: bool):
     )
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
+
+        if video_id != "000316":
+            continue
+
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
