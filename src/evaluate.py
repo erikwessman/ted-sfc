@@ -6,9 +6,15 @@ import helper
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Calculate F1 scores based on ground truth and prediction data.")
-    parser.add_argument("data_path", type=str, help="Path to directory that contains event_window.csv")
-    parser.add_argument("ground_truth_path", type=str, help="Path to the ground truth YML file")
+    parser = argparse.ArgumentParser(
+        description="Calculate F1 scores based on ground truth and prediction data."
+    )
+    parser.add_argument(
+        "data_path", type=str, help="Path to directory that contains event_window.csv"
+    )
+    parser.add_argument(
+        "ground_truth_path", type=str, help="Path to the ground truth YML file"
+    )
     return parser.parse_args()
 
 
@@ -51,7 +57,7 @@ def main(data_path: str, ground_truth_path: str):
 
     iou_map = {}
 
-    t1, t2, t3 = [], [], []
+    tp, tn, fp, fn = [], [], [], []
 
     for _, row in df_event_window.iterrows():
         video_id = row["video_id"]
@@ -69,26 +75,42 @@ def main(data_path: str, ground_truth_path: str):
 
                 if iou_score:
                     TP += 1
+                    tp.append(
+                        f"TP - {video_id} correctly predicted: {prediction_interval} with ground truth: {ground_truth_interval} IoU: {iou_score}"
+                    )
+
                 else:
                     FP += 1
-                    t1.append(f"FP - {video_id} event window missed: {prediction_interval} should be {video_ground_truth['event_window']}")
+                    fp.append(
+                        f"FP - {video_id} event window missed: {prediction_interval} should be {video_ground_truth['event_window']}"
+                    )
             else:
                 FP += 1
-                t2.append(f"FP - {video_id} should not have been detected: {prediction_interval}")
+                fp.append(
+                    f"FP - {video_id} should not have been detected: {prediction_interval}"
+                )
         else:
             if video_ground_truth:
                 FN += 1
-                t3.append(f"FN - {video_id} did not get detected: {video_ground_truth['event_window']}")
+                fn.append(
+                    f"FN - {video_id} did not get detected: {video_ground_truth['event_window']}"
+                )
             else:
+                tn.append(f"TN - {video_id} was correctly not detected")
                 TN += 1
 
-    for t in t1:
+    for t in tp:
         print(t)
 
-    for t in t2:
+    for t in tn:
         print(t)
 
-    for t in t3:
+    print("=================")
+
+    for t in fp:
+        print(t)
+
+    for t in fn:
         print(t)
 
     print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
