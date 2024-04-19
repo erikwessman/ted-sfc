@@ -21,11 +21,11 @@ grid_config:
 detector_config:
   event_length_limit_seconds: [1, 10]
   cell_gap_time_limits:
-    - [.1, 2]
-    - [.1, 2]
+    - [.1, 3]
+    - [.1, 3]
     - [.5, 5]
-    - [.1, 2]
-    - [.1, 2]
+    - [.1, 3]
+    - [.1, 3]
   required_cell_subsets:
     - !!set { 1, 2, 3 }
     - !!set { 4, 5, 6 }

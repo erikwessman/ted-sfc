@@ -1,9 +1,6 @@
 - id: "000383"
   event_window: [132, 200]
   type: left
-- id: "000879"
-  event_window: [182, 200]
-  type: left
 - id: "000389"
   event_window: [98, 164]
   type: left

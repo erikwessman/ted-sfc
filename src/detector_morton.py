@@ -11,10 +11,11 @@ import helper
 
 
 class Sequence:
-    def __init__(self, path, interrupts=0):
+    def __init__(self, path, direction, interrupts=0):
         self.path = path
         self.interrupts = interrupts
         self.active = True
+        self.direction = direction
 
 
 def parse_arguments():
@@ -49,7 +50,7 @@ def get_matching_cell_key(morton_code: float, cell_morton: dict) -> Union[int, N
 
 
 def is_valid_sequence(
-    sequence, required_cell_subsets, cell_gap_time_limits, event_length_limit, fps
+    sequence_path, required_cell_subsets, cell_gap_time_limits, event_length_limit, fps
 ) -> bool:
     """
     Checks if a sequence of tuples, e.g. [(1, 10), (2, 20)] meets the
@@ -57,10 +58,10 @@ def is_valid_sequence(
     The first element of the tuples represents the cell ID, and the second
     is the frame ID.
     """
-    if len(sequence) < 2:
+    if len(sequence_path) < 2:
         return False
 
-    total_nr_frames = abs(sequence[-1][1] - sequence[0][1])
+    total_nr_frames = abs(sequence_path[-1][1] - sequence_path[0][1])
     total_nr_seconds = frames_to_seconds(total_nr_frames, fps)
 
     # Sequence must be within the event length limit
@@ -68,7 +69,7 @@ def is_valid_sequence(
         return False
 
     # Sequence must contain at least one match from each required cell subset
-    unique_cells = {s[0] for s in sequence}
+    unique_cells = {s[0] for s in sequence_path}
     total_matches = 0
     for required_cell_subset in required_cell_subsets:
         count = len(required_cell_subset & unique_cells)
@@ -80,12 +81,12 @@ def is_valid_sequence(
     if total_matches < 3:
         return False
 
-    for i in range(1, len(sequence)):
-        prev_cell_key = sequence[i - 1][0] - 1
-        curr_cell_key = sequence[i][0] - 1
+    for i in range(1, len(sequence_path)):
+        prev_cell_key = sequence_path[i - 1][0] - 1
+        curr_cell_key = sequence_path[i][0] - 1
 
-        prev_frame = sequence[i - 1][1]
-        curr_frame = sequence[i][1]
+        prev_frame = sequence_path[i - 1][1]
+        curr_frame = sequence_path[i][1]
 
         cell_key_diff = curr_cell_key - prev_cell_key
 
@@ -101,7 +102,7 @@ def is_valid_sequence(
                 max_gap += cell_gap_time_limits[i][1]
         elif cell_key_diff < 0:
             min_gap, max_gap = 0, 0
-            for i in range(curr_cell_key, prev_cell_key - 1, -1):
+            for i in range(curr_cell_key, prev_cell_key):
                 min_gap += cell_gap_time_limits[i][0]
                 max_gap += cell_gap_time_limits[i][1]
         else:
@@ -116,21 +117,17 @@ def is_valid_sequence(
     return True
 
 
-def get_sequence_with_most_cells(sequences):
-    max_unique_count = -1
-    list_with_max_unique = []
+def get_sequence_with_most_cells(sequences: List[Sequence]) -> Sequence:
+    longest_sequence = None
 
     for sequence in sequences:
-        unique_first_elements = len(set(x[0] for x in sequence))
+        if longest_sequence is None or len(sequence.path) > len(longest_sequence.path):
+            longest_sequence = sequence
 
-        if unique_first_elements > max_unique_count:
-            max_unique_count = unique_first_elements
-            list_with_max_unique = sequence
-
-    return list_with_max_unique
+    return longest_sequence
 
 
-def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
+def get_ordered_sequences(path: List[Tuple[int, int]], direction: str, tolerance=1):
     active_sequences: List[Sequence] = []
     ordered_sequences: List[Sequence] = []
 
@@ -139,7 +136,7 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
         has_created_new_sequence = False
 
         if not active_sequences:
-            seq = Sequence([node])
+            seq = Sequence([node], direction)
             active_sequences.append(seq)
             has_created_new_sequence = True
             continue
@@ -152,7 +149,9 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
 
             prev = active_seq.path[-1]
 
-            if node[0] > prev[0]:
+            if node[0] > prev[0] and direction == "left":
+                active_seq.path.append(node)
+            elif node[0] < prev[0] and direction == "right":
                 active_seq.path.append(node)
             elif node[0] == prev[0]:
                 frame_diff = abs(node[1] - prev[1])
@@ -161,7 +160,7 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
                     active_seq.active = False
                     ordered_sequences.append(active_seq)
 
-                    seq = Sequence([node])
+                    seq = Sequence([node], direction)
                     active_sequences.append(seq)
                     has_created_new_sequence = True
             else:
@@ -174,7 +173,7 @@ def get_ordered_sequences(path: List[Tuple[int, int]], tolerance=1):
                 if has_created_new_sequence:
                     continue
 
-                seq = Sequence([node])
+                seq = Sequence([node], direction)
                 active_sequences.append(seq)
                 has_created_new_sequence = True
 
@@ -211,16 +210,17 @@ def get_sequence(
 
     valid_sequences = []
 
-    ordered_sequences = get_ordered_sequences(path)
-    for sequence in ordered_sequences:
-        if is_valid_sequence(
-            sequence.path,
-            required_cell_subsets,
-            cell_gap_time_limits,
-            event_length_limit,
-            fps,
-        ):
-            valid_sequences.append(sequence.path)
+    for direction in ("left", "right"):
+        ordered_sequences = get_ordered_sequences(path, direction)
+        for sequence in ordered_sequences:
+            if is_valid_sequence(
+                sequence.path,
+                required_cell_subsets,
+                cell_gap_time_limits,
+                event_length_limit,
+                fps,
+            ):
+                valid_sequences.append(sequence)
 
     if valid_sequences:
         return get_sequence_with_most_cells(valid_sequences)
@@ -240,7 +240,7 @@ def detect_event(
     Returns the event window frame interval and the type, e.g. (30, 50, "left")
     In case there is no event, returns: None
     """
-    sequence_left = get_sequence(
+    sequence = get_sequence(
         morton_codes,
         cell_ranges,
         required_cell_subsets,
@@ -248,19 +248,9 @@ def detect_event(
         event_length_limit,
         fps,
     )
-    sequence_right = get_sequence(
-        morton_codes[::-1],
-        cell_ranges,
-        required_cell_subsets,
-        cell_gap_time_limits,
-        event_length_limit,
-        fps,
-    )
 
-    if sequence_left:
-        return sequence_left[0][1], sequence_left[-1][1], "left"
-    elif sequence_right:
-        return sequence_right[-1][1], sequence_right[0][1], "right"
+    if sequence:
+        return sequence.path[0][1], sequence.path[-1][1], sequence.direction
     else:
         return None
 
@@ -300,9 +290,7 @@ def main(data_path: str, config_path: str, use_attention: bool):
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(
-                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
-            )
+            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
             continue
 
         morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
