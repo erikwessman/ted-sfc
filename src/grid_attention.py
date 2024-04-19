@@ -237,7 +237,7 @@ def main(
             mean_attention_map, target_path, display_results, "Mean attention"
         )
 
-    helper.save_config(grid_config, output_path, "grid_config.yml")
+    helper.save_config(config, output_path, "config.yml")
 
 
 if __name__ == "__main__":

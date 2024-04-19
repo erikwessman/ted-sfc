@@ -132,7 +132,6 @@ def get_ordered_sequences(path: List[Tuple[int, int]], direction: str, tolerance
     ordered_sequences: List[Sequence] = []
 
     for node in path:
-
         has_created_new_sequence = False
 
         if not active_sequences:
@@ -286,14 +285,17 @@ def main(data_path: str, config_path: str, use_attention: bool):
     )
 
     for _, video_id, tqdm_obj in helper.traverse_videos(data_path):
-
         target_path = os.path.join(data_path, video_id)
 
         if not os.path.isfile(os.path.join(target_path, "morton_codes.csv")):
-            tqdm_obj.write(f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}")
+            tqdm_obj.write(
+                f"Skipping {video_id}: morton_codes.csv does not exist at {target_path}"
+            )
             continue
 
-        morton_codes = pd.read_csv(os.path.join(target_path, "morton_codes.csv"), sep=";")
+        morton_codes = pd.read_csv(
+            os.path.join(target_path, "morton_codes.csv"), sep=";"
+        )
 
         event = detect_event(
             morton_codes,
@@ -327,7 +329,6 @@ def main(data_path: str, config_path: str, use_attention: bool):
     )
 
     helper.save_detection_plots(data_path, calibration_videos, cell_ranges)
-    helper.save_config(detector_config, data_path, "detector_config.yml")
 
 
 if __name__ == "__main__":
