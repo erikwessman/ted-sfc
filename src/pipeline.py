@@ -4,53 +4,16 @@ import argparse
 import datetime
 import cv2
 
-from saliency.MLNet.run import main as run_saliency_mlnet
-from saliency.TASEDNet.run import main as run_saliency_tasednet
-from saliency.TranSalNet.run import main as run_saliency_transalnet
-from grid_attention import main as run_grid_attention
-from grid_optical_flow import main as run_grid_optical_flow
-from detector_morton import main as run_detector_morton
-from evaluate import main as run_evaluate
-from morton import main as run_morton
+# from saliency.MLNet.run import main as run_saliency_mlnet
+# from saliency.TASEDNet.run import main as run_saliency_tasednet
+# from saliency.TranSalNet.run import main as run_saliency_transalnet
+# from grid_attention import main as run_grid_attention
+# from grid_optical_flow import main as run_grid_optical_flow
+# from detector_morton import main as run_detector_morton
+# from evaluate import main as run_evaluate
+# from morton import main as run_morton
 import helper
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Script to run data processing pipeline."
-    )
-
-    parser.add_argument("data_path", help="Path to the data directory.")
-    parser.add_argument("output_path", help="Path where output will be saved.")
-    parser.add_argument("config_path", help="Path to the configuration YML file.")
-    parser.add_argument(
-        "--heatmap", help="Generate heatmaps.", action=argparse.BooleanOptionalAction
-    )
-    parser.add_argument(
-        "--saliency-model",
-        choices=["mlnet", "tasednet", "transalnet"],
-        default="mlnet",
-        help="Generate heatmaps.",
-    )
-    parser.add_argument(
-        "--cpu", help="Use CPU instead of GPU.", action=argparse.BooleanOptionalAction
-    )
-    parser.add_argument("--annotations", help="Path to annotations.")
-
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--attention",
-        help="Use attention mechanism.",
-        action=argparse.BooleanOptionalAction,
-    )
-    group.add_argument(
-        "--optical-flow",
-        help="Use optical flow.",
-        action=argparse.BooleanOptionalAction,
-    )
-
-    return parser.parse_args()
-
+import click
 
 def get_dataset_info(data_path):
     """
@@ -110,32 +73,24 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
         log_file.write(f"Seconds per frame: {sec_per_frame}\n")
         log_file.write("--------------------------------------------------\n")
 
-
-def main(
-    data_path,
-    output_path,
-    config_path,
-    generate_heatmaps,
-    saliency_model,
-    attention,
-    optical_flow,
-    use_cpu,
-    annotations
-):
-    check_path_exists(data_path, "Data")
-    check_path_exists(config_path, "Config")
+@click.command()
+@click.option('--data-path', type=click.Path(exists=True), prompt="Where do you have the input videos?", help="Path to the data directory.")
+@click.option('--output-path', type=click.Path(), prompt="Where should the output be saved?", help="Path where output will be saved.")
+@click.option('--config-path', type=click.Path(exists=True), prompt="Where is the configuration YML file located?", help="Path to the configuration YML file.")
+@click.option('--method', type=click.Choice(['mlnet', 'tasednet', 'transalnet', 'optical-flow']), prompt="What method do you want to use?", help="The method or model to use.")
+@click.option('--annotations-path', type=click.Path(), help="Path to annotations.")
+@click.option('--cpu', is_flag=True, help="Use CPU instead of GPU.")
+def main(data_path, output_path, config_path, method, annotations_path, cpu):
+    generate_heatmaps = False
+    if method in ['mlnet', 'tasednet', 'transalnet']:
+        generate_heatmaps = click.confirm("Do you want to generate heatmaps?")
 
     if os.path.isdir(output_path):
-        response = (
-            input("Output path already exists. Do you want to overwrite it? (y/[n]): ")
-            .strip()
-            .lower()
-        )
-        if response != "y":
-            print("Exiting...")
+        if not click.confirm("Output path already exists. Do you want to overwrite it?"):
+            click.echo("Exiting...")
             sys.exit(1)
     else:
-        print("Output path does not exist. Creating it.")
+        click.echo("Output path does not exist. Creating it.")
         os.makedirs(output_path, exist_ok=True)
 
     # Get the information for benchmarking
@@ -188,11 +143,11 @@ def main(
     else:
         run_detector_morton(output_path, config_path, False)
 
-    if annotations:
+    if annotations_path:
         print("----------------------------------------")
         print("Running evaluation...")
         print("----------------------------------------")
-        run_evaluate(output_path, annotations)
+        run_evaluate(output_path, annotations_path)
 
     print("========================================")
     print(f"Pipeline completed. Output saved to '{output_path}'.")
@@ -200,19 +155,4 @@ def main(
 
 
 if __name__ == "__main__":
-    args = parse_arguments()
-
-    if args.optical_flow:
-        args.heatmap = False
-
-    main(
-        args.data_path,
-        args.output_path,
-        args.config_path,
-        args.heatmap,
-        args.saliency_model,
-        args.attention,
-        args.optical_flow,
-        args.cpu,
-        args.annotations
-    )
+    main()
