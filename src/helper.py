@@ -162,10 +162,18 @@ def save_combined_plot(cell_value_map, output_path, display_results, y_label):
 def save_detection_plots(data_path, calibration_videos, cell_ranges):
     plt.figure(figsize=(10, 6))
 
-    # video_colors = plt.cm.jet(np.linspace(0, 1, len(calibration_videos)))
     cell_colors = plt.cm.nipy_spectral(np.linspace(0, 1, len(cell_ranges)))
 
-    for _, video_id in enumerate(calibration_videos):
+    for cell, (min_val, max_val) in cell_ranges.items():
+        plt.axhspan(min_val, max_val, color=cell_colors[cell - 1], alpha=0.3)
+
+    patches = [
+        mpatches.Patch(color=cell_colors[cell - 1], label=f"Cell {cell}", alpha=0.3)
+        for cell in cell_ranges
+    ]
+
+    video_colors = plt.cm.tab20(np.arange(len(calibration_videos)))
+    for index, video_id in enumerate(calibration_videos):
         target_path = os.path.join(data_path, video_id)
         csv_path = os.path.join(target_path, "morton_codes.csv")
 
@@ -177,15 +185,9 @@ def save_detection_plots(data_path, calibration_videos, cell_ranges):
 
         morton_codes = pd.read_csv(csv_path, sep=";")
 
-        plt.scatter(morton_codes["frame_id"], morton_codes["morton"], color="red")
-
-    for cell, (min_val, max_val) in cell_ranges.items():
-        plt.axhspan(min_val, max_val, color=cell_colors[cell - 1], alpha=0.3)
-
-    patches = [
-        mpatches.Patch(color=cell_colors[cell - 1], label=f"Cell {cell}", alpha=0.3)
-        for cell in cell_ranges
-    ]
+        plt.scatter(
+            morton_codes["frame_id"], morton_codes["morton"], color=video_colors[index]
+        )
 
     plt.figtext(
         0.5,
@@ -304,7 +306,7 @@ def annotate_frame(
 
 
 def video_to_frames(video_path):
-    """ Extract frames from a video file and return them as a list of images along with the original dimensions. """
+    """Extract frames from a video file and return them as a list of images along with the original dimensions."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError("Error opening video file")
