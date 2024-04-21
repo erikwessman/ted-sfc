@@ -1,19 +1,19 @@
 import os
 import sys
-import argparse
+import click
 import datetime
 import cv2
 
-# from saliency.MLNet.run import main as run_saliency_mlnet
-# from saliency.TASEDNet.run import main as run_saliency_tasednet
-# from saliency.TranSalNet.run import main as run_saliency_transalnet
-# from grid_attention import main as run_grid_attention
-# from grid_optical_flow import main as run_grid_optical_flow
-# from detector_morton import main as run_detector_morton
-# from evaluate import main as run_evaluate
-# from morton import main as run_morton
+from saliency.MLNet.run import main as run_saliency_mlnet
+from saliency.TASEDNet.run import main as run_saliency_tasednet
+from saliency.TranSalNet.run import main as run_saliency_transalnet
+from grid_attention import main as run_grid_attention
+from grid_optical_flow import main as run_grid_optical_flow
+from detector_morton import main as run_detector_morton
+from evaluate import main as run_evaluate
+from morton import main as run_morton
 import helper
-import click
+
 
 def get_dataset_info(data_path):
     """
@@ -73,20 +73,43 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
         log_file.write(f"Seconds per frame: {sec_per_frame}\n")
         log_file.write("--------------------------------------------------\n")
 
+
 @click.command()
-@click.option('--data-path', type=click.Path(exists=True), prompt="Where do you have the input videos?", help="Path to the data directory.")
-@click.option('--output-path', type=click.Path(), prompt="Where should the output be saved?", help="Path where output will be saved.")
-@click.option('--config-path', type=click.Path(exists=True), prompt="Where is the configuration YML file located?", help="Path to the configuration YML file.")
-@click.option('--method', type=click.Choice(['mlnet', 'tasednet', 'transalnet', 'optical-flow']), prompt="What method do you want to use?", help="The method or model to use.")
-@click.option('--annotations-path', type=click.Path(), help="Path to annotations.")
-@click.option('--cpu', is_flag=True, help="Use CPU instead of GPU.")
+@click.option(
+    "--data-path",
+    type=click.Path(exists=True),
+    prompt="Where do you have the input videos?",
+    help="Path to the data directory.",
+)
+@click.option(
+    "--output-path",
+    type=click.Path(),
+    prompt="Where should the output be saved?",
+    help="Path where output will be saved.",
+)
+@click.option(
+    "--config-path",
+    type=click.Path(exists=True),
+    prompt="Where is the configuration YML file located?",
+    help="Path to the configuration YML file.",
+)
+@click.option(
+    "--method",
+    type=click.Choice(["mlnet", "tasednet", "transalnet", "optical-flow"]),
+    prompt="What method do you want to use?",
+    help="The method or model to use.",
+)
+@click.option("--annotations-path", type=click.Path(), help="Path to annotations.")
+@click.option("--cpu", is_flag=True, help="Use CPU instead of GPU.")
 def main(data_path, output_path, config_path, method, annotations_path, cpu):
     generate_heatmaps = False
-    if method in ['mlnet', 'tasednet', 'transalnet']:
+    if method in ["mlnet", "tasednet", "transalnet"]:
         generate_heatmaps = click.confirm("Do you want to generate heatmaps?")
 
     if os.path.isdir(output_path):
-        if not click.confirm("Output path already exists. Do you want to overwrite it?"):
+        if not click.confirm(
+            "Output path already exists. Do you want to overwrite it?"
+        ):
             click.echo("Exiting...")
             sys.exit(1)
     else:
@@ -99,30 +122,30 @@ def main(data_path, output_path, config_path, method, annotations_path, cpu):
     start_time = datetime.datetime.now()
     print(f"Pipeline started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    if generate_heatmaps and attention:
+    if generate_heatmaps:
         print("----------------------------------------")
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
-        if saliency_model == "mlnet":
-            run_saliency_mlnet(data_path, output_path, config_path, use_cpu)
-        elif saliency_model == "tasednet":
-            run_saliency_tasednet(data_path, output_path, config_path, use_cpu)
-        elif saliency_model == "transalnet":
-            run_saliency_transalnet(data_path, output_path, config_path, use_cpu)
+        if method == "mlnet":
+            run_saliency_mlnet(data_path, output_path, config_path, cpu)
+        elif method == "tasednet":
+            run_saliency_tasednet(data_path, output_path, config_path, cpu)
+        elif method == "transalnet":
+            run_saliency_transalnet(data_path, output_path, config_path, cpu)
         else:
             raise ValueError("Invalid saliency model")
 
-    if attention:
+    if method in ["mlnet", "tasednet", "transalnet"]:
         print("----------------------------------------")
         print("Applying attention grid...")
         print("----------------------------------------")
         run_grid_attention(data_path, output_path, config_path)
 
-    if optical_flow:
+    if method == "optical-flow":
         print("----------------------------------------")
         print("Applying optical flow grid...")
         print("----------------------------------------")
-        run_grid_optical_flow(data_path, output_path, config_path, use_cpu=use_cpu)
+        run_grid_optical_flow(data_path, output_path, config_path, use_cpu=cpu)
 
     print("----------------------------------------")
     print("Generating Morton codes...")
@@ -138,7 +161,7 @@ def main(data_path, output_path, config_path, method, annotations_path, cpu):
     print("----------------------------------------")
     print("Running detector...")
     print("----------------------------------------")
-    if attention:
+    if method in ["mlnet", "tasednet", "transalnet"]:
         run_detector_morton(output_path, config_path, True)
     else:
         run_detector_morton(output_path, config_path, False)

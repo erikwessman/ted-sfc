@@ -26,3 +26,4 @@ tqdm==4.66.2
 typing==3.7.4.3
 tzdata==2024.1
 zCurve==0.0.4
+click
