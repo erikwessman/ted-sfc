@@ -40,6 +40,8 @@ Scripts for processing datasets into the correct structure are provided in `src/
 python src/scripts/zod/process.py data/zod --mode random --max_videos 10
 ```
 
+**Important**: Depending on the Conda environment, ffmpeg may not work. If you cannot process the datasets, deactivate the environment.
+
 ### Optional: Enable GPU-accelerated Optical Flow (NVIDIA CUDA-enabled GPUs only)
 
 To enable running the optical flow model on the GPU, compile opencv from source with the cudaoptflow module:
