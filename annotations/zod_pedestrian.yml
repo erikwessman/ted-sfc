@@ -43,3 +43,6 @@
 - id: "000653"
   event_window: [25, 70]
   type: right
+- id: "000860"
+  event_window: [162, 192]
+  type: right
