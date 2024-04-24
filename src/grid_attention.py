@@ -232,8 +232,7 @@ def main(
         helper.save_cell_value_csv(mean_attention_map, target_path, grid_config)
 
         plot_path = os.path.join(target_path, "plots")
-        if not os.path.exists(plot_path):
-            os.makedirs(plot_path)
+        os.makedirs(plot_path, exist_ok=True)
 
         helper.save_cell_value_subplots(
             mean_attention_map, plot_path, display_results, "Mean attention"

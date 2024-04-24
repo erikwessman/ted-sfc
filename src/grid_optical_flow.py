@@ -336,8 +336,7 @@ def main(
         helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
 
         plot_path = os.path.join(target_path, "plots")
-        if not os.path.exists(plot_path):
-            os.makedirs(plot_path)
+        os.makedirs(plot_path, exist_ok=True)
 
         helper.save_cell_value_subplots(
             output_cell_value_map, plot_path, display_results, "Cell value"

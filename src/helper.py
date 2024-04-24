@@ -85,7 +85,9 @@ def save_config(config, output_path, name):
         yaml.dump(config, file, default_flow_style=False)
 
 
-def save_cell_value_subplots(cell_value_map, output_path, display_results, y_label):
+def save_cell_value_subplots(
+    cell_value_map, output_path, display_results, y_label, event_window=None
+):
     total_cells = len(list(cell_value_map.values())[0])
 
     plot_cols = 6
@@ -97,7 +99,6 @@ def save_cell_value_subplots(cell_value_map, output_path, display_results, y_lab
         figsize=(plot_cols * 4, plot_rows * 3),
     )
 
-    # Flatten the axes array for easy iteration, in case of a single row/column
     axs = np.atleast_2d(axs).reshape(-1)
 
     for cell_index in range(total_cells):
@@ -108,10 +109,12 @@ def save_cell_value_subplots(cell_value_map, output_path, display_results, y_lab
         )
         ax.set_title(f"Cell {cell_index+1}")
 
+        if event_window:
+            ax.axvspan(event_window[0], event_window[1], color="yellow", alpha=0.3)
+
         if cell_index == 0:
             ax.legend()
 
-    # Hide unused subplots if any
     for ax in axs[total_cells:]:
         ax.axis("off")
 
@@ -155,6 +158,93 @@ def save_combined_plot(cell_value_map, output_path, display_results, y_label):
     plt.savefig(os.path.join(output_path, "combined_cell_values_plot.png"))
     plt.savefig(
         os.path.join(output_path, "combined_cell_values_plot.pdf"), format="pdf"
+    )
+
+    if display_results:
+        plt.show()
+    else:
+        plt.close()
+
+
+def create_and_save_CSP(morton_code_df, output_path, display_plots, event_window=None):
+    _, ax1 = plt.subplots()
+
+    ax1.set_xlabel("Morton")
+    ax1.set_ylabel("Frequency")
+    ax1.set_ylim((0, 1))
+    ax1.eventplot(
+        [morton_code_df["morton"].values],
+        orientation="horizontal",
+        colors="lightgrey",
+        lineoffsets=0.5,
+    )
+
+    x = morton_code_df["morton"]
+    y = morton_code_df["frame_id"]
+
+    ax2 = ax1.twinx()
+    ax2.scatter(x, y, s=5, color="red")
+    ax2.set_ylabel("Frame Number")
+    ax2.set_ylim([y.min(), y.max()])
+
+    if event_window:
+        ax2.axhspan(event_window[0], event_window[1], color="lightgrey", alpha=0.3)
+
+    plt.savefig(os.path.join(output_path, "morton_codes.png"))
+    plt.savefig(os.path.join(output_path, "morton_codes.pdf"), format="pdf")
+
+    if display_plots:
+        plt.show()
+    else:
+        plt.close()
+
+
+def create_and_save_combined_plot_with_morton_codes(
+    cell_value_df, morton_code_df, output_path, display_results, y_label
+):
+    _, ax = plt.subplots(figsize=(10, 7))
+    total_cells = len(cell_value_df.columns)
+
+    min_cell_value = cell_value_df.filter(like="cell").min().min()
+    max_cell_value = cell_value_df.filter(like="cell").max().max()
+    min_morton_value = morton_code_df["morton"].min()
+    max_morton_value = morton_code_df["morton"].max()
+
+    morton_code_df["morton_normalized"] = min_cell_value + (
+        (morton_code_df["morton"] - min_morton_value)
+        * (max_cell_value - min_cell_value)
+    ) / (max_morton_value - min_morton_value)
+
+    color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    for cell_index in range(total_cells):
+        cell_column = f"cell{cell_index+1}"
+        if cell_column in cell_value_df:
+            ax.plot(
+                cell_value_df.index,
+                cell_value_df[cell_column],
+                label=f"Cell {cell_index + 1}",
+                color=color_cycle[cell_index % len(color_cycle)],
+            )
+
+    ax.scatter(
+        morton_code_df["frame_id"],
+        morton_code_df["morton_normalized"],
+        color="red",
+        marker="o",
+        label="Normalized Morton Codes",
+    )
+
+    ax.set_xlabel("Frame")
+    ax.set_ylabel(y_label)
+    ax.legend()
+
+    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9)
+
+    plt.savefig(os.path.join(output_path, "combined_cell_values_with_morton_dots.png"))
+    plt.savefig(
+        os.path.join(output_path, "combined_cell_values_with_morton_dots.pdf"),
+        format="pdf",
     )
 
     if display_results:
