@@ -203,68 +203,6 @@ def calculate_cell_values(
 
         frame_cell_values.append(cell_value)
 
-        text_scale = 0.5
-        text_thickness = 1
-
-        if cell_index == 0:
-            cv2.putText(
-                frame,
-                "Moving avg angle",
-                (cell_start_x - 200, cell_end_y + 20),  # Adjust text position as needed
-                cv2.FONT_HERSHEY_SIMPLEX,
-                text_scale,
-                (255, 255, 255),
-                text_thickness,
-            )
-            cv2.putText(
-                frame,
-                "Current 3 angle",
-                (cell_start_x - 200, cell_end_y + 40),  # Adjust text position as needed
-                cv2.FONT_HERSHEY_SIMPLEX,
-                text_scale,
-                (255, 255, 255),
-                text_thickness,
-            )
-            cv2.putText(
-                frame,
-                "Angle difference",
-                (cell_start_x - 200, cell_end_y + 60),  # Adjust text position as needed
-                cv2.FONT_HERSHEY_SIMPLEX,
-                text_scale,
-                (255, 255, 255),
-                text_thickness,
-            )
-
-        cv2.putText(
-            frame,
-            f"{moving_avg_angle:.2f}",
-            (cell_start_x, cell_end_y + 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            text_scale,
-            (255, 255, 255),
-            text_thickness,
-        )
-
-        cv2.putText(
-            frame,
-            f"{current_3_angle:.2f}",
-            (cell_start_x, cell_end_y + 40),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            text_scale,
-            (255, 255, 255),
-            text_thickness,
-        )
-
-        cv2.putText(
-            frame,
-            f"{vector_angle_diff:.2f}",
-            (cell_start_x, cell_end_y + 60),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            text_scale,
-            (255, 255, 255),
-            text_thickness,
-        )
-
         center_x = (cell_start_x + cell_end_x) // 2
         center_y = (cell_start_y + cell_end_y) // 2
         end_x = center_x + int(cell_flow_vector[0]) * SCALE
@@ -396,11 +334,16 @@ def main(
         )
 
         helper.save_cell_value_csv(output_cell_value_map, target_path, grid_config)
+
+        plot_path = os.path.join(target_path, "plots")
+        if not os.path.exists(plot_path):
+            os.makedirs(plot_path)
+
         helper.save_cell_value_subplots(
-            output_cell_value_map, target_path, display_results, "Cell value"
+            output_cell_value_map, plot_path, display_results, "Cell value"
         )
         helper.save_combined_plot(
-            output_cell_value_map, target_path, display_results, "Cell value"
+            output_cell_value_map, plot_path, display_results, "Cell value"
         )
 
     helper.save_config(config, output_path, "config.yml")

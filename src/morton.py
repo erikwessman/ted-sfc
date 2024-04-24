@@ -55,6 +55,7 @@ def create_and_save_CSP(df, output_path, display_plots):
     plt.eventplot(df["morton"], orientation="horizontal", colors="b", lineoffsets=0.5)
 
     plt.savefig(os.path.join(output_path, "morton_codes.png"))
+    plt.savefig(os.path.join(output_path, "morton_codes.pdf"), format="pdf")
 
     if display_plots:
         plt.show()
@@ -63,14 +64,17 @@ def create_and_save_CSP(df, output_path, display_plots):
 
 
 def create_and_save_CSP_with_dots(df, output_path, display_plots):
-    fig, ax1 = plt.subplots()
+    _, ax1 = plt.subplots()
 
     # Plot the blue lines
     ax1.set_xlabel("Morton")
     ax1.set_ylabel("Frequency")
     ax1.set_ylim((0, 1))
     ax1.eventplot(
-        [df["morton"].values], orientation="horizontal", colors="b", lineoffsets=0.5
+        [df["morton"].values],
+        orientation="horizontal",
+        colors="lightgrey",
+        lineoffsets=0.5,
     )
 
     # Plot one dot for each Morton code at each frame
@@ -78,11 +82,12 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
     y = df["frame_id"]
 
     ax2 = ax1.twinx()
-    ax2.scatter(x, y, s=5, color="black")
+    ax2.scatter(x, y, s=5, color="red")
     ax2.set_ylabel("Frame Number")
     ax2.set_ylim([y.min(), y.max()])
 
     plt.savefig(os.path.join(output_path, "morton_codes_with_dots.png"))
+    plt.savefig(os.path.join(output_path, "morton_codes_with_dots.pdf"), format="pdf")
 
     if display_plots:
         plt.show()
@@ -93,7 +98,7 @@ def create_and_save_CSP_with_dots(df, output_path, display_plots):
 def create_and_save_combined_plot_with_morton_codes(
     cell_value_df, morton_code_df, output_path, display_results, y_label
 ):
-    fig, ax = plt.subplots(figsize=(10, 7))
+    _, ax = plt.subplots(figsize=(10, 7))
     total_cells = len(cell_value_df.columns)
 
     min_cell_value = cell_value_df.filter(like="cell").min().min()
@@ -112,13 +117,12 @@ def create_and_save_combined_plot_with_morton_codes(
         cell_column = f"cell{cell_index+1}"
         if cell_column in cell_value_df:
             ax.plot(
-                cell_value_df.index,  # Assuming DataFrame index represents the frame
+                cell_value_df.index,
                 cell_value_df[cell_column],
                 label=f"Cell {cell_index + 1}",
                 color=color_cycle[cell_index % len(color_cycle)],
             )
 
-    # Add Morton code values as dots on the plot
     ax.scatter(
         morton_code_df["frame_id"],
         morton_code_df["morton_normalized"],
@@ -134,6 +138,10 @@ def create_and_save_combined_plot_with_morton_codes(
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9)
 
     plt.savefig(os.path.join(output_path, "morton_codes_with_combined_cell_values.png"))
+    plt.savefig(
+        os.path.join(output_path, "morton_codes_with_combined_cell_values.pdf"),
+        format="pdf",
+    )
 
     if display_results:
         plt.show()
@@ -156,12 +164,17 @@ def main(data_path: str, display_plots: bool = False):
         morton_codes["morton"] = morton_codes["morton"].div(10000000000)
         morton_codes.to_csv(f"{video_path}/morton_codes.csv", sep=";", index=False)
 
-        create_and_save_CSP(morton_codes, video_path, display_plots)
-        create_and_save_CSP_with_dots(morton_codes, video_path, display_plots)
+        plot_path = os.path.join(video_path, "plots")
+
+        if not os.path.exists(plot_path):
+            os.makedirs(plot_path)
+
+        create_and_save_CSP(morton_codes, plot_path, display_plots)
+        create_and_save_CSP_with_dots(morton_codes, plot_path, display_plots)
         create_and_save_combined_plot_with_morton_codes(
             cell_values,
             morton_codes,
-            video_path,
+            plot_path,
             display_plots,
             "Cell values with Morton codes",
         )

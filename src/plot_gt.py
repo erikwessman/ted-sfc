@@ -30,7 +30,7 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
         [],
         [],
         [],
-    )  # Lists to store Morton codes and frame IDs for dots plotting
+    )
 
     for _, row in df.iterrows():
         morton = row["morton"]
@@ -70,6 +70,10 @@ def create_and_save_CSP_with_ground_truth_and_dots(df, ground_truth, output_path
         f"{output_path} \n Video ID: {ground_truth['id']}. Event window: {frame_start}-{frame_end}"
     )
     plt.savefig(os.path.join(output_path, "morton_codes_ground_truth_with_dots.png"))
+    plt.savefig(
+        os.path.join(output_path, "morton_codes_ground_truth_with_dots.pdf"),
+        format="pdf",
+    )
     plt.close()
 
 

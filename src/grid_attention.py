@@ -230,11 +230,16 @@ def main(
         )
 
         helper.save_cell_value_csv(mean_attention_map, target_path, grid_config)
+
+        plot_path = os.path.join(target_path, "plots")
+        if not os.path.exists(plot_path):
+            os.makedirs(plot_path)
+
         helper.save_cell_value_subplots(
-            mean_attention_map, target_path, display_results, "Mean attention"
+            mean_attention_map, plot_path, display_results, "Mean attention"
         )
         helper.save_combined_plot(
-            mean_attention_map, target_path, display_results, "Mean attention"
+            mean_attention_map, plot_path, display_results, "Mean attention"
         )
 
     helper.save_config(config, output_path, "config.yml")

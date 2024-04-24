@@ -128,6 +128,7 @@ def get_sequence_with_most_cells(sequences: List[Sequence]) -> Sequence:
 
 
 def get_ordered_sequences(path: List[Tuple[int, int]], direction: str, tolerance=1):
+    # TODO rename active_sequences
     active_sequences: List[Sequence] = []
     ordered_sequences: List[Sequence] = []
 

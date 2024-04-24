@@ -77,18 +77,21 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
 @click.command()
 @click.option(
     "--data-path",
+    "-d",
     type=click.Path(exists=True),
     prompt="Where do you have the input videos?",
     help="Path to the data directory.",
 )
 @click.option(
     "--output-path",
+    "-o",
     type=click.Path(),
     prompt="Where should the output be saved?",
     help="Path where output will be saved.",
 )
 @click.option(
     "--config-path",
+    "-c",
     type=click.Path(exists=True),
     prompt="Where is the configuration YML file located?",
     help="Path to the configuration YML file.",

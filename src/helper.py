@@ -119,10 +119,11 @@ def save_cell_value_subplots(cell_value_map, output_path, display_results, y_lab
     fig.text(0.04, 0.5, y_label, va="center", rotation="vertical")
 
     plt.subplots_adjust(
-        left=0.07, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4
+        left=0.07, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.5
     )
 
     plt.savefig(os.path.join(output_path, "cell_value_subplots.png"))
+    plt.savefig(os.path.join(output_path, "cell_value_subplots.pdf"), format="pdf")
 
     if display_results:
         plt.show()
@@ -131,7 +132,7 @@ def save_cell_value_subplots(cell_value_map, output_path, display_results, y_lab
 
 
 def save_combined_plot(cell_value_map, output_path, display_results, y_label):
-    fig, ax = plt.subplots(figsize=(10, 7))
+    _, ax = plt.subplots(figsize=(10, 7))
     total_cells = len(list(cell_value_map.values())[0])
 
     # Generate a color cycle or define a list of colors if specific ones are desired
@@ -152,6 +153,9 @@ def save_combined_plot(cell_value_map, output_path, display_results, y_label):
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9)
 
     plt.savefig(os.path.join(output_path, "combined_cell_values_plot.png"))
+    plt.savefig(
+        os.path.join(output_path, "combined_cell_values_plot.pdf"), format="pdf"
+    )
 
     if display_results:
         plt.show()
@@ -204,6 +208,7 @@ def save_detection_plots(data_path, calibration_videos, cell_ranges):
     plt.ylabel("Morton Code")
     plt.legend(handles=patches, loc=2)
     plt.savefig(os.path.join(data_path, "detection_calibration_plot.png"))
+    plt.savefig(os.path.join(data_path, "detection_calibration_plot.pdf"), format="pdf")
     plt.close()
 
 
