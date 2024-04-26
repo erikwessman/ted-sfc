@@ -90,7 +90,7 @@ def save_cell_value_subplots(
 ):
     total_cells = len(list(cell_value_map.values())[0])
 
-    plot_cols = 6
+    plot_cols = 3
     plot_rows = math.ceil(total_cells / plot_cols)
 
     fig, axs = plt.subplots(
@@ -118,8 +118,8 @@ def save_cell_value_subplots(
     for ax in axs[total_cells:]:
         ax.axis("off")
 
-    fig.text(0.5, 0.04, "Frame", ha="center")
-    fig.text(0.04, 0.5, y_label, va="center", rotation="vertical")
+    fig.text(0.5, 0.02, "Frame number", ha="center", fontsize="14")
+    fig.text(0.02, 0.5, y_label, va="center", rotation="vertical", fontsize="14")
 
     plt.subplots_adjust(
         left=0.07, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.5
