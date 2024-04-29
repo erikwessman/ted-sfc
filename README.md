@@ -52,18 +52,19 @@ python src/scripts/zod/process.py path/to/original/dataset data/zod --mode rando
 
 To enable running the optical flow model on the GPU, compile opencv from source with the cudaoptflow module:
 
-- Uninstall the existing opencv package: `pip uninstall opencv-python`
-- Follow [this guide](https://danielhavir.com/notes/install-opencv/) by Daniel Havir. Note:
-  - Get the latest versions of opencv and opencv_contrib from the official repositories: [opencv](https://github.com/opencv/opencv/releases) and [opencv_contrib](https://github.com/opencv/opencv_contrib/tags)
-  - Name the newly created environment `pyTED-cuda-cv` instead of `cv`
-  - Use python3.9 instead of python3.6
-  - Ensure all the environment variables are correctly defined before running the cmake command. Example values:
-    - `$python_exec: /home/elias/miniconda3/envs/pyTED-cuda-cv/bin/python`
-    - `$include_dir: /home/elias/miniconda3/envs/pyTED-cuda-cv/include/python3.9`
-    - `$library: /home/elias/miniconda3/envs/pyTED-cuda-cv/lib/libpython3.9.so`
-    - `$default_exec: /home/elias/miniconda3/envs/pyTED-cuda-cv/bin/python3.9`
-- Test your installation with `python -c "import cv2; print('CUDA is available:', cv2.cuda.getCudaEnabledDeviceCount() > 0)"`
-  - If you get an error about GCC version 12.0.0 being required, run `conda install conda-forge::libgcc-ng==12`
+1. Create a new conda environment, `pyTED-cudacv`, using the instructions from [Step 2](#2-create-environment)
+1. Uninstall the current version of opencv `pip uninstall opencv-python
+1. Follow [this guide](https://danielhavir.com/notes/install-opencv/) by Daniel Havir. Note:
+    - Get the latest versions of opencv and opencv_contrib from the official repositories: [opencv](https://github.com/opencv/opencv/releases) and [opencv_contrib](https://github.com/opencv/opencv_contrib/tags)
+    - Use the newly created environment `pyTED-cuda-cv` instead of `cv`
+    - Replace references to python3.6 with python3.9
+    - Ensure all the environment variables are correctly defined before running the cmake command. Example values:
+        - `$python_exec: /home/elias/miniconda3/envs/pyTED-cuda-cv/bin/python`
+        - `$include_dir: /home/elias/miniconda3/envs/pyTED-cuda-cv/include/python3.9`
+        - `$library: /home/elias/miniconda3/envs/pyTED-cuda-cv/lib/libpython3.9.so`
+        - `$default_exec: /home/elias/miniconda3/envs/pyTED-cuda-cv/bin/python3.9`
+1. Test your installation with `python -c "import cv2; print('CUDA is available:', cv2.cuda.getCudaEnabledDeviceCount() > 0)"`
+    - If you get an error about GCC version 12.0.0 being required, run `conda install conda-forge::libgcc-ng==12`
 
 Only use the `pyTED-cuda-cv` environment when running the optical flow model.
 
