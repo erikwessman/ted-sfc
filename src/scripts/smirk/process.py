@@ -16,12 +16,12 @@ SCALE = (752, 480)
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process SMIRK dataset into videos.")
     parser.add_argument(
-        "data_path",
+        "data-path",
         type=str,
         help="Path to original SMIRK dataset",
     )
     parser.add_argument(
-        "output_path",
+        "output-path",
         type=str,
         help="Path to desired output",
     )
@@ -33,10 +33,10 @@ def parse_arguments():
         help="Order in which to process the sequences. Default is 'sequential'.",
     )
     parser.add_argument(
-        "--max_videos",
+        "--nr-videos",
         type=int,
         default=0,
-        help="Maximum number of videos to process. Default is 0 (process all).",
+        help="Number of videos to process. Default is 0 (process all).",
     )
     return parser.parse_args()
 
@@ -47,7 +47,7 @@ def data_exists(video_id: str, output_path: str) -> bool:
     return os.path.exists(video_path)
 
 
-def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
+def process_data(data_path: str, output_path: str, mode: str, nr_videos: int):
     os.makedirs(output_path, exist_ok=True)
 
     video_names = os.listdir(data_path)
@@ -58,9 +58,9 @@ def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
         video_names.sort()
 
     # Get the number of videos specified, 0 for all videos
-    if max_videos > 0:
-        max_videos = min(len(video_names), max_videos)
-        video_names = video_names[:max_videos]
+    if nr_videos > 0:
+        nr_videos = min(len(video_names), nr_videos)
+        video_names = video_names[:nr_videos]
 
     video_dirs = tqdm(video_names, desc="Processing folders")
 
@@ -99,4 +99,4 @@ def process_data(data_path: str, output_path: str, mode: str, max_videos: int):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    process_data(args.data_path, args.output_path, args.mode, args.max_videos)
+    process_data(args.data_path, args.output_path, args.mode, args.nr_videos)

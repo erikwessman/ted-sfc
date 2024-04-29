@@ -98,6 +98,7 @@ def save_benchmark(output_path, start_time, end_time, nr_videos, nr_frames):
 )
 @click.option(
     "--method",
+    "-m",
     type=click.Choice(["mlnet", "tasednet", "transalnet", "optical-flow"]),
     prompt="What method do you want to use?",
     help="The method or model to use.",

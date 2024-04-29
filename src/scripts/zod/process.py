@@ -21,7 +21,7 @@ def parse_arguments():
     )
     parser.add_argument("data_path", type=str, help="Path to original ZOD dataset")
     parser.add_argument(
-        "output_path",
+        "output-path",
         type=str,
         default="data/zod",
         help="Output path",
@@ -34,10 +34,10 @@ def parse_arguments():
         help="Order in which to process the sequences. Default is 'sequential'.",
     )
     parser.add_argument(
-        "--max_videos",
+        "--nr-videos",
         type=int,
         default=0,
-        help="Maximum number of videos to process. Default is 0 (process all).",
+        help="Number of videos to process. Default is 0 (process all).",
     )
     return parser.parse_args()
 
@@ -48,7 +48,7 @@ def data_exists(video_id: str, output_path: str) -> bool:
     return os.path.exists(video_path)
 
 
-def process_data(data_path, output_path, mode, max_videos):
+def process_data(data_path, output_path, mode, nr_videos):
     os.makedirs(output_path, exist_ok=True)
 
     sequences_dir = os.path.join(data_path, "sequences")
@@ -60,9 +60,9 @@ def process_data(data_path, output_path, mode, max_videos):
         sequence_names.sort()
 
     # Get the number of videos specified, 0 for all videos
-    if max_videos > 0:
-        max_videos = min(len(sequence_names), max_videos)
-        sequence_names = sequence_names[:max_videos]
+    if nr_videos > 0:
+        nr_videos = min(len(sequence_names), nr_videos)
+        sequence_names = sequence_names[:nr_videos]
 
     pbar = tqdm(sequence_names, desc="Processing folders")
 
@@ -109,4 +109,4 @@ def process_data(data_path, output_path, mode, max_videos):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    process_data(args.data_path, args.output_path, args.mode, args.max_videos)
+    process_data(args.data_path, args.output_path, args.mode, args.nr_videos)
