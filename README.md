@@ -52,8 +52,8 @@ python src/scripts/zod/process.py path/to/original/dataset data/zod --mode rando
 
 To enable running the optical flow model on the GPU, compile opencv from source with the cudaoptflow module:
 
-1. Create a new conda environment, `pyTED-cudacv`, using the instructions from [Step 2](#2-create-environment)
-1. Uninstall the current version of opencv `pip uninstall opencv-python
+1. Create a new conda environment, `pyTED-cuda-cv`, using the instructions from [Step 2](#2-create-environment)
+1. Uninstall the current version of opencv `pip uninstall opencv-python`
 1. Follow [this guide](https://danielhavir.com/notes/install-opencv/) by Daniel Havir. Note:
     - Get the latest versions of opencv and opencv_contrib from the official repositories: [opencv](https://github.com/opencv/opencv/releases) and [opencv_contrib](https://github.com/opencv/opencv_contrib/tags)
     - Use the newly created environment `pyTED-cuda-cv` instead of `cv`
