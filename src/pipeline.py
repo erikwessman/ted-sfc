@@ -3,6 +3,7 @@ import sys
 import click
 import datetime
 import cv2
+import matplotlib.pyplot as plt
 
 from saliency.MLNet.run import main as run_saliency_mlnet
 from saliency.TASEDNet.run import main as run_saliency_tasednet
@@ -119,6 +120,11 @@ def main(data_path, output_path, config_path, method, annotations_path, cpu):
     else:
         click.echo("Output path does not exist. Creating it.")
         os.makedirs(output_path, exist_ok=True)
+
+    # Set matplotlib font type
+    # Font type 1 (42) is high quality and suitable for PDFs
+    plt.rcParams['pdf.fonttype'] = 42
+    plt.rcParams['ps.fonttype'] = 42
 
     # Get the information for benchmarking
     nr_videos, nr_frames = get_dataset_info(data_path)
