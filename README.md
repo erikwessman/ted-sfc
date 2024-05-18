@@ -105,3 +105,7 @@ To evaluate the event detection in terms of F1-score, sensitivity, specificity a
 | 000860        | 001326            | 001273            | 001067            | 001328            |
 | 000893        | 001352            | 001294            | 001200            | 001341            |
 |               | 001457            | 001245            | 001295            | 001412            |
+
+## Licensing Information Notice
+
+For this dataset, Zenseact AB has taken all reasonable measures to remove all personally identifiable information, including faces and license plates. To the extent that you like to request removal of specific images from the dataset, please contact privacy@zenseact.com.
