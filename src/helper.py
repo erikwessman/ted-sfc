@@ -254,20 +254,19 @@ def create_and_save_combined_plot_with_morton_codes(
 
 
 def save_detection_plots(data_path, calibration_videos, cell_ranges):
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(8, 6))  # Adjust the figure size to match aspect ratio
 
     cell_colors = plt.cm.nipy_spectral(np.linspace(0, 1, len(cell_ranges)))
 
     for cell, (min_val, max_val) in cell_ranges.items():
-        plt.axhspan(min_val, max_val, color=cell_colors[cell - 1], alpha=0.3)
+        plt.axvspan(min_val, max_val, color=cell_colors[cell - 1], alpha=0.3)
 
     patches = [
         mpatches.Patch(color=cell_colors[cell - 1], label=f"Cell {cell}", alpha=0.3)
         for cell in cell_ranges
     ]
 
-    video_colors = plt.cm.tab20(np.arange(len(calibration_videos)))
-    for index, video_id in enumerate(calibration_videos):
+    for video_id in calibration_videos:
         target_path = os.path.join(data_path, video_id)
         csv_path = os.path.join(target_path, "morton_codes.csv")
 
@@ -280,7 +279,7 @@ def save_detection_plots(data_path, calibration_videos, cell_ranges):
         morton_codes = pd.read_csv(csv_path, sep=";")
 
         plt.scatter(
-            morton_codes["frame_id"], morton_codes["morton"], color=video_colors[index]
+            morton_codes["morton"], morton_codes["frame_id"], color="red", s=5
         )
 
     plt.figtext(
@@ -294,9 +293,9 @@ def save_detection_plots(data_path, calibration_videos, cell_ranges):
     plt.figtext(0.5, 0.96, video_text, ha="center", fontsize=8)
 
     plt.title("Morton Codes by Frame Number")
-    plt.xlabel("Frame Number")
-    plt.ylabel("Morton Code")
-    plt.legend(handles=patches, loc=2)
+    plt.xlabel("Morton Code")
+    plt.ylabel("Frame Number")
+    plt.legend(handles=patches, loc='best')
     plt.savefig(os.path.join(data_path, "detection_calibration_plot.png"))
     plt.savefig(os.path.join(data_path, "detection_calibration_plot.pdf"), format="pdf")
     plt.close()
