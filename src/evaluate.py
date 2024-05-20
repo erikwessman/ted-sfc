@@ -73,7 +73,10 @@ def main(data_path: str, ground_truth_path: str):
 
                 iou_map[video_id] = iou_score
 
-                if iou_score:
+                ground_truth_type = video_ground_truth["type"]
+                predicted_type = row["scenario_type"]
+
+                if iou_score and ground_truth_type == predicted_type:
                     TP += 1
                     tp.append(
                         f"TP - {video_id} correctly predicted: {prediction_interval} with ground truth: {ground_truth_interval} IoU: {iou_score}"
