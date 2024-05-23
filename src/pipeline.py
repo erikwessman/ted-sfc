@@ -5,9 +5,7 @@ import datetime
 import cv2
 import matplotlib.pyplot as plt
 
-from saliency.MLNet.run import main as run_saliency_mlnet
-from saliency.TASEDNet.run import main as run_saliency_tasednet
-from saliency.TranSalNet.run import main as run_saliency_transalnet
+
 from grid_attention import main as run_grid_attention
 from grid_optical_flow import main as run_grid_optical_flow
 from detector_morton import main as run_detector_morton
@@ -137,10 +135,13 @@ def main(data_path, output_path, config_path, method, annotations_path, cpu):
         print("Generating saliency heatmaps...")
         print("----------------------------------------")
         if method == "mlnet":
+            from saliency.MLNet.run import main as run_saliency_mlnet
             run_saliency_mlnet(data_path, output_path, config_path, cpu)
         elif method == "tasednet":
+            from saliency.TASEDNet.run import main as run_saliency_tasednet
             run_saliency_tasednet(data_path, output_path, config_path, cpu)
         elif method == "transalnet":
+            from saliency.TranSalNet.run import main as run_saliency_transalnet
             run_saliency_transalnet(data_path, output_path, config_path, cpu)
         else:
             raise ValueError("Invalid saliency model")
