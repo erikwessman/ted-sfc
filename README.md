@@ -1,6 +1,6 @@
 # ted-sfc
 
-_TODO_ Paper abstract here, plus any more info
+Identifying and analyzing traffic events in large-scale, unstructured video data from vehicle-mounted cameras is a significant challenge for enhancing advanced driver assistance systems (ADAS). This thesis presents a conceptual framework that leverages machine learning (ML) and optical flow (OF) for efficient traffic event detection, utilizing space-filling curves (SFCs) to reduce data dimensionality. Our first approach, ML-SFC, uses an ML model predicting human attention to identify events, while the second, OF-SFC, employs an OF algorithm to detect movement. Both methods are evaluated using the synthetic SMIRK dataset and validated on the real-world Zenseact Open Dataset (ZOD). The results show that OF-SFC performs better on the synthetic dataset, while ML-SFC is better on the real-world dataset. Both methods achieve comparable processing speeds, indicating their suitability for real-time applications. This framework could serve as a foundation for scalable solutions to analyze large volumes of unstructured data in the form of traffic event detection or other contexts.
 
 ## Running TED-SFC
 
